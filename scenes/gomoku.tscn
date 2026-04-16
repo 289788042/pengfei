@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c4b3k4y0kwogy"]
+
+[ext_resource type="Script" path="res://scripts/gomoku.gd" id="1_0"]
+
+[node name="Gomoku" type="Node2D" unique_id=1119041238]
+script = ExtResource("1_0")

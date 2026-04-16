@@ -1,0 +1,95 @@
+[gd_scene format=3 uid="uid://c7q786fxig0aa"]
+
+[ext_resource type="Script" uid="uid://do0gr5ae1l1x" path="res://scenes/StartMenu.gd" id="1_dvnd1"]
+[ext_resource type="Theme" uid="uid://cikxg02q2to20" path="res://UI/GlobalPixelTheme.tres" id="1_kmax6"]
+[ext_resource type="Texture2D" uid="uid://cs32dw77wmhaf" path="res://Assets/title_bg1_high.png" id="3_cp7se"]
+
+[node name="StartMenu" type="Control" unique_id=1795345620]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_kmax6")
+script = ExtResource("1_dvnd1")
+
+[node name="BG" type="TextureRect" parent="." unique_id=1995705612]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_cp7se")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1771739834]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=1901811030]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LabelTitle" type="Label" parent="CenterContainer/VBoxContainer" unique_id=1042516395]
+layout_mode = 2
+text = "这座城市有2000万人，你叫什么名字？"
+horizontal_alignment = 1
+
+[node name="Input_Name" type="LineEdit" parent="CenterContainer/VBoxContainer" unique_id=1339747195]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "输入姓名..."
+
+[node name="LabelZodiac" type="Label" parent="CenterContainer/VBoxContainer" unique_id=670805779]
+layout_mode = 2
+text = "选择你的星象出厂设置："
+horizontal_alignment = 1
+
+[node name="ZodiacBox" type="HBoxContainer" parent="CenterContainer/VBoxContainer" unique_id=1525313168]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Btn_Earth" type="Button" parent="CenterContainer/VBoxContainer/ZodiacBox" unique_id=619727465]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 60)
+layout_mode = 2
+toggle_mode = true
+text = "土象: 金钱+500, 学识+5"
+
+[node name="Btn_Fire" type="Button" parent="CenterContainer/VBoxContainer/ZodiacBox" unique_id=1769276256]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 60)
+layout_mode = 2
+toggle_mode = true
+text = "火象: 精力上限120, 颜值+5"
+
+[node name="Btn_Water" type="Button" parent="CenterContainer/VBoxContainer/ZodiacBox" unique_id=67668509]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 60)
+layout_mode = 2
+toggle_mode = true
+text = "水象: 情绪上限120, 情商+5"
+
+[node name="Btn_Wind" type="Button" parent="CenterContainer/VBoxContainer/ZodiacBox" unique_id=1526148942]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 60)
+layout_mode = 2
+toggle_mode = true
+text = "风象: 颜值+2, 情商+2, 学识+2"
+
+[node name="Btn_StartGame" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1325418540]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "开始深漂生活！"

@@ -1,0 +1,19 @@
+# Godot 4+ 生成的文件（不需要同步）
+.godot/
+/android/
+*.import
+
+# 调试截图
+debug_*.png
+screenshot_*.png
+phase29_*.png
+
+# 临时修复脚本
+fix_*.py
+add_msg_records.py
+wechat_redesign_tscn.py
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini

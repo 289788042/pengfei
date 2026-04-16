@@ -1,0 +1,2507 @@
+[gd_scene format=3 uid="uid://ddnblut4k8t4u"]
+
+[ext_resource type="Script" uid="uid://4efrj08wbmj8" path="res://scenes/MainGame.gd" id="1_8etcy"]
+[ext_resource type="Theme" uid="uid://cikxg02q2to20" path="res://UI/GlobalPixelTheme.tres" id="1_xej52"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+bg_color = Color(0, 0, 0, 0.67)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_smartphone"]
+bg_color = Color(0.12, 0.12, 0.14, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+shadow_size = 15
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_phone_screen"]
+bg_color = Color(0.94, 0.94, 0.96, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8etcy"]
+bg_color = Color(0.2, 0.6, 0.93333334, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frf35"]
+bg_color = Color(0.101960786, 0.72156864, 0.2, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ybmw1"]
+bg_color = Color(0.9019608, 0.3019608, 0.2, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_321ql"]
+bg_color = Color(0.8, 0.3019608, 0.69803923, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d4f28"]
+bg_color = Color(0.53333336, 0.2, 0.8, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hat22"]
+bg_color = Color(0.2, 0.6509804, 0.8509804, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xej52"]
+bg_color = Color(0.9019608, 0.3019608, 0.4, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_job"]
+bg_color = Color(0.15, 0.4, 0.75, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_alipay"]
+bg_color = Color(0.1, 0.45, 0.7, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_diary"]
+bg_color = Color(0.55, 0.35, 0.2, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ios_widget"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.15, 0.15, 0.18, 0.85)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcpnl"]
+bg_color = Color(0.92941177, 0.92941177, 0.92941177, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcnav"]
+bg_color = Color(0.9490196, 0.9490196, 0.9490196, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_panel"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_topbar"]
+bg_color = Color(0.929, 0.929, 0.929, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_tabbar"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.969, 0.969, 0.969, 1)
+border_width_top = 1
+border_color = Color(0.851, 0.851, 0.851, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_menu_item"]
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+bg_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_green_btn"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.027, 0.757, 0.376, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_red_btn"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.98, 0.318, 0.318, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_bubble_self"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.584, 0.925, 0.412, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_bubble_other"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p73vr"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0.98, 0.97, 0.95, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7fyak"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fpdtd"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1hpqh"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7f7ne"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rtryj"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vs82q"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qsiih"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.29, 0.29, 0.29, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7d840"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.2, 0.2, 0.2, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_utvnp"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t4bxf"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.98, 0.97, 0.95, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vtnxl"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_16xnu"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lupq4"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4h46e"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cf4d6"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r0bag"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hogh4"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i1eed"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_av4dx"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0e2px"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jbbka"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_31l0t"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nnwqk"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_omf1d"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j5smc"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6oxnh"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.29, 0.29, 0.29, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qf85o"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.2, 0.2, 0.2, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qnsrl"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x628s"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.98, 0.97, 0.95, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hrv8a"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pettb"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vy7jg"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3i4th"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m6n12"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oj82p"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k2kvy"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i4ug7"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3poku"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yrpf5"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.086, 0.467, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5nyqk"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.06, 0.35, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h31ek"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.15, 0.55, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_525f1"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.29, 0.29, 0.29, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5elrs"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.85, 0.15, 0.25, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pm77x"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.2, 0.2, 0.2, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5tpxq"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kq1ox"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0, 0, 0, 0.8)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cxpsx"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.85, 0.15, 0.25, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xdsxv"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.25, 0.35, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5h3qe"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.15, 0.15, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5wvrv"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.25, 0.25, 0.7, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_next_week"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.18, 0.5, 0.92, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 6
+
+[node name="MainGame" type="Control" unique_id=2071058635]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_xej52")
+script = ExtResource("1_8etcy")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1781901994]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LeftWorldArea" type="Control" parent="HBoxContainer" unique_id=552059861]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.5
+
+[node name="BgImage" type="ColorRect" parent="HBoxContainer/LeftWorldArea" unique_id=1215509953]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.102, 0.102, 0.141, 1)
+
+[node name="NPC_Sprite" type="ColorRect" parent="HBoxContainer/LeftWorldArea" unique_id=49211289]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -300.0
+offset_right = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.3, 0.3, 0.4, 0.5)
+
+[node name="DialogBox" type="Panel" parent="HBoxContainer/LeftWorldArea" unique_id=492207286]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -180.0
+offset_right = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
+
+[node name="DialogText" type="RichTextLabel" parent="HBoxContainer/LeftWorldArea/DialogBox" unique_id=2143022658]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 15.0
+offset_right = -20.0
+offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/default_color = Color(1, 0.9, 0.2, 1)
+theme_override_font_sizes/normal_font_size = 24
+bbcode_enabled = true
+fit_content = true
+autowrap_mode = 2
+
+[node name="RightMargin" type="MarginContainer" parent="HBoxContainer" unique_id=1125743121]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 20
+
+[node name="RightSystemArea" type="VBoxContainer" parent="HBoxContainer/RightMargin" unique_id=1338741491]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="PhoneCase" type="PanelContainer" parent="HBoxContainer/RightMargin/RightSystemArea" unique_id=1305989791]
+custom_minimum_size = Vector2(490, 892)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_smartphone")
+
+[node name="BezelMargin" type="MarginContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase" unique_id=1961096430]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="PhoneScreen" type="Panel" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin" unique_id=1348964505]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_phone_screen")
+
+[node name="ScreenContent" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=971623383]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StatusBar" type="HBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent" unique_id=539196856]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="CarrierLabel" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/StatusBar" unique_id=991181643]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "中国移动 5G"
+
+[node name="BatteryLabel" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/StatusBar" unique_id=1541276876]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "🔋 100%"
+
+[node name="AppGridWrapper" type="MarginContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent" unique_id=982101497]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+
+[node name="AppGrid" type="GridContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper" unique_id=430773334]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+theme_override_constants/h_separation = 28
+theme_override_constants/v_separation = 28
+columns = 3
+
+[node name="BtnApp_Map" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=411125048]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_8etcy")
+text = "高德
+地图"
+
+[node name="BtnApp_WeChat" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=1370556776]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_frf35")
+text = "微信"
+
+[node name="BtnApp_Alipay" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=1678430904]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_alipay")
+text = "支服了宝"
+
+[node name="BtnApp_Diary" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=1126187017]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_diary")
+text = "日记本"
+
+[node name="BtnApp_Dating" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=2089823848]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_xej52")
+text = "滑动交友"
+
+[node name="BtnApp_BaoTao" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=543907125]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_ybmw1")
+text = "宝淘"
+
+[node name="BtnApp_TuanMei" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=2023277305]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_321ql")
+text = "团美
+医美"
+
+[node name="BtnApp_Zodiac" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=416577280]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_d4f28")
+text = "星座"
+
+[node name="BtnApp_Job" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=1262149363]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_job")
+text = "BOSS
+弯聘"
+
+[node name="BtnApp_House" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/AppGridWrapper/AppGrid" unique_id=279387283]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(126, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_hat22")
+text = "贝壳找房"
+
+
+[node name="WidgetOuterMargin" type="MarginContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent" unique_id=1119999999]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="Widget_Profile" type="PanelContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin" unique_id=1315565183]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_ios_widget")
+
+[node name="WidgetMargin" type="MarginContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile" unique_id=1271640420]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="PlayerProfileArea" type="HBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin" unique_id=812608111]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="ProfileInfoVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea" unique_id=2007860989]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="StatsGrid" type="GridContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox" unique_id=299734849]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 2
+columns = 2
+
+[node name="LabelMoneyTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=1042631880]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "金钱:"
+
+[node name="LabelMoney" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=563134587]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "3000"
+
+[node name="LabelEnergyTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=1593653297]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "精力:"
+
+[node name="LabelEnergy" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=78104854]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "100"
+
+[node name="LabelSanityTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=82293906]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "情绪:"
+
+[node name="LabelSanity" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=1065186601]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "100"
+
+[node name="LabelCharmTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=720448682]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "颜值:"
+
+[node name="LabelCharm" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=1876513290]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "10"
+
+[node name="LabelIntellectTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=111906054]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "学识:"
+
+[node name="LabelIntellect" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=724869696]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "10"
+
+[node name="LabelEQTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=1771855277]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "情商:"
+
+[node name="LabelEQ" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=669028810]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "10"
+
+[node name="LabelPendingSalary" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=989818145]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "待发工资:"
+
+[node name="LabelPSalaryValue" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox/StatsGrid" unique_id=992737640]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "0"
+
+[node name="LabelWeek" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox" unique_id=1873995391]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "第 1 周"
+horizontal_alignment = 1
+
+[node name="LabelPlayerInfo" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/ProfileInfoVBox" unique_id=907999890]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "姓名： | 星座："
+horizontal_alignment = 1
+
+[node name="PlayerAvatar" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea" unique_id=894801811]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+color = Color(0.25, 0.25, 0.35, 1)
+
+[node name="LabelAvatar" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/WidgetOuterMargin/Widget_Profile/WidgetMargin/PlayerProfileArea/PlayerAvatar" unique_id=1932436964]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -50.0
+offset_top = -10.0
+offset_right = 50.0
+offset_bottom = 10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "头像"
+
+[node name="LabelGameOver" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1859125837]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
+theme_override_font_sizes/font_size = 22
+text = "你已情绪崩溃，被送入医院。GAME OVER！"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="LocationMenu" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1463467157]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.8)
+
+[node name="LocVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LocationMenu" unique_id=1944226918]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="LabelLocTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LocationMenu/LocVBox" unique_id=1227232143]
+layout_mode = 2
+text = "选择你要去的地方："
+horizontal_alignment = 1
+
+[node name="Btn_Loc_Library" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LocationMenu/LocVBox" unique_id=468454250]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "去图书馆 (-20 精力, +2 学识, +5 情绪)"
+
+[node name="Btn_Loc_Gym" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LocationMenu/LocVBox" unique_id=770682993]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "去健身房 (-45 精力, -200 金钱, +2 颜值, +5 情绪, 精力上限+1)"
+
+[node name="Btn_Loc_Bar" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LocationMenu/LocVBox" unique_id=1833367795]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "去高档酒吧 (-20 精力, -500 金钱, +2 情商, +25 情绪)"
+
+[node name="Btn_CloseLoc" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LocationMenu/LocVBox" unique_id=1650722578]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "返回"
+
+[node name="Btn_Loc_Home" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LocationMenu/LocVBox" unique_id=923816209]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "宅家刷手机 (-10 精力, +20 情绪)"
+
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.4, 0.15, 0.1, 0.95)
+
+[node name="BaoTaoPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1721109811]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.4, 0.15, 0.1, 0.95)
+
+[node name="BTCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup" unique_id=1502610938]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BTVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter" unique_id=44295710]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="LabelBTTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1674217372]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.53333336, 0, 1)
+theme_override_font_sizes/font_size = 22
+text = "【宝淘】网购平台"
+horizontal_alignment = 1
+
+[node name="LabelBTDebt" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1340880063]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.26666668, 0.26666668, 1)
+text = "当前花呗欠款：0"
+horizontal_alignment = 1
+
+[node name="Btn_BT_Skincare" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1788453116]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "大牌护肤套装 -> 花呗+800, 颜值+5, 情绪+5"
+
+[node name="Btn_BT_Fashion" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1689629728]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "快时尚穿搭 -> 花呗+1500, 颜值+8, 情绪+10"
+
+[node name="Btn_CloseBT" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1532478984]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "关闭宝淘"
+
+[node name="TuanMeiPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1708396881]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.35, 0.1, 0.35, 0.95)
+
+[node name="TMCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup" unique_id=1919310736]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TMVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter" unique_id=1325320539]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="LabelTMTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=1429844436]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86666673, 0.53333336, 0.86666673, 1)
+theme_override_font_sizes/font_size = 22
+text = "【团美医美】高端变美"
+horizontal_alignment = 1
+
+[node name="LabelTMDebt" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=2069125259]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.26666668, 0.26666668, 1)
+text = "当前花呗欠款：0"
+horizontal_alignment = 1
+
+[node name="Btn_TM_Injection" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=1812575675]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "轻医美(水光针) -> 花呗+6000, 颜值+25, 情绪+20"
+
+[node name="Btn_TM_Surgery" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=1655837622]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "全脸高级微调 -> 花呗+20000, 颜值+50, 情商-10, 情绪+30"
+
+[node name="Btn_CloseTM" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=645821617]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "关闭团美"
+
+[node name="ZodiacPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=883157341]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.15, 0.1, 0.3, 0.95)
+
+[node name="ZCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ZodiacPopup" unique_id=2138280477]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ZVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ZodiacPopup/ZCenter" unique_id=346839167]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="LabelZTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ZodiacPopup/ZCenter/ZVBox" unique_id=1978478282]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6666667, 0.46666667, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "【陶黑黑星座】本周运势"
+horizontal_alignment = 1
+
+[node name="LabelZContent" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ZodiacPopup/ZCenter/ZVBox" unique_id=1284831547]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Btn_CloseZodiac" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ZodiacPopup/ZCenter/ZVBox" unique_id=1300804787]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "关闭星座"
+
+[node name="HousePopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=990092027]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0.3, 0.4, 0.95)
+
+[node name="HouseCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup" unique_id=1317351164]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="HouseVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter" unique_id=445892974]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="LabelHouseTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=527038249]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "【贝壳找房】租房平台"
+horizontal_alignment = 1
+
+[node name="LabelHouseStatus" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=1314618834]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "当前住房：城中村单间 (月租 1500)"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Btn_House_Village" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=575562651]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "城中村单间 (房租 1500, 无加成)"
+
+[node name="Btn_House_Apartment" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=114735979]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "精装一居室 (房租 4000, 每周情绪+10, 颜值+5)"
+
+[node name="Btn_House_Luxury" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=439453356]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "CBD大平层 (房租 12000, 情绪恢复极快, 高概率遇优质男)"
+
+[node name="Btn_CloseHouse" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=1826888292]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "返回桌面"
+
+[node name="DatingPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1583552558]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.4, 0.1, 0.15, 0.95)
+
+[node name="DatingCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup" unique_id=264286286]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="DatingVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter" unique_id=17204572]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="LabelDatingTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox" unique_id=1347004096]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.5, 1)
+theme_override_font_sizes/font_size = 22
+text = "【滑动交友】左滑右滑"
+horizontal_alignment = 1
+
+[node name="DateCard" type="Panel" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox" unique_id=775697554]
+custom_minimum_size = Vector2(360, 200)
+layout_mode = 2
+
+[node name="DateCardVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox/DateCard" unique_id=1229817598]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 10
+
+[node name="LabelDateName" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox/DateCard/DateCardVBox" unique_id=527498055]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "???"
+horizontal_alignment = 1
+
+[node name="LabelDateAge" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox/DateCard/DateCardVBox" unique_id=2017286895]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+text = "年龄：??"
+horizontal_alignment = 1
+
+[node name="LabelDateBio" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox/DateCard/DateCardVBox" unique_id=167678612]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 15
+text = "签名：???"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="DateBtnHBox" type="HBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox" unique_id=327190895]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="Btn_Pass" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox/DateBtnHBox" unique_id=513084292]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "❌ 拒绝"
+
+[node name="Btn_Like" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox/DateBtnHBox" unique_id=2071297017]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "💚 喜欢"
+
+[node name="Btn_CloseDating" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DatingPopup/DatingCenter/DatingVBox" unique_id=520756526]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "返回桌面"
+
+[node name="JobPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=953812864]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+color = Color(0, 0, 0, 0.6)
+
+[node name="JobCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/JobPopup" unique_id=1535192768]
+layout_mode = 0
+
+[node name="JobVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/JobPopup/JobCenter" unique_id=2084036225]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LabelJobStatus" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/JobPopup/JobCenter/JobVBox" unique_id=1737859729]
+unique_name_in_owner = true
+layout_mode = 2
+text = "当前职位：初级行政
+当前学历：大专"
+horizontal_alignment = 1
+
+[node name="Btn_Job_Admin" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/JobPopup/JobCenter/JobVBox" unique_id=2102257192]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "初级行政 (底薪 1500/周)"
+
+[node name="Btn_Job_Media" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/JobPopup/JobCenter/JobVBox" unique_id=1104093327]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "新媒体运营 (底薪 4000/周)"
+
+[node name="Btn_Job_Client" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/JobPopup/JobCenter/JobVBox" unique_id=1717327837]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "大客户经理 (底薪 8000/周)"
+
+[node name="Btn_CloseJob" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/JobPopup/JobCenter/JobVBox" unique_id=2112040842]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "关闭"
+
+[node name="PaymentPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1135471884]
+unique_name_in_owner = true
+visible = false
+z_index = 60
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="@CenterContainer@112163" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup" unique_id=1097686393]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="@PanelContainer@112164" type="PanelContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163" unique_id=1614206312]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_p73vr")
+
+[node name="PayVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164" unique_id=-1294967295]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LabelPaymentCost" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=-1294967294]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.2, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "请选择支付方式"
+horizontal_alignment = 1
+
+[node name="BtnPayMix" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=-1294967293]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.85, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_7fyak")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_fpdtd")
+theme_override_styles/hover = SubResource("StyleBoxFlat_1hpqh")
+text = "混合支付（现金+花呗）"
+
+[node name="BtnPayHuabei" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=-1294967292]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.85, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_7f7ne")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_rtryj")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vs82q")
+text = "全部花呗透支"
+
+[node name="BtnPayCancel" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=-1294967291]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.85, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_qsiih")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_7d840")
+theme_override_styles/hover = SubResource("StyleBoxFlat_utvnp")
+text = "取消支付"
+
+[node name="DiaryPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1237836593]
+unique_name_in_owner = true
+visible = false
+z_index = 55
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="@CenterContainer@112172" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup" unique_id=10046661]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="@PanelContainer@112173" type="PanelContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172" unique_id=83847414]
+custom_minimum_size = Vector2(600, 500)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_t4bxf")
+
+[node name="DiaryVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173" unique_id=-1294967290]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DiaryFilterHBox" type="HBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=-1294967289]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Btn_DiaryFilter_全部" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=-1294967288]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_vtnxl")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_16xnu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_lupq4")
+text = "全部"
+
+[node name="Btn_DiaryFilter_日常" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=-1294967287]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_4h46e")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_cf4d6")
+theme_override_styles/hover = SubResource("StyleBoxFlat_r0bag")
+text = "日常"
+
+[node name="Btn_DiaryFilter_提升" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=-1294967286]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_hogh4")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_i1eed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_av4dx")
+text = "提升"
+
+[node name="Btn_DiaryFilter_社交" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=-1294967285]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_0e2px")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_jbbka")
+theme_override_styles/hover = SubResource("StyleBoxFlat_31l0t")
+text = "社交"
+
+[node name="Btn_DiaryFilter_消费" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=-1294967284]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_nnwqk")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_omf1d")
+theme_override_styles/hover = SubResource("StyleBoxFlat_j5smc")
+text = "消费"
+
+[node name="DiaryScroll" type="ScrollContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=-1294967283]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DiaryLogContainer" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryScroll" unique_id=-1294967282]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BtnCloseDiary" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=-1294967281]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_6oxnh")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_qf85o")
+theme_override_styles/hover = SubResource("StyleBoxFlat_qnsrl")
+text = "关闭日记"
+
+unique_name_in_owner = true
+visible = false
+z_index = 70
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.067, 0.067, 0.067, 0.95)
+
+[node name="LateNightPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1541483336]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.05, 0.05, 0.12, 0.98)
+
+[node name="LateNightCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LateNightPopup" unique_id=754094843]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="LateNightPanel" type="PanelContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LateNightPopup/LateNightCenter" unique_id=844940575]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kq1ox")
+
+[node name="LateNightVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LateNightPopup/LateNightCenter/LateNightPanel" unique_id=1811275587]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LabelLateNightTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LateNightPopup/LateNightCenter/LateNightPanel/LateNightVBox" unique_id=824982089]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "凌晨 2 点。寂静的夜里，无边的焦虑将你吞没。你翻来覆去无法入睡，拿起手机，大数据精准地给你推送着诱惑……"
+autowrap_mode = 3
+
+[node name="Btn_Emo_Bag" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LateNightPopup/LateNightCenter/LateNightPanel/LateNightVBox" unique_id=109367859]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(480, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_cxpsx")
+theme_override_styles/hover = SubResource("StyleBoxFlat_xdsxv")
+text = "冲动消费，换取多巴胺"
+
+[node name="Btn_Emo_Sleep" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LateNightPopup/LateNightCenter/LateNightPanel/LateNightVBox" unique_id=1893381878]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(480, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_5h3qe")
+theme_override_styles/hover = SubResource("StyleBoxFlat_5wvrv")
+text = "放下手机，强行闭眼！ (代价：颜值-2, 情绪-10, 精力-20)"
+
+[node name="Btn_NextWeek" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea" unique_id=1105591854]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(490, 50)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_next_week")
+text = "⏭ 结束本周 (恢复精力)"
+
+[node name="WeChatMenu" type="ColorRect" parent="." unique_id=1611397621]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="WCPhoneCenter" type="CenterContainer" parent="WeChatMenu" unique_id=191451049]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="WCPanelContainer" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter" unique_id=1841380285]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 780)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wc_panel")
+
+[node name="WCVBox" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer" unique_id=706434929]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="WCTopBar" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wc_topbar")
+
+[node name="WCTopHBox" type="HBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar"]
+layout_mode = 2
+alignment = 1
+
+[node name="Btn_WCBack" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "< 返回"
+
+[node name="WCTitleSpacer" type="Control" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelWCTitle" type="Label" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox" unique_id=118495900]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 18
+text = "微信"
+horizontal_alignment = 1
+
+[node name="WCTitleSpacer2" type="Control" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Btn_WCSearch" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 20
+text = "+"
+
+[node name="WCBody" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="WCChatListView" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody"]
+unique_name_in_owner = true
+visible = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WCScrollContainer" type="ScrollContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCChatListView" unique_id=993938306]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ChatListContainer" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCChatListView/WCScrollContainer" unique_id=689865111]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="WCContactsView" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WCContactSearchBar" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wc_menu_item")
+
+[node name="WCContactSearchLabel" type="Label" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView/WCContactSearchBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 14
+text = "搜索"
+
+[node name="WCContactScroll" type="ScrollContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="WCContactList" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView/WCContactScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="WCMomentsContent" type="ScrollContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="MomentsCover" type="ColorRect" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCMomentsContent"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.3, 0.5, 0.8, 1)
+
+[node name="MomentsList" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCMomentsContent"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="WCBottomTabBar" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wc_tabbar")
+
+[node name="TabHBox" type="HBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="TabContacts" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar/TabHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.4, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "通讯录"
+[node name="TabMoments" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar/TabHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.4, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "朋友圈"
+
+
+[node name="WCChatView" type="CenterContainer" parent="WeChatMenu"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+z_index = 10
+
+[node name="ChatViewBG" type="PanelContainer" parent="WeChatMenu/WCChatView"]
+custom_minimum_size = Vector2(420, 780)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wc_panel")
+
+[node name="ChatViewVBox" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="ChatTopBar" type="PanelContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_wc_topbar")
+
+[node name="ChatTopHBox" type="HBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar"]
+layout_mode = 2
+alignment = 1
+
+[node name="Btn_ChatBack" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "<"
+
+[node name="ChatTitleSpacer" type="Control" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelChatName" type="Label" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 17
+text = ""
+horizontal_alignment = 1
+
+[node name="ChatTitleSpacer2" type="Control" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Btn_ChatMore" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 18
+text = "..."
+
+[node name="ChatMsgScroll" type="ScrollContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ChatMsgContainer" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatMsgScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ChatInputBar" type="HBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Btn_ChatVoice" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "V"
+
+[node name="ChatInputField" type="LineEdit" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "发送消息..."
+
+[node name="Btn_ChatSend" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 36)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "发送"
+
+[node name="ChatActionPanel" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 0)
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Btn_ChatAction1" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "聊天"
+
+[node name="Btn_ChatAction2" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "约会"
+
+[node name="Btn_ChatDelete" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_wc_red_btn")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "删除好友"
+
+[node name="Btn_CloseWeChat" type="Button" parent="WeChatMenu" unique_id=19403083]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+text = "close"
+
+[node name="AlipayPopup" type="ColorRect" parent="." unique_id=1716680338]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="@CenterContainer@112187" type="CenterContainer" parent="AlipayPopup" unique_id=77914634]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="@PanelContainer@112188" type="PanelContainer" parent="AlipayPopup/@CenterContainer@112187" unique_id=117743215]
+custom_minimum_size = Vector2(900, 700)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_x628s")
+
+[node name="AlVBox" type="VBoxContainer" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188" unique_id=-1294967280]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LabelAlipayBalance" type="Label" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967279]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "活期余额：1000"
+horizontal_alignment = 1
+
+[node name="LabelAlipayHuabei" type="Label" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967278]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "花呗欠款：0"
+horizontal_alignment = 1
+
+[node name="LabelAlipayWarning" type="Label" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967277]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+
+[node name="AlSep" type="HSeparator" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967276]
+layout_mode = 2
+
+[node name="LabelAlFinSafe" type="Label" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967275]
+unique_name_in_owner = true
+layout_mode = 2
+text = "稳健宝(约+2%/月)：0"
+
+[node name="BtnAlFinSafeIn" type="Button" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967274]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_hrv8a")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pettb")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vy7jg")
+text = "存入500到稳健宝"
+
+[node name="BtnAlFinSafeOut" type="Button" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967273]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_3i4th")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_m6n12")
+theme_override_styles/hover = SubResource("StyleBoxFlat_oj82p")
+text = "全部取出稳健宝"
+
+[node name="LabelAlFinRisk" type="Label" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967272]
+unique_name_in_owner = true
+layout_mode = 2
+text = "比特币/高风险(-30%~+40%)：0"
+
+[node name="BtnAlFinRiskIn" type="Button" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967271]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_k2kvy")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_i4ug7")
+theme_override_styles/hover = SubResource("StyleBoxFlat_3poku")
+text = "存入500到高风险"
+
+[node name="BtnAlFinRiskOut" type="Button" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967270]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_yrpf5")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_5nyqk")
+theme_override_styles/hover = SubResource("StyleBoxFlat_h31ek")
+text = "全部取出高风险"
+
+[node name="LabelAlInstallment" type="Label" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=1652081523]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.2, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "分期信息：无"
+
+[node name="RepayHBox" type="HBoxContainer" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=618771816]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Input_RepayAmount" type="LineEdit" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox/RepayHBox" unique_id=888810001]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "输入还款金额..."
+
+[node name="Btn_RepayHuabei" type="Button" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox/RepayHBox" unique_id=888810002]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_525f1")
+text = "确认还款"
+
+[node name="Btn_Installment" type="Button" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=546289075]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_5elrs")
+text = "压力太大？办理 12 期账单分期 (含 15% 总手续费)"
+
+[node name="AlSep2" type="HSeparator" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967269]
+layout_mode = 2
+
+[node name="LabelAlSummary" type="Label" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967268]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 2
+
+[node name="AlLogScroll" type="ScrollContainer" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967267]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AlipayLogContainer" type="VBoxContainer" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox/AlLogScroll" unique_id=-1294967266]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Btn_CloseAlipay" type="Button" parent="AlipayPopup/@CenterContainer@112187/@PanelContainer@112188/AlVBox" unique_id=-1294967265]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_525f1")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pm77x")
+theme_override_styles/hover = SubResource("StyleBoxFlat_5tpxq")
+text = "关闭"
+
+[node name="EndingPanel" type="ColorRect" parent="." unique_id=58872562]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.95)
+
+[node name="EndingVBox" type="VBoxContainer" parent="EndingPanel" unique_id=611494142]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="LabelEndingTitle" type="Label" parent="EndingPanel/EndingVBox" unique_id=1834211064]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 36
+text = "游戏结束"
+horizontal_alignment = 1
+
+[node name="LabelEndingContent" type="Label" parent="EndingPanel/EndingVBox" unique_id=205380727]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="LabelEndingAge" type="Label" parent="EndingPanel/EndingVBox" unique_id=649928453]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="WeekdayPanel" type="ColorRect" parent="." unique_id=416049541]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.05, 0.15, 0.95)
+
+[node name="WeekdayVBox" type="VBoxContainer" parent="WeekdayPanel" unique_id=823158369]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="LabelWeekdayTitle" type="Label" parent="WeekdayPanel/WeekdayVBox" unique_id=1110246984]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "新的一周开始了。请选择："
+horizontal_alignment = 1
+
+[node name="FoodSection" type="VBoxContainer" parent="WeekdayPanel/WeekdayVBox" unique_id=210892094]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LabelFoodTitle" type="Label" parent="WeekdayPanel/WeekdayVBox/FoodSection" unique_id=1691075391]
+layout_mode = 2
+text = "【第一步：选择本周饮食标准】"
+
+[node name="Btn_Food_Low" type="Button" parent="WeekdayPanel/WeekdayVBox/FoodSection" unique_id=674808516]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "挂逼生存套餐 (沙县/拉面) -> 费用:300, 情绪-15"
+
+[node name="Btn_Food_Mid" type="Button" parent="WeekdayPanel/WeekdayVBox/FoodSection" unique_id=1599680787]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "打工人标配 (肯德基/火锅) -> 费用:800, 精力+10"
+
+[node name="Btn_Food_High" type="Button" parent="WeekdayPanel/WeekdayVBox/FoodSection" unique_id=1046623365]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "小资高档 (日料/西餐) -> 费用:2000, 情绪+20, 精力+15"
+
+[node name="SepFood" type="HSeparator" parent="WeekdayPanel/WeekdayVBox" unique_id=72746084]
+layout_mode = 2
+
+[node name="LabelWorkTitle" type="Label" parent="WeekdayPanel/WeekdayVBox" unique_id=1507393494]
+layout_mode = 2
+text = "【第二步：选择工作态度】"
+
+[node name="Btn_Work_Normal" type="Button" parent="WeekdayPanel/WeekdayVBox" unique_id=889637909]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "正常打卡 (精力-30, 情绪-15, 待发工资+2000)"
+
+[node name="Btn_Work_Slack" type="Button" parent="WeekdayPanel/WeekdayVBox" unique_id=592076591]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "摸鱼混日子 (精力-10, 情绪+5, 待发工资+1000)"
+
+[node name="Btn_Work_Overtime" type="Button" parent="WeekdayPanel/WeekdayVBox" unique_id=1034446569]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "疯狂自愿加班 (精力-60, 情绪-30, 待发工资+3000)"
+
+[node name="EventPopup" type="ColorRect" parent="." unique_id=1263197879]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.2, 0.05, 0.05, 0.95)
+
+[node name="EventVBox" type="VBoxContainer" parent="EventPopup" unique_id=2077402979]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="LabelEventDesc" type="Label" parent="EventPopup/EventVBox" unique_id=1720883650]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.53333336, 0.26666668, 1)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Btn_EventConfirm" type="Button" parent="EventPopup/EventVBox" unique_id=1214411617]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "确认"
+
+[node name="MonthEndPopup" type="ColorRect" parent="." unique_id=1129935625]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.95)
+
+[node name="MEVBox" type="VBoxContainer" parent="MonthEndPopup" unique_id=1890241974]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="LabelMETitle" type="Label" parent="MonthEndPopup/MEVBox" unique_id=2018466899]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.26666668, 1)
+theme_override_font_sizes/font_size = 28
+text = "【月底账单结算】"
+horizontal_alignment = 1
+
+[node name="LabelMEContent" type="Label" parent="MonthEndPopup/MEVBox" unique_id=238063462]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Btn_PayRent" type="Button" parent="MonthEndPopup/MEVBox" unique_id=707375647]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "交房租并进入下个月"
+
+[node name="TransitionScreen" type="ColorRect" parent="." unique_id=1297640681]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="TransVBox" type="VBoxContainer" parent="TransitionScreen" unique_id=1474638638]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+alignment = 1
+
+[node name="LabelTransText" type="Label" parent="TransitionScreen/TransVBox" unique_id=592135023]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
