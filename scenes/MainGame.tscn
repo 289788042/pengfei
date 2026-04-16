@@ -40,6 +40,27 @@ corner_radius_top_right = 28
 corner_radius_bottom_right = 28
 corner_radius_bottom_left = 28
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_alipay"]
+bg_color = Color(0.1, 0.45, 0.7, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_diary"]
+bg_color = Color(0.55, 0.35, 0.2, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xej52"]
+bg_color = Color(0.9019608, 0.3019608, 0.4, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ybmw1"]
 bg_color = Color(0.9019608, 0.3019608, 0.2, 1)
 corner_radius_top_left = 28
@@ -61,20 +82,6 @@ corner_radius_top_right = 28
 corner_radius_bottom_right = 28
 corner_radius_bottom_left = 28
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hat22"]
-bg_color = Color(0.2, 0.6509804, 0.8509804, 1)
-corner_radius_top_left = 28
-corner_radius_top_right = 28
-corner_radius_bottom_right = 28
-corner_radius_bottom_left = 28
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xej52"]
-bg_color = Color(0.9019608, 0.3019608, 0.4, 1)
-corner_radius_top_left = 28
-corner_radius_top_right = 28
-corner_radius_bottom_right = 28
-corner_radius_bottom_left = 28
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_job"]
 bg_color = Color(0.15, 0.4, 0.75, 1)
 corner_radius_top_left = 28
@@ -82,15 +89,8 @@ corner_radius_top_right = 28
 corner_radius_bottom_right = 28
 corner_radius_bottom_left = 28
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_alipay"]
-bg_color = Color(0.1, 0.45, 0.7, 1)
-corner_radius_top_left = 28
-corner_radius_top_right = 28
-corner_radius_bottom_right = 28
-corner_radius_bottom_left = 28
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_diary"]
-bg_color = Color(0.55, 0.35, 0.2, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hat22"]
+bg_color = Color(0.2, 0.6509804, 0.8509804, 1)
 corner_radius_top_left = 28
 corner_radius_top_right = 28
 corner_radius_bottom_right = 28
@@ -106,86 +106,6 @@ corner_radius_top_left = 22
 corner_radius_top_right = 22
 corner_radius_bottom_right = 22
 corner_radius_bottom_left = 22
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcpnl"]
-bg_color = Color(0.92941177, 0.92941177, 0.92941177, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wcnav"]
-bg_color = Color(0.9490196, 0.9490196, 0.9490196, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_panel"]
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
-bg_color = Color(1, 1, 1, 1)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_topbar"]
-bg_color = Color(0.929, 0.929, 0.929, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_tabbar"]
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
-bg_color = Color(0.969, 0.969, 0.969, 1)
-border_width_top = 1
-border_color = Color(0.851, 0.851, 0.851, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_menu_item"]
-content_margin_left = 16.0
-content_margin_top = 14.0
-content_margin_right = 16.0
-content_margin_bottom = 14.0
-bg_color = Color(1, 1, 1, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_green_btn"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.027, 0.757, 0.376, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_red_btn"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.98, 0.318, 0.318, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_bubble_self"]
-content_margin_left = 10.0
-content_margin_top = 8.0
-content_margin_right = 10.0
-content_margin_bottom = 8.0
-bg_color = Color(0.584, 0.925, 0.412, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_bubble_other"]
-content_margin_left = 10.0
-content_margin_top = 8.0
-content_margin_right = 10.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 1, 1, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p73vr"]
 content_margin_left = 24.0
@@ -506,6 +426,126 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kq1ox"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0, 0, 0, 0.8)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cxpsx"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.85, 0.15, 0.25, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xdsxv"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.25, 0.35, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5h3qe"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.15, 0.15, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5wvrv"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.25, 0.25, 0.7, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_next_week"]
+content_margin_left = 20.0
+content_margin_top = 12.0
+content_margin_right = 20.0
+content_margin_bottom = 12.0
+bg_color = Color(0.18, 0.5, 0.92, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_panel"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_topbar"]
+bg_color = Color(0.929, 0.929, 0.929, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_menu_item"]
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+bg_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_tabbar"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.969, 0.969, 0.969, 1)
+border_width_top = 1
+border_color = Color(0.851, 0.851, 0.851, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_green_btn"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.027, 0.757, 0.376, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_red_btn"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.98, 0.318, 0.318, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x628s"]
 content_margin_left = 20.0
 content_margin_top = 20.0
@@ -692,74 +732,6 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kq1ox"]
-content_margin_left = 24.0
-content_margin_top = 24.0
-content_margin_right = 24.0
-content_margin_bottom = 24.0
-bg_color = Color(0, 0, 0, 0.8)
-corner_radius_top_left = 28
-corner_radius_top_right = 28
-corner_radius_bottom_right = 28
-corner_radius_bottom_left = 28
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cxpsx"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.85, 0.15, 0.25, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xdsxv"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(1, 0.25, 0.35, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5h3qe"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.15, 0.15, 0.5, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5wvrv"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.25, 0.25, 0.7, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_next_week"]
-content_margin_left = 20.0
-content_margin_top = 12.0
-content_margin_right = 20.0
-content_margin_bottom = 12.0
-bg_color = Color(0.18, 0.5, 0.92, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-shadow_color = Color(0, 0, 0, 0.3)
-shadow_size = 6
 
 [node name="MainGame" type="Control" unique_id=2071058635]
 layout_mode = 3
@@ -1008,7 +980,6 @@ theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_hat22")
 text = "贝壳找房"
 
-
 [node name="WidgetOuterMargin" type="MarginContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent" unique_id=1119999999]
 layout_mode = 2
 theme_override_constants/margin_left = 16
@@ -1240,17 +1211,11 @@ text = "返回"
 
 [node name="Btn_Loc_Home" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/LocationMenu/LocVBox" unique_id=923816209]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "宅家刷手机 (-10 精力, +20 情绪)"
-
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0.4, 0.15, 0.1, 0.95)
 
 [node name="BaoTaoPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1721109811]
 unique_name_in_owner = true
@@ -1756,6 +1721,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="BtnCloseDiary" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=-1294967281]
+unique_name_in_owner = true
+visible = false
+z_index = 70
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -1763,14 +1731,6 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_6oxnh")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_qf85o")
 theme_override_styles/hover = SubResource("StyleBoxFlat_qnsrl")
 text = "关闭日记"
-
-unique_name_in_owner = true
-visible = false
-z_index = 70
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0.067, 0.067, 0.067, 0.95)
 
 [node name="LateNightPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1541483336]
 unique_name_in_owner = true
@@ -1862,16 +1822,16 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_wc_panel")
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="WCTopBar" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox"]
+[node name="WCTopBar" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox" unique_id=628499316]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_wc_topbar")
 
-[node name="WCTopHBox" type="HBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar"]
+[node name="WCTopHBox" type="HBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar" unique_id=489316439]
 layout_mode = 2
 alignment = 1
 
-[node name="Btn_WCBack" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox"]
+[node name="Btn_WCBack" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox" unique_id=705179186]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
@@ -1879,7 +1839,7 @@ theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 16
 text = "< 返回"
 
-[node name="WCTitleSpacer" type="Control" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox"]
+[node name="WCTitleSpacer" type="Control" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox" unique_id=1253695572]
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -1891,11 +1851,11 @@ theme_override_font_sizes/font_size = 18
 text = "微信"
 horizontal_alignment = 1
 
-[node name="WCTitleSpacer2" type="Control" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox"]
+[node name="WCTitleSpacer2" type="Control" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox" unique_id=525161929]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Btn_WCSearch" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox"]
+[node name="Btn_WCSearch" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox" unique_id=1587089448]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
@@ -1903,15 +1863,14 @@ theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 20
 text = "+"
 
-[node name="WCBody" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox"]
+[node name="WCBody" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox" unique_id=545210649]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="WCChatListView" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody"]
+[node name="WCChatListView" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody" unique_id=80082305]
 unique_name_in_owner = true
-visible = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -1926,63 +1885,63 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 1
 
-[node name="WCContactsView" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody"]
+[node name="WCContactsView" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody" unique_id=1076533124]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="WCContactSearchBar" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView"]
+[node name="WCContactSearchBar" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView" unique_id=1933894618]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_wc_menu_item")
 
-[node name="WCContactSearchLabel" type="Label" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView/WCContactSearchBar"]
+[node name="WCContactSearchLabel" type="Label" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView/WCContactSearchBar" unique_id=1383656191]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
 theme_override_font_sizes/font_size = 14
 text = "搜索"
 
-[node name="WCContactScroll" type="ScrollContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView"]
+[node name="WCContactScroll" type="ScrollContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView" unique_id=582954126]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="WCContactList" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView/WCContactScroll"]
+[node name="WCContactList" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCContactsView/WCContactScroll" unique_id=1817939091]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="WCMomentsContent" type="ScrollContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody"]
+[node name="WCMomentsContent" type="ScrollContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody" unique_id=2112650389]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="MomentsCover" type="ColorRect" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCMomentsContent"]
+[node name="MomentsCover" type="ColorRect" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCMomentsContent" unique_id=716696696]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_horizontal = 3
 color = Color(0.3, 0.5, 0.8, 1)
 
-[node name="MomentsList" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCMomentsContent"]
+[node name="MomentsList" type="VBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBody/WCMomentsContent" unique_id=350745713]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 0
 
-[node name="WCBottomTabBar" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox"]
+[node name="WCBottomTabBar" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox" unique_id=90168713]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_wc_tabbar")
 
-[node name="TabHBox" type="HBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar"]
+[node name="TabHBox" type="HBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar" unique_id=1320569379]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="TabContacts" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar/TabHBox"]
+[node name="TabContacts" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar/TabHBox" unique_id=1318417246]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -1990,7 +1949,8 @@ size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.4, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 text = "通讯录"
-[node name="TabMoments" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar/TabHBox"]
+
+[node name="TabMoments" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar/TabHBox" unique_id=435552949]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -1999,35 +1959,36 @@ theme_override_colors/font_color = Color(0.4, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 text = "朋友圈"
 
-
-[node name="WCChatView" type="CenterContainer" parent="WeChatMenu"]
+[node name="WCChatView" type="CenterContainer" parent="WeChatMenu" unique_id=316408092]
 unique_name_in_owner = true
 visible = false
+z_index = 10
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-z_index = 10
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="ChatViewBG" type="PanelContainer" parent="WeChatMenu/WCChatView"]
+[node name="ChatViewBG" type="PanelContainer" parent="WeChatMenu/WCChatView" unique_id=324640858]
 custom_minimum_size = Vector2(420, 780)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_wc_panel")
 
-[node name="ChatViewVBox" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG"]
+[node name="ChatViewVBox" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG" unique_id=277825929]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="ChatTopBar" type="PanelContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox"]
+[node name="ChatTopBar" type="PanelContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox" unique_id=1837905880]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_wc_topbar")
 
-[node name="ChatTopHBox" type="HBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar"]
+[node name="ChatTopHBox" type="HBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar" unique_id=147015337]
 layout_mode = 2
 alignment = 1
 
-[node name="Btn_ChatBack" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+[node name="Btn_ChatBack" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox" unique_id=559585106]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
@@ -2035,23 +1996,22 @@ theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 16
 text = "<"
 
-[node name="ChatTitleSpacer" type="Control" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+[node name="ChatTitleSpacer" type="Control" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox" unique_id=1639616616]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LabelChatName" type="Label" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+[node name="LabelChatName" type="Label" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox" unique_id=1000907003]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 17
-text = ""
 horizontal_alignment = 1
 
-[node name="ChatTitleSpacer2" type="Control" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+[node name="ChatTitleSpacer2" type="Control" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox" unique_id=1696458331]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Btn_ChatMore" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox"]
+[node name="Btn_ChatMore" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox" unique_id=920176973]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
@@ -2059,78 +2019,77 @@ theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 18
 text = "..."
 
-[node name="ChatMsgScroll" type="ScrollContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox"]
+[node name="ChatMsgScroll" type="ScrollContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox" unique_id=1234392502]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ChatMsgContainer" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatMsgScroll"]
+[node name="ChatMsgContainer" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatMsgScroll" unique_id=1783610954]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="ChatInputBar" type="HBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox"]
+[node name="ChatInputBar" type="HBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox" unique_id=324470955]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Btn_ChatVoice" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar"]
+[node name="Btn_ChatVoice" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar" unique_id=1366891396]
 custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "V"
 
-[node name="ChatInputField" type="LineEdit" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar"]
+[node name="ChatInputField" type="LineEdit" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar" unique_id=607311306]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "发送消息..."
 
-[node name="Btn_ChatSend" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar"]
+[node name="Btn_ChatSend" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar" unique_id=604627440]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(56, 36)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
 text = "发送"
 
-[node name="ChatActionPanel" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox"]
+[node name="ChatActionPanel" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox" unique_id=955808816]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Btn_ChatAction1" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel"]
+[node name="Btn_ChatAction1" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel" unique_id=127271386]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
 text = "聊天"
 
-[node name="Btn_ChatAction2" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel"]
+[node name="Btn_ChatAction2" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel" unique_id=1075252720]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
 text = "约会"
 
-[node name="Btn_ChatDelete" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel"]
+[node name="Btn_ChatDelete" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel" unique_id=1384929752]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_wc_red_btn")
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_wc_red_btn")
 text = "删除好友"
 
 [node name="Btn_CloseWeChat" type="Button" parent="WeChatMenu" unique_id=19403083]
@@ -2140,6 +2099,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "close"
 
 [node name="AlipayPopup" type="ColorRect" parent="." unique_id=1716680338]

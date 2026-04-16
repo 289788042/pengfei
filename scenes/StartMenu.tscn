@@ -2,7 +2,216 @@
 
 [ext_resource type="Script" uid="uid://do0gr5ae1l1x" path="res://scenes/StartMenu.gd" id="1_dvnd1"]
 [ext_resource type="Theme" uid="uid://cikxg02q2to20" path="res://UI/GlobalPixelTheme.tres" id="1_kmax6"]
-[ext_resource type="Texture2D" uid="uid://dct2iulmiebr4" path="res://Assets/title_bg1_highsuper.png" id="3_cp7se"]
+[ext_resource type="Texture2D" uid="uid://bl2upsdgj3lrv" path="res://Assets/title_bg2.png" id="3_cp7se"]
+[ext_resource type="Texture2D" uid="uid://cc0qgaik57ncn" path="res://Assets/7.png" id="4_fgoeh"]
+[ext_resource type="Script" uid="uid://cqux3ll27rfl3" path="res://scripts/PhoneAnimation.gd" id="5_kcs48"]
+[ext_resource type="Script" uid="uid://oqvrpjuvue7q" path="res://scripts/SlideToUnlock.gd" id="6_aso40"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tmjqw"]
+bg_color = Color(0.15, 0.15, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.3, 0.3, 1)
+corner_radius_top_left = 25
+corner_radius_top_right = 25
+corner_radius_bottom_right = 25
+corner_radius_bottom_left = 25
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iqewe"]
+bg_color = Color(0.7529412, 0.9098039, 1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5019608, 0.8156863, 1, 1)
+corner_radius_top_left = 25
+corner_radius_top_right = 25
+corner_radius_bottom_right = 25
+corner_radius_bottom_left = 25
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yhguo"]
+bg_color = Color(0.627451, 0.84705883, 1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3764706, 0.7529412, 1, 1)
+corner_radius_top_left = 25
+corner_radius_top_right = 25
+corner_radius_bottom_right = 25
+corner_radius_bottom_left = 25
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mh60q"]
+bg_color = Color(0.8156863, 0.9411765, 1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5647059, 0.8784314, 1, 1)
+corner_radius_top_left = 25
+corner_radius_top_right = 25
+corner_radius_bottom_right = 25
+corner_radius_bottom_left = 25
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qdvto"]
+bg_color = Color(0.2, 0.5, 0.3, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6hury"]
+bg_color = Color(0.2, 0.2, 0.2, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kcs48"]
+bg_color = Color(0.36, 0.25, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_aso40"]
+bg_color = Color(0.55200005, 0.47500002, 0.44, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cuvp2"]
+bg_color = Color(0.48800004, 0.4, 0.36, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frkif"]
+bg_color = Color(0.5, 0.15, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sf8pk"]
+bg_color = Color(0.65, 0.40500003, 0.37, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j6af4"]
+bg_color = Color(0.6, 0.32, 0.28, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xbxv1"]
+bg_color = Color(0.15, 0.25, 0.45, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6qyeu"]
+bg_color = Color(0.40500003, 0.47500002, 0.615, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bdxd2"]
+bg_color = Color(0.32, 0.4, 0.56, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5v8q3"]
+bg_color = Color(0.2, 0.38, 0.25, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_72q55"]
+bg_color = Color(0.44, 0.566, 0.47500002, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wacnh"]
+bg_color = Color(0.36, 0.504, 0.4, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
 
 [node name="StartMenu" type="Control" unique_id=1795345620]
 layout_mode = 3
@@ -26,70 +235,281 @@ texture = ExtResource("3_cp7se")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1771739834]
+[node name="Phone" type="TextureRect" parent="." unique_id=127664412]
+texture_filter = 1
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
+offset_right = 688.0
+offset_bottom = 680.0
+pivot_offset = Vector2(946, 526)
+texture = ExtResource("4_fgoeh")
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("5_kcs48")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=1901811030]
-custom_minimum_size = Vector2(500, 0)
-layout_mode = 2
-theme_override_constants/separation = 16
+[node name="ScreenBg" type="ColorRect" parent="Phone" unique_id=1912616363]
+layout_mode = 0
+offset_left = 719.0
+offset_top = 148.0
+offset_right = 1204.0
+offset_bottom = 893.0
+color = Color(0.08, 0.08, 0.12, 1)
 
-[node name="LabelTitle" type="Label" parent="CenterContainer/VBoxContainer" unique_id=1042516395]
-layout_mode = 2
-text = "这座城市有2000万人，你叫什么名字？"
+[node name="ScreenContent" type="Control" parent="Phone" unique_id=660585388]
+anchors_preset = 0
+offset_left = 721.0
+offset_top = 150.0
+offset_right = 1202.0
+offset_bottom = 890.0
+
+[node name="LockScreen" type="ColorRect" parent="Phone/ScreenContent" unique_id=491087135]
+layout_mode = 0
+offset_right = 481.0
+offset_bottom = 740.0
+color = Color(0.06, 0.06, 0.1, 0.95)
+script = ExtResource("6_aso40")
+
+[node name="LockTitle" type="Label" parent="Phone/ScreenContent/LockScreen" unique_id=1272750682]
+layout_mode = 0
+offset_top = 200.0
+offset_right = 481.0
+offset_bottom = 260.0
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 36
+text = "深漂模拟器"
 horizontal_alignment = 1
 
-[node name="Input_Name" type="LineEdit" parent="CenterContainer/VBoxContainer" unique_id=1339747195]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 40)
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "输入姓名..."
-
-[node name="LabelZodiac" type="Label" parent="CenterContainer/VBoxContainer" unique_id=670805779]
-layout_mode = 2
-text = "选择你的星象出厂设置："
+[node name="LockSub" type="Label" parent="Phone/ScreenContent/LockScreen" unique_id=976592609]
+layout_mode = 0
+offset_top = 270.0
+offset_right = 481.0
+offset_bottom = 300.0
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "错位时卡"
 horizontal_alignment = 1
 
-[node name="ZodiacBox" type="HBoxContainer" parent="CenterContainer/VBoxContainer" unique_id=1525313168]
-layout_mode = 2
-theme_override_constants/separation = 8
-alignment = 1
+[node name="SliderTrack" type="Panel" parent="Phone/ScreenContent/LockScreen" unique_id=1926487246]
+layout_mode = 0
+offset_left = 60.5
+offset_top = 500.0
+offset_right = 420.5
+offset_bottom = 550.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_tmjqw")
 
-[node name="Btn_Earth" type="Button" parent="CenterContainer/VBoxContainer/ZodiacBox" unique_id=619727465]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 60)
-layout_mode = 2
-toggle_mode = true
-text = "土象: 金钱+500, 学识+5"
+[node name="SliderHint" type="Label" parent="Phone/ScreenContent/LockScreen/SliderTrack" unique_id=578495826]
+layout_mode = 0
+offset_right = 360.0
+offset_bottom = 50.0
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 16
+text = ">>> 向右滑动解锁 >>>"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="Btn_Fire" type="Button" parent="CenterContainer/VBoxContainer/ZodiacBox" unique_id=1769276256]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 60)
-layout_mode = 2
-toggle_mode = true
-text = "火象: 精力上限120, 颜值+5"
+[node name="SliderHandle" type="Button" parent="Phone/ScreenContent/LockScreen/SliderTrack" unique_id=1322054423]
+layout_mode = 0
+offset_right = 50.0
+offset_bottom = 50.0
+theme_override_colors/font_color = Color(0.26666668, 0.53333336, 0.6666667, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_iqewe")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_yhguo")
+theme_override_styles/hover = SubResource("StyleBoxFlat_mh60q")
+text = "›"
 
-[node name="Btn_Water" type="Button" parent="CenterContainer/VBoxContainer/ZodiacBox" unique_id=67668509]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 60)
-layout_mode = 2
-toggle_mode = true
-text = "水象: 情绪上限120, 情商+5"
+[node name="SweepReveal" type="Control" parent="Phone/ScreenContent/LockScreen/SliderTrack" unique_id=1402237388]
+clip_contents = true
+anchors_preset = 0
+offset_bottom = 50.0
+mouse_filter = 2
 
-[node name="Btn_Wind" type="Button" parent="CenterContainer/VBoxContainer/ZodiacBox" unique_id=1526148942]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 60)
-layout_mode = 2
-toggle_mode = true
-text = "风象: 颜值+2, 情商+2, 学识+2"
+[node name="BrightText" type="Label" parent="Phone/ScreenContent/LockScreen/SliderTrack/SweepReveal" unique_id=446355295]
+layout_mode = 0
+offset_right = 360.0
+offset_bottom = 50.0
+theme_override_colors/font_color = Color(0.5, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = ">>> 向右滑动解锁 >>>"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="Btn_StartGame" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1325418540]
+[node name="LockTip" type="Label" parent="Phone/ScreenContent/LockScreen" unique_id=1924539749]
+layout_mode = 0
+offset_top = 570.0
+offset_right = 481.0
+offset_bottom = 595.0
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+
+[node name="LabelTitle" type="Label" parent="Phone/ScreenContent" unique_id=678040330]
+layout_mode = 0
+offset_top = 20.0
+offset_right = 481.0
+offset_bottom = 75.0
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 26
+text = "这是座有2000W人的城市，你叫？"
+horizontal_alignment = 1
+
+[node name="LabelName" type="Label" parent="Phone/ScreenContent" unique_id=622879812]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 80.0
+offset_right = 447.0
+offset_bottom = 105.0
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+text = "你的名字"
+horizontal_alignment = 1
+
+[node name="Input_Name" type="LineEdit" parent="Phone/ScreenContent" unique_id=1316274500]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-size_flags_horizontal = 3
+layout_mode = 0
+offset_left = 50.0
+offset_top = 115.0
+offset_right = 431.0
+offset_bottom = 157.0
+theme_override_font_sizes/font_size = 22
+placeholder_text = "默认: 林小满"
+
+[node name="Btn_StartGame" type="Button" parent="Phone/ScreenContent" unique_id=109699256]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 60.0
+offset_top = 620.0
+offset_right = 417.0
+offset_bottom = 660.0
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_qdvto")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_6hury")
 disabled = true
-text = "开始深漂生活！"
+text = "开始深漂生活"
+
+[node name="Btn_Earth_Box" type="VBoxContainer" parent="Phone/ScreenContent" unique_id=1225633118]
+layout_mode = 0
+offset_left = 123.5
+offset_top = 200.0
+offset_right = 223.5
+offset_bottom = 400.0
+theme_override_constants/separation = 3
+
+[node name="Btn_Earth" type="Button" parent="Phone/ScreenContent/Btn_Earth_Box" unique_id=565185064]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_kcs48")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_aso40")
+theme_override_styles/hover = SubResource("StyleBoxFlat_cuvp2")
+toggle_mode = true
+
+[node name="Btn_Earth_Label" type="Label" parent="Phone/ScreenContent/Btn_Earth_Box" unique_id=1206416883]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "土象星座"
+horizontal_alignment = 1
+
+[node name="Btn_Earth_Bonus" type="Label" parent="Phone/ScreenContent/Btn_Earth_Box" unique_id=260055615]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "金钱+500
+学识+5"
+horizontal_alignment = 1
+
+[node name="Btn_Fire_Box" type="VBoxContainer" parent="Phone/ScreenContent" unique_id=1993061761]
+layout_mode = 0
+offset_left = 253.5
+offset_top = 200.0
+offset_right = 353.5
+offset_bottom = 400.0
+theme_override_constants/separation = 3
+
+[node name="Btn_Fire" type="Button" parent="Phone/ScreenContent/Btn_Fire_Box" unique_id=710693182]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_frkif")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_sf8pk")
+theme_override_styles/hover = SubResource("StyleBoxFlat_j6af4")
+toggle_mode = true
+
+[node name="Btn_Fire_Label" type="Label" parent="Phone/ScreenContent/Btn_Fire_Box" unique_id=1077827920]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "火象星座"
+horizontal_alignment = 1
+
+[node name="Btn_Fire_Bonus" type="Label" parent="Phone/ScreenContent/Btn_Fire_Box" unique_id=1561619469]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "精力上限↑
+颜值+5"
+horizontal_alignment = 1
+
+[node name="Btn_Water_Box" type="VBoxContainer" parent="Phone/ScreenContent" unique_id=1773891551]
+layout_mode = 0
+offset_left = 123.5
+offset_top = 385.0
+offset_right = 223.5
+offset_bottom = 585.0
+theme_override_constants/separation = 3
+
+[node name="Btn_Water" type="Button" parent="Phone/ScreenContent/Btn_Water_Box" unique_id=1648983190]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_xbxv1")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_6qyeu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_bdxd2")
+toggle_mode = true
+
+[node name="Btn_Water_Label" type="Label" parent="Phone/ScreenContent/Btn_Water_Box" unique_id=142891973]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "水象星座"
+horizontal_alignment = 1
+
+[node name="Btn_Water_Bonus" type="Label" parent="Phone/ScreenContent/Btn_Water_Box" unique_id=1301947636]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "情绪上限↑
+情商+5"
+horizontal_alignment = 1
+
+[node name="Btn_Wind_Box" type="VBoxContainer" parent="Phone/ScreenContent" unique_id=17515401]
+layout_mode = 0
+offset_left = 253.5
+offset_top = 385.0
+offset_right = 353.5
+offset_bottom = 585.0
+theme_override_constants/separation = 3
+
+[node name="Btn_Wind" type="Button" parent="Phone/ScreenContent/Btn_Wind_Box" unique_id=94499496]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_5v8q3")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_72q55")
+theme_override_styles/hover = SubResource("StyleBoxFlat_wacnh")
+toggle_mode = true
+
+[node name="Btn_Wind_Label" type="Label" parent="Phone/ScreenContent/Btn_Wind_Box" unique_id=1671490088]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "风象星座"
+horizontal_alignment = 1
+
+[node name="Btn_Wind_Bonus" type="Label" parent="Phone/ScreenContent/Btn_Wind_Box" unique_id=321832633]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "颜值+2 情商+2
+学识+2"
+horizontal_alignment = 1

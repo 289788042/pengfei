@@ -16,13 +16,17 @@ extends Control
 ## 开始游戏按钮（选择星象后才能点击）
 @onready var btn_start_game: Button = %Btn_StartGame
 
+## 加成信息已移到每个星座图标下方，无需单独引用
+
 ## 当前选中的星象名称，空字符串表示未选择
 var selected_zodiac: String = ""
+
 
 
 # ==================== 生命周期 ====================
 
 func _ready() -> void:
+
 	# 连接四个星象按钮的点击事件
 	btn_earth.pressed.connect(_on_zodiac_selected.bind("土象"))
 	btn_fire.pressed.connect(_on_zodiac_selected.bind("火象"))
@@ -32,11 +36,15 @@ func _ready() -> void:
 	# 连接开始游戏按钮
 	btn_start_game.pressed.connect(_on_start_game_pressed)
 
+	# 连接锁屏解锁信号
+	var lock = get_node_or_null("Phone/ScreenContent/LockScreen")
+	if lock:
+		lock.unlock_success.connect(_on_unlocked)
+
 
 # ==================== 星象选择逻辑 ====================
 
 ## 选择某个星象时调用
-## zodiac_name: 星象名称（"土象"、"火象"、"水象"、"风象"）
 func _on_zodiac_selected(zodiac_name: String) -> void:
 	selected_zodiac = zodiac_name
 
@@ -51,6 +59,13 @@ func _on_zodiac_selected(zodiac_name: String) -> void:
 
 
 # ==================== 开始游戏 ====================
+
+## 滑动解锁成功后显示主UI
+func _on_unlocked() -> void:
+	var phone = get_node_or_null("Phone")
+	if phone and phone.has_method("show_main_ui"):
+		phone.show_main_ui()
+
 
 ## 点击"开始深漂生活"按钮时调用
 func _on_start_game_pressed() -> void:
