@@ -420,8 +420,12 @@ func show_floating_text(text: String, color: Color, start_pos: Vector2) -> void:
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_font_size_override("font_size", 22)
 	label.position = start_pos
-	label.z_index = 100
-	add_child(label)
+	if wechat_menu.visible:
+		label.z_index = 200
+		wechat_menu.add_child(label)
+	else:
+		label.z_index = 100
+		add_child(label)
 
 	var tween := create_tween()
 	tween.set_parallel(true)
@@ -1474,8 +1478,9 @@ func _show_chat_action_menu() -> void:
 			_chat_menu_panel = null)
 	## 显示菜单
 	wc_chat_view.add_child(_chat_menu_panel)
-	var input_pos := chat_input_field.get_global_position()
-	_chat_menu_panel.global_position = Vector2(input_pos.x, input_pos.y - _chat_menu_panel.size.y - 4)
+	await get_tree().process_frame
+	var bar_rect := chat_input_field.get_global_rect()
+	_chat_menu_panel.global_position = Vector2(bar_rect.position.x, bar_rect.position.y - _chat_menu_panel.size.y - 8)
 
 
 func _send_text_message(text: String) -> void:
