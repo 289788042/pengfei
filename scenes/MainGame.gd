@@ -1638,6 +1638,7 @@ func _build_moments() -> void:
 		var cm_l := Control.new()
 		cm_l.custom_minimum_size = Vector2(60, 0)
 		content_hbox.add_child(cm_l)
+		content_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		content_hbox.add_child(content_label)
 		var cm_r := Control.new()
 		cm_r.custom_minimum_size = Vector2(12, 0)
