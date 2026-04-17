@@ -1438,7 +1438,8 @@ func _on_chat_send() -> void:
 func _show_chat_action_menu() -> void:
 	## 清除旧菜单
 	if is_instance_valid(_chat_menu_panel):
-		_chat_menu_panel.queue_free()
+		_chat_menu_panel.get_parent().remove_child(_chat_menu_panel)
+		_chat_menu_panel.free()
 		_chat_menu_panel = null
 	var npc_data: Dictionary = GameManager.npcs[_current_chat_npc]
 	_chat_menu_panel = PanelContainer.new()
@@ -1478,9 +1479,20 @@ func _show_chat_action_menu() -> void:
 			_chat_menu_panel = null)
 	## 显示菜单
 	wc_chat_view.add_child(_chat_menu_panel)
-	await get_tree().process_frame
-	var bar_rect := chat_input_field.get_global_rect()
-	_chat_menu_panel.global_position = Vector2(bar_rect.position.x, bar_rect.position.y - _chat_menu_panel.size.y - 8)
+	_chat_menu_panel.custom_minimum_size.x = chat_input_field.size.x
+	_chat_menu_panel.size.x = chat_input_field.size.x
+	_chat_menu_panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_chat_menu_panel.anchor_left = chat_input_field.anchor_left
+	_chat_menu_panel.anchor_right = chat_input_field.anchor_right
+	_chat_menu_panel.anchor_top = 1.0
+	_chat_menu_panel.anchor_bottom = 1.0
+	_chat_menu_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_chat_menu_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_chat_menu_panel.position.y = -_chat_menu_panel.size.y - 8
+	_chat_menu_panel.modulate.a = 0.0
+	var tween := create_tween()
+	tween.tween_property(_chat_menu_panel, "position:y", _chat_menu_panel.position.y, 0.15).set_trans(Tween.TRANS_BACK)
+	tween.tween_property(_chat_menu_panel, "modulate:a", 1.0, 0.15).set_trans(Tween.TRANS_LINEAR)
 
 
 func _send_text_message(text: String) -> void:
