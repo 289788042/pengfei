@@ -2016,13 +2016,7 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Btn_ChatMore" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatTopBar/ChatTopHBox" unique_id=920176973]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(50, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 18
-text = "..."
+
 
 [node name="ChatMsgScroll" type="ScrollContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox" unique_id=1234392502]
 layout_mode = 2
@@ -2040,12 +2034,6 @@ custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Btn_ChatVoice" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar" unique_id=1366891396]
-custom_minimum_size = Vector2(40, 40)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "V"
-
 [node name="ChatInputField" type="LineEdit" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar" unique_id=607311306]
 unique_name_in_owner = true
 layout_mode = 2
@@ -2061,11 +2049,7 @@ theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
 text = "发送"
 
-[node name="ChatActionPanel" type="VBoxContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox" unique_id=955808816]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 4
+
 
 [node name="Btn_ChatAction1" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel" unique_id=127271386]
 unique_name_in_owner = true
@@ -2087,15 +2071,7 @@ theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
 text = "约会"
 
-[node name="Btn_ChatDelete" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel" unique_id=1384929752]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_wc_red_btn")
-text = "删除好友"
+
 
 [node name="Btn_CloseWeChat" type="Button" parent="WeChatMenu" unique_id=19403083]
 unique_name_in_owner = true

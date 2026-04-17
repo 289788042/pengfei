@@ -50,11 +50,6 @@ enum Phase { WEEKDAY, WEEKEND, EVENT, MONTH_END, TRANSITION, ENDING, GAME_OVER }
 @onready var chat_input_field: LineEdit = %ChatInputField
 @onready var btn_chat_send: Button = %Btn_ChatSend
 @onready var btn_chat_back: Button = %Btn_ChatBack
-@onready var btn_chat_more: Button = %Btn_ChatMore
-@onready var btn_chat_action1: Button = %Btn_ChatAction1
-@onready var btn_chat_action2: Button = %Btn_ChatAction2
-@onready var btn_chat_delete: Button = %Btn_ChatDelete
-@onready var chat_action_panel: VBoxContainer = %ChatActionPanel
 @onready var moments_list: VBoxContainer = %MomentsList
 
 ## 微信颜色常量
@@ -68,6 +63,7 @@ const WC_TEXT_SECONDARY: Color = Color(0.55, 0.55, 0.55, 1)
 
 ## 微信当前打开的聊天NPC ID
 var _current_chat_npc: String = ""
+var _chat_menu_panel: PanelContainer = null
 var _current_tab: int = 0
 
 ## 手机桌面App图标按钮
@@ -289,12 +285,8 @@ func _ready() -> void:
 	tab_contacts.pressed.connect(_on_wc_tab.bind(0))
 	tab_moments.pressed.connect(_on_wc_tab.bind(1))
 	btn_chat_back.pressed.connect(_on_chat_back)
-	btn_chat_more.pressed.connect(_on_chat_more_pressed)
-	btn_chat_send.pressed.connect(_on_chat_send)
-	btn_chat_action1.pressed.connect(_on_chat_action1_pressed)
-	btn_chat_action2.pressed.connect(_on_chat_action2_pressed)
-	btn_chat_delete.pressed.connect(_on_chat_delete_pressed)
-	btn_pay_rent.pressed.connect(_on_pay_rent)
+		btn_chat_send.pressed.connect(_on_chat_send)
+				btn_pay_rent.pressed.connect(_on_pay_rent)
 
 
 	btn_app_map.pressed.connect(_on_app_map)
@@ -1363,37 +1355,6 @@ func _open_chat_view(npc_id: String) -> void:
 	for msg in msgs:
 		_add_chat_bubble(msg["sender"], msg["text"])
 	## 设置操作按钮
-	chat_action_panel.visible = true
-	btn_chat_action1.visible = true
-	btn_chat_action2.visible = false
-	if npc_id == "family_group":
-		btn_chat_action1.text = "查看家庭消息"
-		btn_chat_action2.visible = false
-	elif npc_id == "wang_teacher":
-		if GameManager.night_school_progress >= 12:
-			btn_chat_action1.text = "已毕业 ✅"
-			btn_chat_action1.disabled = true
-		else:
-			btn_chat_action1.text = "报名冲刺班 (-50精力, -1000金)"
-			btn_chat_action1.disabled = false
-		btn_chat_action2.visible = false
-	elif npc_id == "xiao_ya":
-		match GameManager.xiaoya_state:
-			0: btn_chat_action1.text = "和她吐槽工作 (-10精力)"
-			1: btn_chat_action1.text = "赴约高级下午茶 (-20精力, -800金)"
-			2: btn_chat_action1.text = "听她哭诉渣男 (-20精力)"
-		btn_chat_action2.visible = false
-	else:
-		btn_chat_action1.text = "聊天 (-10精力)"
-		btn_chat_action1.disabled = false
-		if npc_data["level"] >= 2:
-			btn_chat_action2.visible = true
-			btn_chat_action2.text = "约会"
-			btn_chat_action2.disabled = false
-		else:
-			btn_chat_action2.visible = true
-			btn_chat_action2.text = "约会 (Lv.2解锁)"
-			btn_chat_action2.disabled = true
 	## 显示聊天视图
 	wc_chat_view.mouse_filter = Control.MOUSE_FILTER_STOP
 	wc_chat_view.visible = true
@@ -1466,20 +1427,101 @@ func _on_chat_back() -> void:
 	_current_chat_npc = ""
 
 func _on_chat_send() -> void:
-	var text: String = chat_input_field.text.strip_edges()
-	if text == "" or _current_chat_npc == "":
+	if _current_chat_npc == "":
 		return
+	_show_chat_action_menu()
+
+
+func _show_chat_action_menu() -> void:
+	## 清除旧菜单
+	if is_instance_valid(_chat_menu_panel):
+		_chat_menu_panel.queue_free()
+		_chat_menu_panel = null
+	var npc_data: Dictionary = GameManager.npcs[_current_chat_npc]
+	_chat_menu_panel = PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.95, 0.95, 0.95, 1)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(4)
+	_chat_menu_panel.add_theme_stylebox_override("panel", style)
+	_chat_menu_panel.z_index = 20
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 2)
+	_chat_menu_panel.add_child(vbox)
+	var text: String = chat_input_field.text.strip_edges()
+	## 如果有文字，显示发送消息
+	if text != "":
+		_add_menu_btn(vbox, "发送消息", func() -> void:
+			_send_text_message(text))
+	## 根据 NPC 添加选项
+	match _current_chat_npc:
+		"family_group":
+			_add_menu_btn(vbox, "查看家庭消息", func() -> void: _on_family_interact())
+		"wang_teacher":
+			if GameManager.night_school_progress >= 12:
+				_add_menu_btn(vbox, "已毕业 ✅", func() -> void: pass)
+			else:
+				_add_menu_btn(vbox, "报名冲刺班 (-50精力, -1000金)", func() -> void: _on_chat_wang_teacher())
+		"xiao_ya":
+			match GameManager.xiaoya_state:
+				0: _add_menu_btn(vbox, "跟她吐槽工作 (-10精力)", func() -> void: _on_chat_xiao_ya())
+				1: _add_menu_btn(vbox, "赴约高级下午茶 (-20精力, -800金)", func() -> void: _on_chat_xiao_ya())
+				2: _add_menu_btn(vbox, "听她哭诉渣男 (-20精力)", func() -> void: _on_chat_xiao_ya())
+		_:
+			_add_menu_btn(vbox, "吐槽 (-10精力)", func() -> void: _on_chat_npc(_current_chat_npc))
+			if npc_data["level"] >= 2:
+				_add_menu_btn(vbox, "约会", func() -> void: _on_date_npc(_current_chat_npc))
+	## 删除好友
+	_add_menu_btn(vbox, "删除好友", func() -> void: _do_delete_friend())
+	## 取消
+	_add_menu_btn(vbox, "取消", func() -> void:
+		if is_instance_valid(_chat_menu_panel):
+			_chat_menu_panel.queue_free()
+			_chat_menu_panel = null)
+	## 显示菜单
+	wc_chat_view.add_child(_chat_menu_panel)
+	var input_pos := chat_input_field.get_global_position()
+	_chat_menu_panel.global_position = Vector2(input_pos.x, input_pos.y - _chat_menu_panel.size.y - 4)
+
+
+func _send_text_message(text: String) -> void:
 	chat_input_field.text = ""
-	## 添加玩家消息
 	_add_chat_bubble("self", text)
 	var npc_data: Dictionary = GameManager.npcs[_current_chat_npc]
 	npc_data["messages"].append({"sender": "self", "text": text})
-	## NPC自动回复
 	var reply := _get_npc_auto_reply(_current_chat_npc)
 	await get_tree().create_timer(0.5).timeout
 	_add_chat_bubble("npc", reply)
 	npc_data["messages"].append({"sender": "npc", "text": reply})
 	_refresh_wechat_ui()
+
+
+func _add_menu_btn(parent: Control, text: String, callback: Callable) -> void:
+	var btn := Button.new()
+	btn.text = text
+	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_color_override("font_color", WC_TEXT_PRIMARY)
+	btn.pressed.connect(func() -> void:
+		if is_instance_valid(_chat_menu_panel):
+			_chat_menu_panel.queue_free()
+			_chat_menu_panel = null
+		callback.call())
+	parent.add_child(btn)
+
+
+func _do_delete_friend() -> void:
+	if _current_chat_npc == "":
+		return
+	var npc_data: Dictionary = GameManager.npcs[_current_chat_npc]
+	npc_data["unlocked"] = false
+	npc_data["blocked"] = true
+	if _chat_menu_panel:
+		_chat_menu_panel.queue_free()
+		_chat_menu_panel = null
+	_on_chat_back()
+	_build_chat_items()
+	_refresh_wechat_ui()
+
 
 func _get_npc_auto_reply(npc_id: String) -> String:
 	var replies: Dictionary = {
@@ -1494,39 +1536,13 @@ func _get_npc_auto_reply(npc_id: String) -> String:
 	var pool: Array = replies.get(npc_id, ["嗯", "好的"])
 	return pool[randi() % pool.size()]
 
-func _on_chat_more_pressed() -> void:
-	chat_action_panel.visible = !chat_action_panel.visible
 
-func _on_chat_action1_pressed() -> void:
-	if _current_chat_npc == "":
-		return
-	match _current_chat_npc:
-		"family_group":
-			_on_family_interact()
-		"wang_teacher":
-			_on_chat_wang_teacher()
-		"xiao_ya":
-			_on_chat_xiao_ya()
-		_:
-			_on_chat_npc(_current_chat_npc)
 
-func _on_chat_action2_pressed() -> void:
-	if _current_chat_npc == "":
-		return
-	_on_date_npc(_current_chat_npc)
 
-func _on_chat_delete_pressed() -> void:
-	if _current_chat_npc == "":
-		return
-	var npc_name: String = GameManager.npcs[_current_chat_npc]["name"]
-	GameManager.npcs[_current_chat_npc]["unlocked"] = false
-	GameManager.npcs[_current_chat_npc]["blocked"] = true
-	GameManager.npcs[_current_chat_npc]["affection"] = 0
-	_add_chat_bubble("npc", "你已删除好友 " + npc_name)
-	show_message("已删除好友: " + npc_name)
-	_refresh_wechat_ui()
-	await get_tree().create_timer(1.0).timeout
-	_on_chat_back()
+
+
+
+
 
 func _build_contacts_list() -> void:
 	for child in wc_contact_list.get_children():
