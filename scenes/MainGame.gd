@@ -1490,7 +1490,7 @@ func _send_text_message(text: String) -> void:
 	_refresh_wechat_ui()
 
 
-func _add_menu_btn(parent: Control, text: String, color: Color = WC_TEXT_PRIMARY, callback: Callable = func() -> void: pass) -> void:
+func _add_menu_btn(parent: Control, text: String, callback: Callable, color: Color = WC_TEXT_PRIMARY) -> void:
 	var btn := Button.new()
 	btn.text = text
 	btn.add_theme_font_size_override("font_size", 13)
