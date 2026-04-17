@@ -1265,7 +1265,7 @@ func _create_chat_item(npc_id: String, npc_data: Dictionary) -> PanelContainer:
 
 	var avatar := ColorRect.new()
 	avatar.custom_minimum_size = Vector2(48, 48)
-	avatar.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	avatar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	if npc_id == "family_group":
 		avatar.color = Color(1.0, 0.6, 0.2, 1)
 	elif npc_id == "xiao_ya":
