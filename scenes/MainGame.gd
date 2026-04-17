@@ -1466,7 +1466,7 @@ func _show_chat_action_menu() -> void:
 			if npc_data["level"] >= 2:
 				_add_menu_btn(vbox, "约会", func() -> void: _on_date_npc(_current_chat_npc))
 	## 删除好友
-	_add_menu_btn(vbox, "删除好友", Color(1, 0.2, 0.2, 1), func() -> void: _do_delete_friend())
+	_add_menu_btn(vbox, "删除好友", func() -> void: _do_delete_friend(), Color(1, 0.2, 0.2, 1))
 	## 取消
 	_add_menu_btn(vbox, "取消", func() -> void:
 		if is_instance_valid(_chat_menu_panel):
