@@ -407,6 +407,10 @@ func _close_top_popup() -> void:
 		zodiac_popup.visible = false
 		return
 	if wechat_menu.visible:
+		if wc_chat_view.visible:
+			_on_chat_back()
+			return
+		wechat_menu.visible = false
 		return
 	if location_menu.visible:
 		location_menu.visible = false
@@ -1409,11 +1413,19 @@ func _add_chat_bubble(sender: String, text: String) -> void:
 	label.text = text
 	label.add_theme_font_size_override("font_size", 14)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	if is_self:
-		label.add_theme_color_override("font_color", WC_TEXT_PRIMARY)
-	else:
-		label.add_theme_color_override("font_color", WC_TEXT_PRIMARY)
+	label.add_theme_color_override("font_color", WC_TEXT_PRIMARY)
 	bubble.add_child(label)
+
+	## 头像
+	var avatar := ColorRect.new()
+	avatar.custom_minimum_size = Vector2(36, 36)
+	avatar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	avatar.size_flags_stretch_ratio = 0.0
+	avatar.z_index = -1
+	if is_self:
+		avatar.color = Color(0.3, 0.7, 0.9, 1)
+	else:
+		avatar.color = _get_npc_avatar_color(_current_chat_npc)
 
 	## 对齐方向
 	var wrapper := HBoxContainer.new()
@@ -1421,12 +1433,14 @@ func _add_chat_bubble(sender: String, text: String) -> void:
 	if is_self:
 		var spacer := Control.new()
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		spacer.size_flags_stretch_ratio = 1
 		wrapper.add_child(spacer)
 		wrapper.add_child(bubble)
 		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bubble.size_flags_stretch_ratio = 2.5
-		spacer.size_flags_stretch_ratio = 1
+		wrapper.add_child(avatar)
 	else:
+		wrapper.add_child(avatar)
 		wrapper.add_child(bubble)
 		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bubble.size_flags_stretch_ratio = 2.5
@@ -1436,6 +1450,16 @@ func _add_chat_bubble(sender: String, text: String) -> void:
 		wrapper.add_child(spacer)
 
 	chat_msg_container.add_child(wrapper)
+
+
+func _get_npc_avatar_color(npc_id: String) -> Color:
+	match npc_id:
+		"family_group": return Color(1.0, 0.6, 0.2, 1)
+		"xiao_ya": return Color(0.85, 0.35, 0.55, 1)
+		"wang_teacher": return Color(0.12, 0.35, 0.75, 1)
+		"chen_yu": return Color(0.2, 0.5, 0.8, 1)
+		"gu_lin": return Color(0.4, 0.4, 0.4, 1)
+		_: return Color(0.3, 0.3, 0.3, 1)
 
 func _on_chat_back() -> void:
 	wc_chat_view.visible = false
