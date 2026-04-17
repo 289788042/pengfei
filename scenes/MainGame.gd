@@ -285,8 +285,8 @@ func _ready() -> void:
 	tab_contacts.pressed.connect(_on_wc_tab.bind(0))
 	tab_moments.pressed.connect(_on_wc_tab.bind(1))
 	btn_chat_back.pressed.connect(_on_chat_back)
-		btn_chat_send.pressed.connect(_on_chat_send)
-				btn_pay_rent.pressed.connect(_on_pay_rent)
+	btn_chat_send.pressed.connect(_on_chat_send)
+	btn_pay_rent.pressed.connect(_on_pay_rent)
 
 
 	btn_app_map.pressed.connect(_on_app_map)
