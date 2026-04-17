@@ -1240,6 +1240,7 @@ func _build_chat_items() -> void:
 
 func _create_chat_item(npc_id: String, npc_data: Dictionary) -> PanelContainer:
 	var root := PanelContainer.new()
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var row_style := StyleBoxFlat.new()
 	row_style.bg_color = Color.WHITE
 	row_style.set_content_margin_all(0)
