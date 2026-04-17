@@ -45,6 +45,7 @@ enum Phase { WEEKDAY, WEEKEND, EVENT, MONTH_END, TRANSITION, ENDING, GAME_OVER }
 @onready var tab_contacts: Button = %TabContacts
 @onready var tab_moments: Button = %TabMoments
 @onready var wc_chat_view: Control = %WCChatView
+@onready var chat_view_bg: PanelContainer = %ChatViewBG
 @onready var label_chat_name: Label = %LabelChatName
 @onready var chat_msg_container: VBoxContainer = %ChatMsgContainer
 @onready var chat_input_field: Button = %ChatInputField
@@ -419,17 +420,18 @@ func show_floating_text(text: String, color: Color, start_pos: Vector2) -> void:
 	label.text = text
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_font_size_override("font_size", 22)
-	label.position = start_pos
-	if wechat_menu.visible:
+	if wechat_menu.visible or alipay_popup.visible:
 		label.z_index = 200
-		wechat_menu.add_child(label)
+		label.position = Vector2(1570, 30.0)
+		add_child(label)
 	else:
 		label.z_index = 100
+		label.position = start_pos
 		add_child(label)
 
 	var tween := create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(label, "position:y", start_pos.y - 60, 1.0)
+	tween.tween_property(label, "position:y", label.position.y - 60, 1.0)
 	tween.tween_property(label, "modulate:a", 0.0, 1.0)
 	tween.chain().tween_callback(label.queue_free)
 
@@ -624,6 +626,16 @@ func _on_stats_updated() -> void:
 
 func _on_week_advanced(_new_week: int) -> void:
 	_refresh_ui()
+	## 家庭消息提醒
+	if GameManager.npcs.get("family_group", {}).get("unlocked", false):
+		var nick := GameManager.player_name.substr(0, 2) if GameManager.player_name.length() >= 2 else GameManager.player_name
+		var reminders := [
+			"%s，妈妈发了条语音提醒你回消息！" % nick,
+			"%s，爸爸说好久没打电话了！" % nick,
+			"%s，快点回妈妈消息！" % nick,
+			"%s，家里群又有未读消息啦！" % nick,
+		]
+		show_message(reminders[_new_week % reminders.size()], true)
 
 func _on_npc_unlocked(_id: String, npc_name: String) -> void:
 	show_message("[%s] 通过群聊添加了你的微信！" % npc_name, true)
@@ -1252,7 +1264,10 @@ func _create_chat_item(npc_id: String, npc_data: Dictionary) -> PanelContainer:
 	click_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	root.add_child(click_btn)
 	click_btn.pressed.connect(func() -> void:
-		_open_chat_view(npc_id)
+		if npc_id == "family_group":
+			_on_family_interact()
+		else:
+			_open_chat_view(npc_id)
 	)
 
 	var content_hbox := HBoxContainer.new()
@@ -1452,6 +1467,8 @@ func _show_chat_action_menu() -> void:
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 2)
 	_chat_menu_panel.add_child(vbox)
+	## 发送消息
+	_add_menu_btn(vbox, "发送消息", func() -> void: _open_text_input())
 	## 根据 NPC 添加选项
 	match _current_chat_npc:
 		"family_group":
@@ -1478,20 +1495,18 @@ func _show_chat_action_menu() -> void:
 			_chat_menu_panel.queue_free()
 			_chat_menu_panel = null)
 	## 显示菜单
-	wc_chat_view.add_child(_chat_menu_panel)
-	_chat_menu_panel.custom_minimum_size.x = chat_input_field.size.x
+	chat_view_bg.add_child(_chat_menu_panel)
+	
+	_chat_menu_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_chat_menu_panel.size.x = chat_input_field.size.x
-	_chat_menu_panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_chat_menu_panel.anchor_left = chat_input_field.anchor_left
-	_chat_menu_panel.anchor_right = chat_input_field.anchor_right
-	_chat_menu_panel.anchor_top = 1.0
-	_chat_menu_panel.anchor_bottom = 1.0
-	_chat_menu_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_chat_menu_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_chat_menu_panel.position.y = -_chat_menu_panel.size.y - 8
+	_chat_menu_panel.z_index = 30
+	## 获取输入框在chat_view_bg本地坐标
+	var input_local: Vector2 = (chat_view_bg.get_global_transform().affine_inverse() * chat_input_field.global_position)
+	var final_pos := Vector2(input_local.x, input_local.y - _chat_menu_panel.size.y - 8)
+	_chat_menu_panel.position = Vector2(final_pos.x, input_local.y)
 	_chat_menu_panel.modulate.a = 0.0
 	var tween := create_tween()
-	tween.tween_property(_chat_menu_panel, "position:y", _chat_menu_panel.position.y, 0.15).set_trans(Tween.TRANS_BACK)
+	tween.tween_property(_chat_menu_panel, "position:y", final_pos.y, 0.15).set_trans(Tween.TRANS_BACK)
 	tween.tween_property(_chat_menu_panel, "modulate:a", 1.0, 0.15).set_trans(Tween.TRANS_LINEAR)
 
 
@@ -1505,6 +1520,59 @@ func _send_text_message(text: String) -> void:
 	_add_chat_bubble("npc", reply)
 	npc_data["messages"].append({"sender": "npc", "text": reply})
 	_refresh_wechat_ui()
+
+func _open_text_input() -> void:
+	## 关闭菜单，弹出文本输入框
+	if is_instance_valid(_chat_menu_panel):
+		_chat_menu_panel.queue_free()
+		_chat_menu_panel = null
+	var input_panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.95, 0.95, 0.95, 1)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(6)
+	input_panel.add_theme_stylebox_override("panel", style)
+	input_panel.z_index = 30
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 6)
+	input_panel.add_child(hbox)
+	var line_edit := LineEdit.new()
+	line_edit.placeholder_text = "请输入消息..."
+	line_edit.custom_minimum_size.y = 36
+	line_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	line_edit.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hbox.add_child(line_edit)
+	var send_btn := Button.new()
+	send_btn.text = "发送"
+	send_btn.custom_minimum_size = Vector2(50, 36)
+	send_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	send_btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	var btn_style := StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.07, 0.65, 0.35, 1)
+	btn_style.set_corner_radius_all(4)
+	send_btn.add_theme_stylebox_override("normal", btn_style)
+	hbox.add_child(send_btn)
+	var close_panel := func() -> void:
+		if is_instance_valid(input_panel):
+			input_panel.queue_free()
+	send_btn.pressed.connect(func() -> void:
+		var text := line_edit.text.strip_edges()
+		close_panel.call()
+		if text != "":
+			_send_text_message(text)
+	)
+	line_edit.text_submitted.connect(func(_t: String) -> void:
+		var text := line_edit.text.strip_edges()
+		close_panel.call()
+		if text != "":
+			_send_text_message(text)
+	)
+	## 定位到+按钮正上方
+	chat_view_bg.add_child(input_panel)
+	input_panel.size.x = chat_input_field.size.x
+	var input_local: Vector2 = (chat_view_bg.get_global_transform().affine_inverse() * chat_input_field.global_position)
+	input_panel.position = Vector2(input_local.x, input_local.y - input_panel.size.y - 8)
+	line_edit.grab_focus()
 
 
 func _add_menu_btn(parent: Control, text: String, callback: Callable, color: Color = WC_TEXT_PRIMARY) -> void:
