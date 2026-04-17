@@ -113,6 +113,14 @@ var night_school_progress: int = 0
 ## 闺蜜小雅蝴蝶效应状态 (0:合租室友, 1:傍上大款的阔太太, 2:被骗的怨妇)
 var xiaoya_state: int = 0
 
+# ==================== NPC 剧本数据 ====================
+
+## 静态剧本数据库（从 npc_data.json 加载）
+var npc_database: Array = []
+## 玩家运行时动态数据（如 {"shen_yi": {"affection": 0, "flags": [], "used_daily_chats": []}}）
+var unlocked_npcs: Dictionary = {}
+var encounter_failed_ids: Array = []
+
 # ==================== 玩家信息 ====================
 
 var player_name: String = ""
@@ -139,6 +147,9 @@ var stat_names: Dictionary = {
 }
 
 # ==================== 核心函数 ====================
+
+func _ready() -> void:
+	load_npc_data()
 
 ## 修改指定属性的值
 func modify_stat(stat_name: String, amount: int) -> void:
@@ -423,6 +434,76 @@ func roll_random_event(context: String) -> Dictionary:
 
 
 ## 检查是否有新 NPC 解锁
+## 加载 NPC 静态剧本数据
+func load_npc_data() -> void:
+	var f := FileAccess.open("res://Data/npc_data.json", FileAccess.READ)
+	if not f:
+		push_warning("GameManager: 无法打开 npc_data.json")
+		return
+	var json_text := f.get_as_text()
+	f.close()
+	var json := JSON.new()
+	if json.parse(json_text) != OK:
+		push_warning("GameManager: npc_data.json 解析失败 - " + json.get_error_message())
+		return
+	npc_database = json.data
+	print("GameManager: 已加载 %d 个NPC剧本" % npc_database.size())
+
+
+## 根据 ID 获取静态剧本数据
+func get_npc_data(npc_id: String) -> Dictionary:
+	for npc in npc_database:
+		if npc.get("id", "") == npc_id:
+			return npc
+	return {}
+
+
+## 获取/创建运行时动态数据
+func get_npc_runtime(npc_id: String) -> Dictionary:
+	if not unlocked_npcs.has(npc_id):
+		unlocked_npcs[npc_id] = {
+			"affection": 0,
+			"flags": [],
+			"used_daily_chats": [],
+			"chat_cooldown": 0
+		}
+	return unlocked_npcs[npc_id]
+
+
+## 检查 NPC 是否已解锁
+func is_npc_unlocked(npc_id: String) -> bool:
+	return unlocked_npcs.has(npc_id)
+
+
+## 解锁一个 NPC
+func unlock_npc(npc_id: String) -> void:
+	if unlocked_npcs.has(npc_id):
+		return
+	var static_data := get_npc_data(npc_id)
+	var display_name: String = static_data.get("name", npc_id)
+	unlocked_npcs[npc_id] = {
+		"affection": 0,
+		"flags": [],
+		"used_daily_chats": [],
+		"chat_cooldown": 0
+	}
+	# 同步加入微信联系人列表（npcs 字典）
+	if not npcs.has(npc_id):
+		npcs[npc_id] = {
+			"name": display_name,
+			"affection": 0,
+			"level": 1,
+			"unlocked": true,
+			"warning_msg": "",
+			"blocked": false,
+			"messages": [],
+			"last_seen_week": 0,
+		}
+	else:
+		npcs[npc_id]["unlocked"] = true
+	npc_unlocked.emit(npc_id, display_name)
+
+
 func check_npc_unlocks() -> void:
 	if not npcs["chen_yu"]["unlocked"] and eq >= 20:
 		npcs["chen_yu"]["unlocked"] = true

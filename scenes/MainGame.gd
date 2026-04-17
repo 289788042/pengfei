@@ -65,6 +65,8 @@ const WC_TEXT_SECONDARY: Color = Color(0.55, 0.55, 0.55, 1)
 var _current_chat_npc: String = ""
 var _chat_menu_panel: PanelContainer = null
 var _current_tab: int = 0
+## 动态生成的回复选项按钮容器
+var _reply_btn_container: VBoxContainer = null
 
 ## 手机桌面App图标按钮
 @onready var btn_app_map: Button = %BtnApp_Map
@@ -109,6 +111,20 @@ var _current_tab: int = 0
 
 ## 对话框淡出动画
 var dialog_tween: Tween
+
+## Galgame 分页对话状态
+var _gal_pages: Array = []
+var _gal_page_idx: int = 0
+var _gal_char_idx: int = 0
+var _gal_typing: bool = false
+var _gal_full_text: String = ""
+var _gal_tween: Tween = null
+var _gal_on_complete: Callable = Callable()
+var _gal_encounter_data: Dictionary = {}
+var _gal_npc_id: String = ""
+var _gal_choice_container: VBoxContainer = null
+var _arrow_label: Label = null
+var _arrow_tween: Tween = null
 
 ## 支服了宝弹窗
 @onready var alipay_popup: ColorRect = %AlipayPopup
@@ -366,8 +382,13 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_LEFT:
 			if dialog_box.visible and dialog_box.modulate.a > 0.5:
-				if dialog_box.get_global_rect().has_point(get_global_mouse_position()):
-					_dismiss_dialog()
+				if dialog_box.get_global_rect().has_point(event.global_position):
+					if _gal_pages.size() > 0:
+						_gal_on_click()
+					elif is_instance_valid(_gal_choice_container):
+						pass  # 选择按钮自行处理点击
+					else:
+						_dismiss_dialog()
 					get_viewport().set_input_as_handled()
 
 
@@ -471,6 +492,214 @@ func _dismiss_dialog() -> void:
 		dialog_tween.kill()
 	dialog_box.modulate.a = 0.0
 	dialog_box.visible = false
+
+
+# ==================== Galgame 分页对话系统 ====================
+
+## 启动 Galgame 分页对话（pages: 每页一个字符串）
+func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> void:
+	if _gal_tween and _gal_tween.is_valid():
+		_gal_tween.kill()
+	_gal_pages = pages
+	_gal_page_idx = 0
+	_gal_on_complete = on_complete
+	dialog_box.visible = true
+	dialog_box.modulate.a = 1.0
+	if is_instance_valid(_gal_choice_container):
+		_gal_choice_container.visible = false
+	dialog_text.visible = true
+	_gal_start_page()
+
+## 开始打字当前页
+func _gal_start_page() -> void:
+	_gal_full_text = _gal_pages[_gal_page_idx]
+	_gal_char_idx = 0
+	_gal_typing = true
+	dialog_text.text = ""
+	_apply_page_color(_gal_full_text)
+	_stop_arrow_anim()
+	_gal_type_char()
+
+## 打字机核心：逐字输出
+func _gal_type_char() -> void:
+	if _gal_char_idx >= _gal_full_text.length():
+		_gal_typing = false
+		dialog_text.text = _gal_full_text
+		_start_arrow_anim()
+		return
+	_gal_char_idx += 1
+	dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
+	_gal_tween = create_tween()
+	_gal_tween.tween_interval(0.03)
+	_gal_tween.tween_callback(_gal_type_char)
+
+## 点击处理：跳过打字 or 翻页
+func _gal_on_click() -> void:
+	if _gal_typing:
+		## 跳过当前页打字，直接显示完整文本
+		if _gal_tween and _gal_tween.is_valid():
+			_gal_tween.kill()
+		_gal_typing = false
+		dialog_text.text = _gal_full_text
+		_start_arrow_anim()
+	else:
+		## 翻到下一页
+		_gal_page_idx += 1
+		if _gal_page_idx < _gal_pages.size():
+			_gal_start_page()
+		else:
+			_gal_end()
+
+## 根据内容设置对话框颜色：旁白白色，对话黄色
+func _apply_page_color(raw: String) -> void:
+	if raw.begins_with('陌生男子：') or raw.begins_with('我：'):
+		dialog_text.add_theme_color_override('default_color', Color(1.0, 0.9, 0.3, 1.0))
+	elif raw.begins_with("'"):
+		dialog_text.add_theme_color_override('default_color', Color(1.0, 0.9, 0.3, 1.0))
+	else:
+		dialog_text.add_theme_color_override('default_color', Color(0.94, 0.94, 0.94, 1.0))
+
+## 箭头指示器动画：上下轻微浮动
+func _start_arrow_anim() -> void:
+	if not is_instance_valid(_arrow_label):
+		_arrow_label = Label.new()
+		_arrow_label.name = 'ArrowIndicator'
+		_arrow_label.text = '▼'
+		_arrow_label.add_theme_font_size_override('font_size', 22)
+		_arrow_label.add_theme_color_override('font_color', Color(1, 1, 1, 0.7))
+		dialog_box.add_child(_arrow_label)
+		_arrow_label.position = Vector2(dialog_box.size.x - 50, dialog_box.size.y - 35)
+	_arrow_label.visible = true
+	_arrow_label.modulate.a = 1.0
+	if _arrow_tween and _arrow_tween.is_valid():
+		_arrow_tween.kill()
+	var base_y: float = _arrow_label.position.y
+	_arrow_tween = create_tween().set_loops()
+	_arrow_tween.tween_property(_arrow_label, 'position:y', base_y - 6.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_arrow_tween.tween_property(_arrow_label, 'position:y', base_y, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func _stop_arrow_anim() -> void:
+	if _arrow_tween and _arrow_tween.is_valid():
+		_arrow_tween.kill()
+		_arrow_tween = null
+	if is_instance_valid(_arrow_label):
+		_arrow_label.visible = false
+
+## 结束 Galgame 对话
+## 结束 Galgame 对话
+func _gal_end() -> void:
+	if _gal_tween and _gal_tween.is_valid():
+		_gal_tween.kill()
+	_gal_pages.clear()
+	_gal_typing = false
+	_stop_arrow_anim()
+	## 统一渐隐对话框，再处理回调或完成文案
+	var cb: Callable = _gal_on_complete
+	_gal_on_complete = Callable()
+	var has_encounter: bool = _gal_encounter_data.size() > 0
+	_gal_tween = create_tween()
+	_gal_tween.tween_property(dialog_box, "modulate:a", 0.0, 0.4)
+	_gal_tween.tween_callback(func() -> void:
+		dialog_box.visible = false
+		if cb.is_valid():
+			cb.call()
+		elif has_encounter:
+			_gal_encounter_data = {}
+			show_message("在图书馆度过了一个充实的下午。\n[color=90EE90]学识+3 情绪+5[/color]", true)
+	)
+
+
+	## 邂逅第二阶段：NPC 请求加微信
+func _start_wechat_request_phase() -> void:
+	var wechat: Dictionary = _gal_encounter_data.get("wechat_request", {})
+	if wechat.size() == 0:
+		dialog_box.modulate.a = 0.0
+		dialog_box.visible = false
+		return
+	var pages: Array = []
+	for line in wechat.get("his_lines", []):
+		pages.append("陌生男子：" + line)
+	show_galgame_dialog(pages, _show_wechat_choices_phase)
+
+## 邂逅第三阶段：显示玩家选择按钮
+func _show_wechat_choices_phase() -> void:
+	var wechat: Dictionary = _gal_encounter_data.get("wechat_request", {})
+	var options: Array = wechat.get("player_options", [])
+	if options.size() == 0:
+		dialog_box.modulate.a = 0.0
+		dialog_box.visible = false
+		return
+	dialog_text.visible = false
+	if is_instance_valid(_gal_choice_container):
+		_gal_choice_container.queue_free()
+	_gal_choice_container = VBoxContainer.new()
+	_gal_choice_container.name = "GalChoiceContainer"
+	_gal_choice_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_gal_choice_container.offset_left = 16
+	_gal_choice_container.offset_top = 8
+	_gal_choice_container.offset_right = -12
+	_gal_choice_container.offset_bottom = -8
+	_gal_choice_container.add_theme_constant_override("separation", 4)
+	dialog_box.add_child(_gal_choice_container)
+	for option in options:
+		var btn := Button.new()
+		btn.text = option.get("text", "...")
+		btn.add_theme_font_size_override("font_size", 13)
+		btn.add_theme_color_override("font_color", Color(0.1, 0.1, 0.1, 1))
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.95, 0.95, 0.95, 0.9)
+		style.set_corner_radius_all(4)
+		style.set_content_margin_all(6)
+		btn.add_theme_stylebox_override("normal", style)
+		var hover_style := StyleBoxFlat.new()
+		hover_style.bg_color = Color(0.85, 0.9, 0.95, 0.95)
+		hover_style.set_corner_radius_all(4)
+		hover_style.set_content_margin_all(6)
+		btn.add_theme_stylebox_override("hover", hover_style)
+		var req_stat: String = option.get("req_stat", "")
+		var req_val: int = int(option.get("req_val", 0))
+		if req_stat != "" and GameManager.get(req_stat) < req_val:
+			btn.disabled = true
+			btn.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+		var captured_option: Dictionary = option
+		btn.pressed.connect(func() -> void: _on_encounter_choice(captured_option))
+		_gal_choice_container.add_child(btn)
+
+## 邂逅选择回调
+func _on_encounter_choice(option: Dictionary) -> void:
+	var cost: Dictionary = option.get("cost", {})
+	var cost_energy: int = int(cost.get("energy", 0))
+	var cost_money: int = int(cost.get("money", 0))
+	if cost_energy > 0:
+		GameManager.modify_stat("energy", -cost_energy)
+	if cost_money > 0:
+		GameManager.modify_stat("money", -cost_money)
+	var stat_changes: Dictionary = option.get("stat_changes", {})
+	for stat_name in stat_changes:
+		var val: int = int(stat_changes[stat_name])
+		if stat_name == "affection" and _gal_npc_id != "":
+			GameManager.get_npc_runtime(_gal_npc_id)["affection"] += val
+		else:
+			GameManager.modify_stat(stat_name, val)
+	var flag: String = option.get("flag", "")
+	if flag != "" and _gal_npc_id != "":
+		var runtime: Dictionary = GameManager.get_npc_runtime(_gal_npc_id)
+		if not runtime["flags"].has(flag):
+			runtime["flags"].append(flag)
+	if is_instance_valid(_gal_choice_container):
+		_gal_choice_container.queue_free()
+		_gal_choice_container = null
+	dialog_text.visible = true
+	var pages: Array = []
+	pages.append("我：" + option.get("text", ""))
+	for line in option.get("reply_lines", []):
+		if line.begins_with("'"):
+			pages.append("陌生男子：" + line)
+		else:
+			pages.append(line)
+	if option.get("note", "") != "":
+		pages.append(option["note"])
+	show_galgame_dialog(pages)
 
 
 # ==================== 阶段状态机 ====================
@@ -1175,12 +1404,119 @@ func _on_loc_library() -> void:
 	if GameManager.energy < 20:
 		show_message("精力不足，无法去图书馆！")
 		return
+
+	## 邂逅判定：遍历剧本库寻找 location=library 的 NPC
+	var encounter_npc: Dictionary = {}
+	var encounter_data: Dictionary = {}
+	for npc in GameManager.npc_database:
+		var enc: Dictionary = npc.get("encounter", {})
+		if enc.get("location", "") == "library" and not GameManager.is_npc_unlocked(npc.get("id", "")) and not npc.get("id", "") in GameManager.encounter_failed_ids:
+			encounter_npc = npc
+			encounter_data = enc
+			break
+
+	if encounter_npc.size() > 0:
+		var npc_id: String = encounter_npc["id"]
+		var npc_name: String = encounter_npc["name"]
+		var req: Dictionary = encounter_data.get("req_stats", {})
+		var cost: Dictionary = encounter_data.get("cost", {})
+		var energy_cost: int = cost.get("energy", 0)
+		var money_cost: int = cost.get("money", 0)
+
+		## 检查属性门槛
+		var charm_ok: bool = GameManager.charm >= req.get("charm", 0)
+		var intellect_ok: bool = GameManager.intellect >= req.get("intellect", 0)
+		var money_ok: bool = GameManager.money >= req.get("money", 0)
+
+		## 扣除基础精力 + 额外消耗
+		var total_energy: int = 20 + energy_cost
+		if GameManager.energy < total_energy:
+			show_message("精力不足（需%d），无法去图书馆！" % total_energy)
+			return
+		if money_cost > 0 and GameManager.money < money_cost:
+			show_message("金钱不足（需%d元）！" % money_cost)
+			return
+
+		GameManager.modify_stat("energy", -total_energy)
+		if money_cost > 0:
+			GameManager.modify_stat("money", -money_cost)
+
+		location_menu.visible = false
+
+		if charm_ok and intellect_ok and money_ok:
+			## 邂逅成功
+			GameManager.unlock_npc(npc_id)
+			var pass_changes: Dictionary = encounter_data.get("pass_stat_changes", {})
+			for stat_name in pass_changes:
+				if stat_name == "affection":
+					GameManager.get_npc_runtime(npc_id)["affection"] += pass_changes[stat_name]
+				else:
+					GameManager.modify_stat(stat_name, pass_changes[stat_name])
+
+			## 保存邂逅数据供回调使用
+			_gal_encounter_data = encounter_data
+			_gal_npc_id = npc_id
+
+			## Phase 1：场景 + 对话 + 考验 + 通过
+			var pages: Array = []
+			## 旁白：场景描写（scene_lines）
+			for line in encounter_data.get("scene_lines", []):
+				pages.append(line)
+			## 陌生男子：对话台词（dialogue_lines）
+			for line in encounter_data.get("dialogue_lines", []):
+				pages.append("陌生男子：" + line)
+			## 陌生男子：考验问题
+			if encounter_data.get("test_question", "") != "":
+				for seg in encounter_data["test_question"].split("\n"):
+					if seg.strip_edges() != "":
+						pages.append("陌生男子：" + seg)
+			## 我：玩家通过台词（pass_lines）
+			for line in encounter_data.get("pass_lines", []):
+				pages.append("我：" + line)
+			## 混合旁白+对话（pass_result_lines）
+			for line in encounter_data.get("pass_result_lines", []):
+				if line.begins_with("'"):
+					pages.append("陌生男子：" + line)
+				else:
+					pages.append(line)
+			show_galgame_dialog(pages, _start_wechat_request_phase)
+			GameManager.add_activity("社交", "在图书馆邂逅了%s" % npc_name)
+		else:
+			## 邂逅失败
+			var fail_changes: Dictionary = encounter_data.get("fail_stat_changes", {})
+			for stat_name in fail_changes:
+				GameManager.modify_stat(stat_name, fail_changes[stat_name])
+			## Galgame 逐句分页：场景 + 对话 + 失败台词
+			var fail_pages: Array = []
+			for line in encounter_data.get("scene_lines", []):
+				fail_pages.append(line)
+			for line in encounter_data.get("dialogue_lines", []):
+				fail_pages.append("陌生男子：" + line)
+			if encounter_data.get("test_question", "") != "":
+				for seg in encounter_data["test_question"].split("\n"):
+					if seg.strip_edges() != "":
+						fail_pages.append("陌生男子：" + seg)
+			for line in encounter_data.get("fail_lines", []):
+				fail_pages.append("我：" + line)
+			for line in encounter_data.get("fail_result_lines", []):
+				if line.begins_with("'"):
+					fail_pages.append("陌生男子：" + line)
+				else:
+					fail_pages.append(line)
+			GameManager.encounter_failed_ids.append(npc_id)
+			show_galgame_dialog(fail_pages, func() -> void:
+				show_message("在图书馆度过了一个充实的下午。\n[color=90EE90]学识+3 情绪+5[/color]", true)
+			)
+			GameManager.add_activity("提升", "在图书馆读书（与某人擦肩而过）")
+		return
+
+	## 正常图书馆逻辑（无邂逅或已解锁）
 	GameManager.modify_stat("energy", -20)
 	GameManager.modify_stat("intellect", 3)
 	GameManager.modify_stat("sanity", 5)
-	float_stat("+3 学识 +5 情绪", 5, get_global_mouse_position())
 	GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
-	_visit_location("library", "在图书馆度过了一个充实的下午。")
+	show_message("在图书馆度过了一个充实的下午。\n[color=90EE90]学识+3 情绪+5[/color]", true)
+	location_menu.visible = false
 
 func _on_loc_gym() -> void:
 	if GameManager.energy < 45:
@@ -1292,6 +1628,8 @@ func _create_chat_item(npc_id: String, npc_data: Dictionary) -> PanelContainer:
 		avatar.color = Color(0.2, 0.5, 0.8, 1)
 	elif npc_id == "gu_lin":
 		avatar.color = Color(0.4, 0.4, 0.4, 1)
+	elif npc_id == "shen_yi":
+		avatar.color = Color(0.2, 0.35, 0.5, 1)
 	else:
 		avatar.color = Color(0.3, 0.3, 0.3, 1)
 	content_hbox.add_child(avatar)
@@ -1438,6 +1776,7 @@ func _get_npc_avatar_color(npc_id: String) -> Color:
 		"wang_teacher": return Color(0.12, 0.35, 0.75, 1)
 		"chen_yu": return Color(0.2, 0.5, 0.8, 1)
 		"gu_lin": return Color(0.4, 0.4, 0.4, 1)
+		"shen_yi": return Color(0.2, 0.35, 0.5, 1)
 		_: return Color(0.3, 0.3, 0.3, 1)
 
 func _on_chat_back() -> void:
@@ -1467,8 +1806,9 @@ func _show_chat_action_menu() -> void:
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 2)
 	_chat_menu_panel.add_child(vbox)
-	## 发送消息
-	_add_menu_btn(vbox, "发送消息", func() -> void: _open_text_input())
+	## 剧本NPC日常闲聊
+	if GameManager.is_npc_unlocked(_current_chat_npc):
+		_add_menu_btn(vbox, "日常闲聊", func() -> void: _on_daily_chat())
 	## 根据 NPC 添加选项
 	match _current_chat_npc:
 		"family_group":
@@ -1510,69 +1850,154 @@ func _show_chat_action_menu() -> void:
 	tween.tween_property(_chat_menu_panel, "modulate:a", 1.0, 0.15).set_trans(Tween.TRANS_LINEAR)
 
 
-func _send_text_message(text: String) -> void:
-	chat_input_field.text = ""
-	_add_chat_bubble("self", text)
-	var npc_data: Dictionary = GameManager.npcs[_current_chat_npc]
-	npc_data["messages"].append({"sender": "self", "text": text})
-	var reply := _get_npc_auto_reply(_current_chat_npc)
-	await get_tree().create_timer(0.5).timeout
-	_add_chat_bubble("npc", reply)
-	npc_data["messages"].append({"sender": "npc", "text": reply})
-	_refresh_wechat_ui()
 
-func _open_text_input() -> void:
-	## 关闭菜单，弹出文本输入框
+# ==================== 日常闲聊（防重复抽卡） ====================
+
+func _on_daily_chat() -> void:
+	## 关闭菜单
 	if is_instance_valid(_chat_menu_panel):
 		_chat_menu_panel.queue_free()
 		_chat_menu_panel = null
-	var input_panel := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.95, 0.95, 0.95, 1)
-	style.set_corner_radius_all(8)
-	style.set_content_margin_all(6)
-	input_panel.add_theme_stylebox_override("panel", style)
-	input_panel.z_index = 30
-	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 6)
-	input_panel.add_child(hbox)
-	var line_edit := LineEdit.new()
-	line_edit.placeholder_text = "请输入消息..."
-	line_edit.custom_minimum_size.y = 36
-	line_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	line_edit.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hbox.add_child(line_edit)
-	var send_btn := Button.new()
-	send_btn.text = "发送"
-	send_btn.custom_minimum_size = Vector2(50, 36)
-	send_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	send_btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-	var btn_style := StyleBoxFlat.new()
-	btn_style.bg_color = Color(0.07, 0.65, 0.35, 1)
-	btn_style.set_corner_radius_all(4)
-	send_btn.add_theme_stylebox_override("normal", btn_style)
-	hbox.add_child(send_btn)
-	var close_panel := func() -> void:
-		if is_instance_valid(input_panel):
-			input_panel.queue_free()
-	send_btn.pressed.connect(func() -> void:
-		var text := line_edit.text.strip_edges()
-		close_panel.call()
-		if text != "":
-			_send_text_message(text)
-	)
-	line_edit.text_submitted.connect(func(_t: String) -> void:
-		var text := line_edit.text.strip_edges()
-		close_panel.call()
-		if text != "":
-			_send_text_message(text)
-	)
-	## 定位到+按钮正上方
-	chat_view_bg.add_child(input_panel)
-	input_panel.size.x = chat_input_field.size.x
+
+	var npc_id: String = _current_chat_npc
+	var static_data: Dictionary = GameManager.get_npc_data(npc_id)
+	if static_data.is_empty():
+		show_message("[系统] 该NPC暂无对话数据。")
+		return
+
+	var runtime: Dictionary = GameManager.get_npc_runtime(npc_id)
+	var all_chats: Array = static_data.get("daily_chats", [])
+	var used_ids: Array = runtime.get("used_daily_chats", [])
+
+	## 【防重过滤核心】
+	var available_chats: Array = []
+	for chat in all_chats:
+		if not used_ids.has(chat.get("id", "")):
+			available_chats.append(chat)
+
+	## 【兜底逻辑】
+	if available_chats.is_empty():
+		GameManager.modify_stat("energy", -5)
+		_add_chat_bubble("npc", "[对方无回复]")
+		var npc_data_dict: Dictionary = GameManager.npcs[_current_chat_npc]
+		npc_data_dict["messages"].append({"sender": "npc", "text": "[对方无回复]"})
+		show_floating_text("他似乎很忙，没有回复你的消息。", Color.GRAY, get_global_mouse_position())
+		return
+
+	## 【抽取与记录】
+	var selected: Dictionary = available_chats[randi() % available_chats.size()]
+	runtime["used_daily_chats"].append(selected["id"])
+
+	## 显示 NPC 发来的文本
+	var text_lines: Array = selected.get("text_lines", [])
+	var npc_msg: String = ""
+	for line in text_lines:
+		npc_msg += line + "\n"
+		npc_msg = npc_msg.strip_edges()
+	var npc_name: String = static_data.get("name", npc_id)
+	_add_chat_bubble("npc", npc_msg)
+	var npc_data_dict2: Dictionary = GameManager.npcs[_current_chat_npc]
+	npc_data_dict2["messages"].append({"sender": "npc", "text": npc_msg})
+
+	## 隐藏输入按钮，动态生成回复选项
+	chat_input_field.visible = false
+	_reply_btn_container = VBoxContainer.new()
+	_reply_btn_container.add_theme_constant_override("separation", 4)
+	chat_view_bg.add_child(_reply_btn_container)
+	## 定位到输入框位置
 	var input_local: Vector2 = (chat_view_bg.get_global_transform().affine_inverse() * chat_input_field.global_position)
-	input_panel.position = Vector2(input_local.x, input_local.y - input_panel.size.y - 8)
-	line_edit.grab_focus()
+	_reply_btn_container.position = input_local + Vector2(0, -_reply_btn_container.size.y)
+	_reply_btn_container.size.x = chat_input_field.size.x
+	_reply_btn_container.z_index = 25
+
+	var reply_options: Array = selected.get("reply_options", [])
+	for option in reply_options:
+		var opt_btn := Button.new()
+		opt_btn.text = option.get("text", "...")
+		opt_btn.add_theme_font_size_override("font_size", 13)
+		opt_btn.add_theme_color_override("font_color", Color(0.1, 0.1, 0.1, 1))
+		var opt_style := StyleBoxFlat.new()
+		opt_style.bg_color = Color(0.95, 0.95, 0.95, 1)
+		opt_style.set_corner_radius_all(6)
+		opt_style.set_content_margin_all(8)
+		opt_btn.add_theme_stylebox_override("normal", opt_style)
+		## 检查属性门槛
+		var req_stat: String = option.get("req_stat", "")
+		var req_val: int = int(option.get("req_val", 0))
+		if req_stat != "" and GameManager.get(req_stat) < req_val:
+			opt_btn.disabled = true
+			opt_btn.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+			opt_btn.tooltip_text = "需要 %s >= %d" % [GameManager.stat_names.get(req_stat, req_stat), req_val]
+		## 绑定选项数据
+		var captured_option: Dictionary = option
+		opt_btn.pressed.connect(func() -> void: _on_reply_selected(captured_option))
+		_reply_btn_container.add_child(opt_btn)
+
+	## 等一帧后重新定位选项容器
+	await get_tree().process_frame
+	_reply_btn_container.position = Vector2(input_local.x, input_local.y - _reply_btn_container.size.y - 4)
+
+
+func _on_reply_selected(option: Dictionary) -> void:
+	## 资源校验
+	var cost: Dictionary = option.get("cost", {})
+	var cost_energy: int = int(cost.get("energy", 0))
+	var cost_money: int = int(cost.get("money", 0))
+	if cost_energy > 0 and GameManager.energy < cost_energy:
+		show_floating_text("太累了，没精力回复...", Color.RED, get_global_mouse_position())
+		return
+	if cost_money > 0 and GameManager.money < cost_money:
+		show_floating_text("金钱不足...", Color.RED, get_global_mouse_position())
+		return
+
+	## 扣除资源
+	if cost_energy > 0:
+		GameManager.modify_stat("energy", -cost_energy)
+	if cost_money > 0:
+		GameManager.modify_stat("money", -cost_money)
+
+	## 应用属性变化
+	var stat_changes: Dictionary = option.get("stat_changes", {})
+	for stat_name in stat_changes:
+		var val: int = int(stat_changes[stat_name])
+		if stat_name == "affection":
+			GameManager.get_npc_runtime(_current_chat_npc)["affection"] += val
+		else:
+			GameManager.modify_stat(stat_name, val)
+
+	## 显示玩家回复
+	var player_text: String = option.get("text", "")
+	_add_chat_bubble("self", player_text)
+	var npc_data_dict: Dictionary = GameManager.npcs[_current_chat_npc]
+	npc_data_dict["messages"].append({"sender": "self", "text": player_text})
+
+	## 显示男主回复
+	var reply_lines: Array = option.get("reply_lines", [])
+	var reply_text: String = ""
+	for line in reply_lines:
+		reply_text += line + "\n"
+	reply_text = reply_text.strip_edges()
+	if reply_text != "":
+		_add_chat_bubble("npc", reply_text)
+		npc_data_dict["messages"].append({"sender": "npc", "text": reply_text})
+
+	## 记录 flag
+	var flag: String = option.get("flag", "")
+	if flag != "":
+		var runtime: Dictionary = GameManager.get_npc_runtime(_current_chat_npc)
+		if not runtime["flags"].has(flag):
+			runtime["flags"].append(flag)
+
+	## 销毁选项按钮，恢复常驻按钮
+	_clear_reply_buttons()
+	_refresh_wechat_ui()
+
+
+func _clear_reply_buttons() -> void:
+	if is_instance_valid(_reply_btn_container):
+		_reply_btn_container.queue_free()
+		_reply_btn_container = null
+	chat_input_field.visible = true
 
 
 func _add_menu_btn(parent: Control, text: String, callback: Callable, color: Color = WC_TEXT_PRIMARY) -> void:

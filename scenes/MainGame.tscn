@@ -2,13 +2,7 @@
 
 [ext_resource type="Script" uid="uid://4efrj08wbmj8" path="res://scenes/MainGame.gd" id="1_8etcy"]
 [ext_resource type="Theme" uid="uid://cikxg02q2to20" path="res://UI/GlobalPixelTheme.tres" id="1_xej52"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
-bg_color = Color(0, 0, 0, 0.67)
-corner_radius_top_left = 15
-corner_radius_top_right = 15
-corner_radius_bottom_right = 15
-corner_radius_bottom_left = 15
+[ext_resource type="Script" uid="uid://wupulnqs5tac" path="res://scripts/DebugPanel.gd" id="3_p73vr"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_smartphone"]
 bg_color = Color(0.12, 0.12, 0.14, 1)
@@ -494,6 +488,18 @@ corner_radius_bottom_left = 10
 shadow_color = Color(0, 0, 0, 0.3)
 shadow_size = 6
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+bg_color = Color(0, 0, 0, 0.75)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.6, 0.55, 0.45, 0.8)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_panel"]
 content_margin_left = 0.0
 content_margin_top = 0.0
@@ -523,28 +529,6 @@ content_margin_bottom = 0.0
 bg_color = Color(0.969, 0.969, 0.969, 1)
 border_width_top = 1
 border_color = Color(0.851, 0.851, 0.851, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_green_btn"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.027, 0.757, 0.376, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wc_red_btn"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.98, 0.318, 0.318, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x628s"]
 content_margin_left = 20.0
@@ -778,8 +762,6 @@ offset_right = -40.0
 grow_horizontal = 2
 grow_vertical = 0
 color = Color(0.3, 0.3, 0.4, 0.5)
-
-
 
 [node name="RightMargin" type="MarginContainer" parent="HBoxContainer" unique_id=1125743121]
 layout_mode = 2
@@ -1768,17 +1750,14 @@ text = "⏭ 结束本周 (恢复精力)"
 [node name="DialogBox" type="Panel" parent="." unique_id=492207286]
 unique_name_in_owner = true
 visible = false
-layout_mode = 0
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -380.0
-offset_top = -160.0
-grow_horizontal = 0
-grow_vertical = 0
 z_index = 200
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -240.0
+offset_right = 1080.0
+grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
 
 [node name="DialogText" type="RichTextLabel" parent="DialogBox" unique_id=2143022658]
@@ -1794,7 +1773,8 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/default_color = Color(1, 0.9, 0.2, 1)
-theme_override_font_sizes/normal_font_size = 24
+theme_override_constants/line_separation = 8
+theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
 fit_content = true
 autowrap_mode = 2
@@ -1814,8 +1794,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-pivot_offset = Vector2(960, 540)
 scale = Vector2(1.33, 1.33)
+pivot_offset = Vector2(960, 540)
 
 [node name="WCPanelContainer" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter" unique_id=1841380285]
 unique_name_in_owner = true
@@ -1975,8 +1955,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-pivot_offset = Vector2(960, 540)
 scale = Vector2(1.33, 1.33)
+pivot_offset = Vector2(960, 540)
 
 [node name="ChatViewBG" type="PanelContainer" parent="WeChatMenu/WCChatView" unique_id=324640858]
 unique_name_in_owner = true
@@ -2020,8 +2000,6 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 
-
-
 [node name="ChatMsgScroll" type="ScrollContainer" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox" unique_id=1234392502]
 layout_mode = 2
 size_flags_vertical = 3
@@ -2040,19 +2018,13 @@ theme_override_constants/separation = 6
 
 [node name="ChatInputField" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar" unique_id=607311306]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 40)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "+"
-
-
-
-
-
-
 
 [node name="Btn_CloseWeChat" type="Button" parent="WeChatMenu" unique_id=19403083]
 unique_name_in_owner = true
@@ -2428,3 +2400,11 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 24
 horizontal_alignment = 1
+
+[node name="DebugPanel" type="Control" parent="." unique_id=891129447]
+z_index = 100
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("3_p73vr")
