@@ -1811,6 +1811,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+pivot_offset = Vector2(960, 540)
 scale = Vector2(1.33, 1.33)
 
 [node name="WCPanelContainer" type="PanelContainer" parent="WeChatMenu/WCPhoneCenter" unique_id=1841380285]
@@ -1971,6 +1972,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+pivot_offset = Vector2(960, 540)
 scale = Vector2(1.33, 1.33)
 
 [node name="ChatViewBG" type="PanelContainer" parent="WeChatMenu/WCChatView" unique_id=324640858]
