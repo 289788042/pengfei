@@ -1306,6 +1306,10 @@ func _create_chat_item(npc_id: String, npc_data: Dictionary) -> PanelContainer:
 	right_margin.custom_minimum_size = Vector2(10, 0)
 	content_hbox.add_child(right_margin)
 
+	## 让所有内容子元素忽略鼠标，只有click_btn接收点击
+	for child in content_hbox.get_children():
+		child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	return root
 
 
