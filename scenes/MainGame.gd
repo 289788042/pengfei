@@ -297,6 +297,7 @@ func _ready() -> void:
 	btn_pay_rent.pressed.connect(_on_pay_rent)
 
 
+	btn_app_map.pressed.connect(_on_app_map)
 	btn_app_wechat.pressed.connect(_on_app_wechat)
 	btn_app_alipay.pressed.connect(_on_app_alipay)
 	btn_app_diary.pressed.connect(_on_app_diary)
