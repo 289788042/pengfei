@@ -1423,10 +1423,16 @@ func _add_chat_bubble(sender: String, text: String) -> void:
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		wrapper.add_child(spacer)
 		wrapper.add_child(bubble)
+		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bubble.size_flags_stretch_ratio = 2.5
+		spacer.size_flags_stretch_ratio = 1
 	else:
 		wrapper.add_child(bubble)
+		bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bubble.size_flags_stretch_ratio = 2.5
 		var spacer := Control.new()
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		spacer.size_flags_stretch_ratio = 1
 		wrapper.add_child(spacer)
 
 	chat_msg_container.add_child(wrapper)
