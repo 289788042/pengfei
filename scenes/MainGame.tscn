@@ -2048,26 +2048,6 @@ text = "+ 发送消息"
 
 
 
-[node name="Btn_ChatAction1" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel" unique_id=127271386]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
-text = "聊天"
-
-[node name="Btn_ChatAction2" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatActionPanel" unique_id=1075252720]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
-text = "约会"
-
 
 
 [node name="Btn_CloseWeChat" type="Button" parent="WeChatMenu" unique_id=19403083]
