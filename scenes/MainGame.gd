@@ -47,8 +47,7 @@ enum Phase { WEEKDAY, WEEKEND, EVENT, MONTH_END, TRANSITION, ENDING, GAME_OVER }
 @onready var wc_chat_view: Control = %WCChatView
 @onready var label_chat_name: Label = %LabelChatName
 @onready var chat_msg_container: VBoxContainer = %ChatMsgContainer
-@onready var chat_input_field: LineEdit = %ChatInputField
-@onready var btn_chat_send: Button = %Btn_ChatSend
+@onready var chat_input_field: Button = %ChatInputField
 @onready var btn_chat_back: Button = %Btn_ChatBack
 @onready var moments_list: VBoxContainer = %MomentsList
 
@@ -285,7 +284,7 @@ func _ready() -> void:
 	tab_contacts.pressed.connect(_on_wc_tab.bind(0))
 	tab_moments.pressed.connect(_on_wc_tab.bind(1))
 	btn_chat_back.pressed.connect(_on_chat_back)
-	btn_chat_send.pressed.connect(_on_chat_send)
+	chat_input_field.pressed.connect(_on_chat_send)
 	btn_pay_rent.pressed.connect(_on_pay_rent)
 
 
@@ -1448,11 +1447,6 @@ func _show_chat_action_menu() -> void:
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 2)
 	_chat_menu_panel.add_child(vbox)
-	var text: String = chat_input_field.text.strip_edges()
-	## 如果有文字，显示发送消息
-	if text != "":
-		_add_menu_btn(vbox, "发送消息", func() -> void:
-			_send_text_message(text))
 	## 根据 NPC 添加选项
 	match _current_chat_npc:
 		"family_group":
@@ -1472,7 +1466,7 @@ func _show_chat_action_menu() -> void:
 			if npc_data["level"] >= 2:
 				_add_menu_btn(vbox, "约会", func() -> void: _on_date_npc(_current_chat_npc))
 	## 删除好友
-	_add_menu_btn(vbox, "删除好友", func() -> void: _do_delete_friend())
+	_add_menu_btn(vbox, "删除好友", Color(1, 0.2, 0.2, 1), func() -> void: _do_delete_friend())
 	## 取消
 	_add_menu_btn(vbox, "取消", func() -> void:
 		if is_instance_valid(_chat_menu_panel):
@@ -1496,11 +1490,11 @@ func _send_text_message(text: String) -> void:
 	_refresh_wechat_ui()
 
 
-func _add_menu_btn(parent: Control, text: String, callback: Callable) -> void:
+func _add_menu_btn(parent: Control, text: String, color: Color = WC_TEXT_PRIMARY, callback: Callable = func() -> void: pass) -> void:
 	var btn := Button.new()
 	btn.text = text
 	btn.add_theme_font_size_override("font_size", 13)
-	btn.add_theme_color_override("font_color", WC_TEXT_PRIMARY)
+	btn.add_theme_color_override("font_color", color)
 	btn.pressed.connect(func() -> void:
 		if is_instance_valid(_chat_menu_panel):
 			_chat_menu_panel.queue_free()

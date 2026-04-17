@@ -2034,20 +2034,17 @@ custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="ChatInputField" type="LineEdit" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar" unique_id=607311306]
+[node name="ChatInputField" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar" unique_id=607311306]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "发送消息..."
-
-[node name="Btn_ChatSend" type="Button" parent="WeChatMenu/WCChatView/ChatViewBG/ChatViewVBox/ChatInputBar" unique_id=604627440]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 36)
-layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 40)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("StyleBoxFlat_wc_green_btn")
-text = "发送"
+theme_override_font_sizes/font_size = 16
+text = "+ 发送消息"
+
+
 
 
 
