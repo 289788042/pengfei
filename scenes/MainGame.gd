@@ -1418,10 +1418,9 @@ func _add_chat_bubble(sender: String, text: String) -> void:
 
 	## 头像
 	var avatar := ColorRect.new()
-	avatar.custom_minimum_size = Vector2(36, 36)
+	avatar.custom_minimum_size = Vector2(40, 40)
 	avatar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	avatar.size_flags_stretch_ratio = 0.0
-	avatar.z_index = -1
 	if is_self:
 		avatar.color = Color(0.3, 0.7, 0.9, 1)
 	else:
