@@ -1857,6 +1857,7 @@ size_flags_horizontal = 3
 
 [node name="Btn_WCSearch" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCTopBar/WCTopHBox" unique_id=1587089448]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)

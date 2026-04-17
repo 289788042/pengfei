@@ -285,7 +285,7 @@ func _ready() -> void:
 	btn_close_wechat.pressed.connect(_on_close_wechat)
 	_build_chat_items()
 	btn_wc_back.pressed.connect(_on_close_wechat)
-	btn_wc_search.pressed.connect(_on_wc_search_pressed)
+		# btn_wc_search removed
 	tab_contacts.pressed.connect(_on_wc_tab.bind(0))
 	tab_moments.pressed.connect(_on_wc_tab.bind(1))
 	btn_chat_back.pressed.connect(_on_chat_back)
@@ -1122,6 +1122,8 @@ func _on_app_wechat() -> void:
 	_refresh_wechat_ui()
 	_on_wc_tab(0)
 	wechat_menu.mouse_filter = Control.MOUSE_FILTER_PASS
+	if not wechat_menu.gui_input.is_connected(_on_wechat_gui_input):
+		wechat_menu.gui_input.connect(_on_wechat_gui_input)
 	wechat_menu.visible = true
 
 func _on_app_alipay() -> void:
@@ -1253,6 +1255,7 @@ func _create_chat_item(npc_id: String, npc_data: Dictionary) -> PanelContainer:
 	)
 
 	var content_hbox := HBoxContainer.new()
+	content_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content_hbox.add_theme_constant_override("separation", 10)
 	root.add_child(content_hbox)
 
@@ -1262,6 +1265,7 @@ func _create_chat_item(npc_id: String, npc_data: Dictionary) -> PanelContainer:
 
 	var avatar := ColorRect.new()
 	avatar.custom_minimum_size = Vector2(48, 48)
+	avatar.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	if npc_id == "family_group":
 		avatar.color = Color(1.0, 0.6, 0.2, 1)
 	elif npc_id == "xiao_ya":
@@ -1304,6 +1308,13 @@ func _create_chat_item(npc_id: String, npc_data: Dictionary) -> PanelContainer:
 	return root
 
 
+func _on_wechat_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		if wc_chat_view.visible:
+			_on_chat_back()
+			return
+		_on_close_wechat()
+
 func _on_close_wechat() -> void:
 	if wc_chat_view.visible:
 		_on_chat_back()
@@ -1328,8 +1339,6 @@ func _on_wc_tab(tab_idx: int) -> void:
 	## 隐藏子视图
 	wc_chat_view.visible = false
 
-func _on_wc_search_pressed() -> void:
-	show_message("微信搜索功能暂未开放")
 
 func _open_chat_view(npc_id: String) -> void:
 	_current_chat_npc = npc_id
