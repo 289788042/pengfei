@@ -42,6 +42,19 @@ func _ready() -> void:
 		lock.unlock_success.connect(_on_unlocked)
 
 
+## 开发阶段：按 F2 直接跳过开场，用默认属性进入游戏
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.keycode == KEY_F2 and event.pressed:
+		# 直接用默认数据跳过开场
+		GameManager.player_name = "测试"
+		GameManager.player_zodiac = "火象"
+		GameManager.max_energy = 120
+		GameManager.energy = 120
+		GameManager.charm += 5
+		GameManager.load_npc_data()
+		get_tree().change_scene_to_file("res://scenes/MainGame.tscn")
+
+
 # ==================== 星象选择逻辑 ====================
 
 ## 选择某个星象时调用
