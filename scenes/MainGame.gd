@@ -629,6 +629,8 @@ func _show_wechat_choices_phase() -> void:
 		dialog_box.modulate.a = 0.0
 		dialog_box.visible = false
 		return
+	dialog_box.visible = true
+	dialog_box.modulate.a = 1.0
 	dialog_text.visible = false
 	if is_instance_valid(_gal_choice_container):
 		_gal_choice_container.queue_free()
