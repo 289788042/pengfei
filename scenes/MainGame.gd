@@ -385,12 +385,12 @@ func _input(event: InputEvent) -> void:
 				if dialog_box.get_global_rect().has_point(event.global_position):
 					if _gal_pages.size() > 0:
 						_gal_on_click()
+						get_viewport().set_input_as_handled()
 					elif is_instance_valid(_gal_choice_container):
-						pass  # 选择按钮自行处理点击
+						pass  # 选择按钮自行处理点击，不消耗事件
 					else:
 						_dismiss_dialog()
-					get_viewport().set_input_as_handled()
-
+						get_viewport().set_input_as_handled()
 
 ## 右键返回：按优先级关闭当前最上层弹窗
 func _close_top_popup() -> void:
