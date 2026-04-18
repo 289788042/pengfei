@@ -1719,7 +1719,10 @@ func _on_wc_tab(tab_idx: int) -> void:
 func _open_chat_view(npc_id: String) -> void:
 	_current_chat_npc = npc_id
 	var npc_data: Dictionary = GameManager.npcs[npc_id]
-	label_chat_name.text = npc_data["name"]
+	if npc_id == "family_group":
+		label_chat_name.text = npc_data["name"] + "  亲情: %d" % npc_data["affection"]
+	else:
+		label_chat_name.text = npc_data["name"] + "  好感: %d" % npc_data["affection"]
 	## 渲染消息气泡
 	while chat_msg_container.get_child_count() > 0:
 		var _c := chat_msg_container.get_child(0)
@@ -1826,7 +1829,7 @@ func _show_chat_action_menu() -> void:
 	_chat_menu_panel.add_child(vbox)
 	## 剧本NPC日常闲聊
 	if GameManager.is_npc_unlocked(_current_chat_npc):
-		_add_menu_btn(vbox, "日常闲聊", func() -> void: _on_daily_chat())
+		_add_menu_btn(vbox, "日常闲聊 (-10精力)", func() -> void: _on_daily_chat())
 	## 根据 NPC 添加选项
 	match _current_chat_npc:
 		"family_group":
@@ -1842,7 +1845,8 @@ func _show_chat_action_menu() -> void:
 				1: _add_menu_btn(vbox, "赴约高级下午茶 (-20精力, -800金)", func() -> void: _on_chat_xiao_ya())
 				2: _add_menu_btn(vbox, "听她哭诉渣男 (-20精力)", func() -> void: _on_chat_xiao_ya())
 		_:
-			_add_menu_btn(vbox, "吐槽 (-10精力)", func() -> void: _on_chat_npc(_current_chat_npc))
+			if _current_chat_npc == "lin_fan":
+				_add_menu_btn(vbox, "日常吐槽 (-10精力)", func() -> void: _on_chat_npc(_current_chat_npc))
 			if npc_data["level"] >= 2:
 				_add_menu_btn(vbox, "约会", func() -> void: _on_date_npc(_current_chat_npc))
 	## 删除好友
@@ -1872,6 +1876,11 @@ func _show_chat_action_menu() -> void:
 # ==================== 日常闲聊（防重复抽卡） ====================
 
 func _on_daily_chat() -> void:
+	## 消耗精力
+	if GameManager.energy < 10:
+		show_message("精力不足，没力气聊天了！")
+		return
+	GameManager.modify_stat("energy", -10)
 	## 关闭菜单
 	if is_instance_valid(_chat_menu_panel):
 		_chat_menu_panel.queue_free()
