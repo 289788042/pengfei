@@ -22,8 +22,7 @@ signal invest_settled(safe_profit: int, risk_profit: int)
 signal aging_decayed
 ## 春节回家事件（显示扣款和情绪结算提示）
 signal spring_festival(msg: String)
-## 林凡结局判定（35岁+林凡Lv≥2时发出，等待玩家做出彩礼选择）
-signal lin_fan_ending_check()
+
 
 # ==================== 时间系统 ====================
 
@@ -89,8 +88,6 @@ var invest_risk: int = 0
 var game_finished: bool = false
 ## 是否正在等待月度结算确认
 var awaiting_month_settle: bool = false
-## 是否正在等待林凡结局彩礼选择
-var awaiting_ending_choice: bool = false
 
 ## 愧疚debuff剩余周数（每周情绪-10）
 var guilt_debuff_weeks: int = 0
@@ -108,10 +105,12 @@ var degree: int = 0
 var job_level: int = 0
 ## 夜校学分进度（满12获得本科）
 var night_school_progress: int = 0
+## 王老师上次推送消息的周数（用于隔4周推送逻辑）
+var _wang_teacher_last_push_week: int = 0
+var _family_chat_used_indices: Array = []
 
 
-## 闺蜜小雅蝴蝶效应状态 (0:合租室友, 1:傍上大款的阔太太, 2:被骗的怨妇)
-var xiaoya_state: int = 0
+
 
 # ==================== NPC 剧本数据 ====================
 
@@ -130,12 +129,7 @@ var player_zodiac: String = ""
 
 var npcs: Dictionary = {
 	"family_group": {"name": "相亲相爱一家人 (爸妈)", "affection": 50, "level": 1, "unlocked": true, "warning_msg": "你妈昨天又在朋友圈转发了《女孩过了25岁还不结婚有多可怕》", "blocked": false, "messages": [], "last_seen_week": 0},
-	"lin_fan": {"name": "林凡", "affection": 0, "level": 1, "unlocked": true, "warning_msg": "", "blocked": false, "messages": [], "last_seen_week": 0},
-	"chen_yu": {"name": "陈宇", "affection": 0, "level": 1, "unlocked": false, "warning_msg": "朋友圈三天可见，且都是深夜emo文案，疑似海王", "blocked": false, "messages": [], "last_seen_week": 0},
-	"gu_lin": {"name": "顾凛", "affection": 0, "level": 1, "unlocked": false, "warning_msg": "只发高端商务局，从不回复你的评论，高阶玩家", "blocked": false, "messages": [], "last_seen_week": 0},
-	"zhang_minghao": {"name": "张明浩", "affection": 0, "level": 1, "unlocked": false, "warning_msg": "经常在工作群画大饼，爹味极重", "blocked": false, "messages": [], "last_seen_week": 0},
 	"wang_teacher": {"name": "尚德夜校-王老师", "affection": 0, "level": 1, "unlocked": true, "warning_msg": "不逼自己一把，你永远只能拿底薪！", "blocked": false, "messages": [], "last_seen_week": 0},
-	"xiao_ya": {"name": "小雅 (大专闺蜜)", "affection": 50, "level": 1, "unlocked": true, "warning_msg": "", "blocked": false, "messages": [], "last_seen_week": 0},
 }
 
 # ==================== 属性名中文映射 ====================
@@ -174,7 +168,6 @@ func modify_stat(stat_name: String, amount: int) -> void:
 			push_warning("GameManager: 未知的属性名 '%s'" % stat_name)
 			return
 
-	check_npc_unlocks()
 	stats_updated.emit()
 
 
@@ -201,18 +194,6 @@ func add_npc_affection(npc_id: String, amount: int) -> void:
 func advance_week() -> void:
 	if game_finished:
 		return
-
-	# 闺蜜蝴蝶效应：半年后（第24周）触发小雅命运分歧
-	if turn_count == 24 and xiaoya_state == 0:
-		xiaoya_state = randi() % 2 + 1
-		match xiaoya_state:
-			1:
-				npcs["xiao_ya"]["name"] = "小雅 (阔太太)"
-				npcs["xiao_ya"]["warning_msg"] = "最近朋友圈全是马尔代夫和爱马仕..."
-			2:
-				npcs["xiao_ya"]["name"] = "小雅 (被骗的怨妇)"
-				npcs["xiao_ya"]["warning_msg"] = "她上周哭着说被那个男的骗了十几万..."
-		npc_unlocked.emit("xiao_ya", npcs["xiao_ya"]["name"])
 
 	week_in_month += 1
 	# 精力恢复
@@ -355,21 +336,7 @@ func start_new_month() -> void:
 		else:
 			sf_msg += "平平淡淡又是一年。\n"
 
-		# 春节关系人审视：找最高等级的可约会NPC
-		var highest_npc_id: String = ""
-		var highest_level: int = 0
-		for check_id in ["lin_fan", "chen_yu", "gu_lin", "zhang_minghao"]:
-			if npcs[check_id]["unlocked"] and npcs[check_id]["level"] > highest_level:
-				highest_level = npcs[check_id]["level"]
-				highest_npc_id = check_id
-		if highest_npc_id == "gu_lin":
-			eq = maxi(eq - 10, 0)
-			sanity = maxi(sanity - 20, 0)
-			sf_msg += "\n过年聚会上，顾凛的助理发来一条消息：'顾总说新年快乐。'你把手机翻了过去。(情商 -10, 情绪 -20)"
-		elif highest_npc_id == "lin_fan":
-			sanity = mini(sanity + 80, max_sanity)
-			sf_msg += "\n林凡提着两袋橘子出现在你家楼下，被你妈拉进屋吃了顿饺子。你看着他在厨房帮忙的背影，突然觉得这样也挺好。(情绪 +80)"
-
+		#
 		spring_festival.emit(sf_msg)
 
 		# 春节后破产惩罚
@@ -383,37 +350,14 @@ func start_new_month() -> void:
 
 		# 35岁结局判定
 		if age >= 35:
-			if npcs["lin_fan"]["level"] >= 2:
-				# 林凡路线：等待玩家做出彩礼选择
-				awaiting_ending_choice = true
-				lin_fan_ending_check.emit()
-				stats_updated.emit()
-				return
-			else:
-				# 精英结局：没有林凡
-				game_finished = true
-				game_ended.emit("elite")
-				stats_updated.emit()
-				return
+			game_finished = true
+			game_ended.emit("elite")
+			stats_updated.emit()
+			return
 
 	# 继续推进
 	turn_count += 1
 	week_advanced.emit(turn_count)
-	stats_updated.emit()
-
-
-## 林凡结局最终确认（由MainGame调用）
-func finalize_lin_fan_ending(is_true_love: bool) -> void:
-	awaiting_ending_choice = false
-	game_finished = true
-	if is_true_love:
-		if money >= 50000:
-			money -= 50000
-			game_ended.emit("true_love")
-		else:
-			game_ended.emit("regret")
-	else:
-		game_ended.emit("elite")
 	stats_updated.emit()
 
 
@@ -504,17 +448,31 @@ func unlock_npc(npc_id: String) -> void:
 	npc_unlocked.emit(npc_id, display_name)
 
 
-func check_npc_unlocks() -> void:
-	if not npcs["chen_yu"]["unlocked"] and eq >= 20:
-		npcs["chen_yu"]["unlocked"] = true
-		npc_unlocked.emit("chen_yu", npcs["chen_yu"]["name"])
-	if charm >= 20 and not npcs["gu_lin"]["unlocked"]:
-		npcs["gu_lin"]["unlocked"] = true
-		npc_unlocked.emit("gu_lin", npcs["gu_lin"]["name"])
-	if not npcs["zhang_minghao"]["unlocked"] and month >= 3:
-		npcs["zhang_minghao"]["unlocked"] = true
-		npc_unlocked.emit("zhang_minghao", npcs["zhang_minghao"]["name"])
 
+
+## 增加 NPC 未读消息数
+func add_unread(npc_id: String, count: int = 1) -> void:
+	if not npcs.has(npc_id):
+		return
+	if not npcs[npc_id].has("unread"):
+		npcs[npc_id]["unread"] = 0
+	npcs[npc_id]["unread"] += count
+	stats_updated.emit()
+
+
+## 清零 NPC 未读消息数
+func clear_unread(npc_id: String) -> void:
+	if npcs.has(npc_id):
+		npcs[npc_id]["unread"] = 0
+		stats_updated.emit()
+
+
+## 获取所有 NPC 未读总数
+func get_total_unread() -> int:
+	var total: int = 0
+	for npc_id in npcs:
+		total += npcs[npc_id].get("unread", 0)
+	return total
 
 
 ## 检查连续行为死法（加班/吃土），返回死法信息字典或空字典

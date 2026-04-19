@@ -158,7 +158,7 @@ func _build_scene_tab() -> void:
 	)
 
 	_add_scene_btn("解锁全部微信NPC", func():
-		for npc_id in ["family_group", "lin_fan", "chen_yu", "gu_lin", "zhang_minghao", "wang_teacher", "xiao_ya"]:
+		for npc_id in ["family_group", "shen_yi", "wang_teacher"]:
 			if GameManager.npcs.has(npc_id):
 				GameManager.npcs[npc_id]["unlocked"] = true
 		for npc in GameManager.npc_database:
