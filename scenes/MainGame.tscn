@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://4efrj08wbmj8" path="res://scenes/MainGame.gd" id="1_8etcy"]
 [ext_resource type="Theme" uid="uid://cikxg02q2to20" path="res://UI/GlobalPixelTheme.tres" id="1_xej52"]
-[ext_resource type="Script" uid="uid://wupulnqs5tac" path="res://scripts/DebugPanel.gd" id="3_p73vr"]
+[ext_resource type="Script" uid="uid://b7vav7q3jvpi5" path="res://scripts/DebugPanel.gd" id="3_p73vr"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_smartphone"]
 bg_color = Color(0.12, 0.12, 0.14, 1)
@@ -1120,117 +1120,29 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0, 0, 0, 0.6)
 
-[node name="BaoTaoPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1721109811]
+[node name="BaoTaoMenu" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1128091651]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.4, 0.15, 0.1, 0.95)
+color = Color(0, 0, 0, 0.6)
 
-[node name="BTCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup" unique_id=1502610938]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BTVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter" unique_id=44295710]
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="LabelBTTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1674217372]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.53333336, 0, 1)
-theme_override_font_sizes/font_size = 22
-text = "【宝淘】网购平台"
-horizontal_alignment = 1
-
-[node name="LabelBTDebt" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1340880063]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.26666668, 0.26666668, 1)
-text = "当前花呗欠款：0"
-horizontal_alignment = 1
-
-[node name="Btn_BT_Skincare" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1788453116]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "大牌护肤套装 -> 花呗+800, 颜值+5, 情绪+5"
-
-[node name="Btn_BT_Fashion" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1689629728]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "快时尚穿搭 -> 花呗+1500, 颜值+8, 情绪+10"
-
-[node name="Btn_CloseBT" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/BaoTaoPopup/BTCenter/BTVBox" unique_id=1532478984]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "关闭宝淘"
-
-[node name="TuanMeiPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1708396881]
+[node name="TuanMeiMenu" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1686350053]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.35, 0.1, 0.35, 0.95)
+color = Color(0, 0, 0, 0.6)
 
-[node name="TMCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup" unique_id=1919310736]
-layout_mode = 1
-anchors_preset = 15
+[node name="JobMenu" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=255088709]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="TMVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter" unique_id=1325320539]
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="LabelTMTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=1429844436]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.86666673, 0.53333336, 0.86666673, 1)
-theme_override_font_sizes/font_size = 22
-text = "【团美医美】高端变美"
-horizontal_alignment = 1
-
-[node name="LabelTMDebt" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=2069125259]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.26666668, 0.26666668, 1)
-text = "当前花呗欠款：0"
-horizontal_alignment = 1
-
-[node name="Btn_TM_Injection" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=1812575675]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "轻医美(水光针) -> 花呗+6000, 颜值+25, 情绪+20"
-
-[node name="Btn_TM_Surgery" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=1655837622]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "全脸高级微调 -> 花呗+20000, 颜值+50, 情商-10, 情绪+30"
-
-[node name="Btn_CloseTM" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/TuanMeiPopup/TMCenter/TMVBox" unique_id=645821617]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "关闭团美"
+color = Color(0, 0, 0, 0.6)
 
 [node name="ZodiacPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=883157341]
 unique_name_in_owner = true
@@ -1274,70 +1186,6 @@ custom_minimum_size = Vector2(400, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "关闭星座"
-
-[node name="HousePopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=990092027]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0, 0.3, 0.4, 0.95)
-
-[node name="HouseCenter" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup" unique_id=1317351164]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-
-[node name="HouseVBox" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter" unique_id=445892974]
-layout_mode = 2
-theme_override_constants/separation = 20
-
-[node name="LabelHouseTitle" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=527038249]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 22
-text = "【贝壳找房】租房平台"
-horizontal_alignment = 1
-
-[node name="LabelHouseStatus" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=1314618834]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "当前住房：城中村单间 (月租 1500)"
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="Btn_House_Village" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=575562651]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "城中村单间 (房租 1500, 无加成)"
-
-[node name="Btn_House_Apartment" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=114735979]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "精装一居室 (房租 4000, 每周情绪+10, 颜值+5)"
-
-[node name="Btn_House_Luxury" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=439453356]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "CBD大平层 (房租 12000, 情绪恢复极快, 高概率遇优质男)"
-
-[node name="Btn_CloseHouse" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/HousePopup/HouseCenter/HouseVBox" unique_id=1826888292]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(400, 50)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "返回桌面"
 
 [node name="DatingPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1583552558]
 unique_name_in_owner = true
@@ -1542,6 +1390,67 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_7d840")
 theme_override_styles/hover = SubResource("StyleBoxFlat_utvnp")
 text = "取消支付"
 
+[node name="LabelPaymentCost2" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=731293259]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.2, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "请选择支付方式"
+horizontal_alignment = 1
+
+[node name="BtnPayMix2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=566316451]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.85, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_7fyak")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_fpdtd")
+theme_override_styles/hover = SubResource("StyleBoxFlat_1hpqh")
+text = "现金支付"
+
+[node name="BtnPayHuabei2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=1142234268]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.85, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_7f7ne")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_rtryj")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vs82q")
+text = "全部花呗透支"
+
+[node name="BtnPayCancel2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=670777307]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.85, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_qsiih")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_7d840")
+theme_override_styles/hover = SubResource("StyleBoxFlat_utvnp")
+text = "取消支付"
+
+[node name="PayVBox2" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164" unique_id=138032402]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="_PanelContainer_112164" type="PanelContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163" unique_id=940823865]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_p73vr")
+
+[node name="_CenterContainer_112163" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup" unique_id=559682441]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
 [node name="DiaryPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1237836593]
 unique_name_in_owner = true
 visible = false
@@ -1614,11 +1523,61 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_omf1d")
 theme_override_styles/hover = SubResource("StyleBoxFlat_j5smc")
 text = "消费"
 
+[node name="Btn_DiaryFilter_全部2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=1109728421]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_vtnxl")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_16xnu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_lupq4")
+text = "全部"
+
+[node name="Btn_DiaryFilter_日常2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=1671168235]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_4h46e")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_cf4d6")
+theme_override_styles/hover = SubResource("StyleBoxFlat_r0bag")
+text = "日常"
+
+[node name="Btn_DiaryFilter_提升2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=17470182]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_hogh4")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_i1eed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_av4dx")
+text = "提升"
+
+[node name="Btn_DiaryFilter_社交2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=744282496]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_0e2px")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_jbbka")
+theme_override_styles/hover = SubResource("StyleBoxFlat_31l0t")
+text = "社交"
+
+[node name="Btn_DiaryFilter_消费2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryFilterHBox" unique_id=1283439214]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_nnwqk")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_omf1d")
+theme_override_styles/hover = SubResource("StyleBoxFlat_j5smc")
+text = "消费"
+
 [node name="DiaryScroll" type="ScrollContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=-1294967283]
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="DiaryLogContainer" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryScroll" unique_id=-1294967282]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DiaryLogContainer2" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryScroll" unique_id=850638478]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -1634,6 +1593,40 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_6oxnh")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_qf85o")
 theme_override_styles/hover = SubResource("StyleBoxFlat_qnsrl")
 text = "关闭日记"
+
+[node name="DiaryFilterHBox2" type="HBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=1347859971]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DiaryScroll2" type="ScrollContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=1803683861]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BtnCloseDiary2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=706400293]
+unique_name_in_owner = true
+visible = false
+z_index = 70
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_6oxnh")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_qf85o")
+theme_override_styles/hover = SubResource("StyleBoxFlat_qnsrl")
+text = "关闭日记"
+
+[node name="DiaryVBox2" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173" unique_id=832656463]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="_PanelContainer_112173" type="PanelContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172" unique_id=963564077]
+custom_minimum_size = Vector2(600, 500)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_t4bxf")
+
+[node name="_CenterContainer_112172" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup" unique_id=828147524]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
 
 [node name="LateNightPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1541483336]
 unique_name_in_owner = true
@@ -1686,7 +1679,32 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("StyleBoxFlat_5h3qe")
 theme_override_styles/hover = SubResource("StyleBoxFlat_5wvrv")
-text = "放下手机，强行闭眼！ (代价：颜值-2, 情绪-10, 精力-20)"
+
+[node name="HouseMenu" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=147572853]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="PaymentPopup2" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=405191612]
+unique_name_in_owner = true
+visible = false
+z_index = 60
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="DiaryPopup2" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=194620749]
+unique_name_in_owner = true
+visible = false
+z_index = 55
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
 
 [node name="Btn_NextWeek" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea" unique_id=1105591854]
 unique_name_in_owner = true
@@ -1878,6 +1896,15 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_wc_tabbar")
 [node name="TabHBox" type="HBoxContainer" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar" unique_id=1320569379]
 layout_mode = 2
 theme_override_constants/separation = 0
+
+[node name="TabChats" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar/TabHBox" unique_id=901234567]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.4, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "微信"
 
 [node name="TabContacts" type="Button" parent="WeChatMenu/WCPhoneCenter/WCPanelContainer/WCVBox/WCBottomTabBar/TabHBox" unique_id=1318417246]
 unique_name_in_owner = true

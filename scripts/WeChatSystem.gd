@@ -323,13 +323,17 @@ func _on_close_wechat() -> void:
 func _on_wc_tab(tab_idx: int) -> void:
 	_current_tab = tab_idx
 	_main.wc_chat_list_view.visible = (tab_idx == 0)
-	_main.wc_moments_content.visible = (tab_idx == 1)
+	_main.wc_contacts_view.visible = (tab_idx == 1)
+	_main.wc_moments_content.visible = (tab_idx == 2)
 	## 更新tab栏高亮颜色
-	for i in [_main.tab_contacts, _main.tab_moments]:
+	for i in [_main.tab_chats, _main.tab_contacts, _main.tab_moments]:
 		i.add_theme_color_override("font_color", WC_TEXT_SECONDARY)
 	match tab_idx:
-		0: _main.tab_contacts.add_theme_color_override("font_color", WC_GREEN)
+		0: _main.tab_chats.add_theme_color_override("font_color", WC_GREEN)
 		1:
+			_main.tab_contacts.add_theme_color_override("font_color", WC_GREEN)
+			_build_contacts_list()
+		2:
 			_main.tab_moments.add_theme_color_override("font_color", WC_GREEN)
 			_build_moments()
 	## 隐藏子视图

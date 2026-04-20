@@ -37,6 +37,7 @@ enum Phase { WEEKDAY, WEEKEND, EVENT, MONTH_END, TRANSITION, ENDING, GAME_OVER }
 @onready var wc_contacts_view: VBoxContainer = %WCContactsView
 @onready var wc_contact_list: VBoxContainer = %WCContactList
 @onready var wc_moments_content: ScrollContainer = %WCMomentsContent
+@onready var tab_chats: Button = %TabChats
 @onready var tab_contacts: Button = %TabContacts
 @onready var tab_moments: Button = %TabMoments
 @onready var wc_chat_view: Control = %WCChatView
@@ -58,14 +59,12 @@ enum Phase { WEEKDAY, WEEKEND, EVENT, MONTH_END, TRANSITION, ENDING, GAME_OVER }
 @onready var btn_app_dating: Button = %BtnApp_Dating
 @onready var btn_app_diary: Button = %BtnApp_Diary
 
-## BOSS弯聘弹窗
+## BOSS弯聘 / 淘宝 / 团美 / 贝壳 覆盖层容器
 @onready var btn_app_job: Button = %BtnApp_Job
-@onready var job_popup: ColorRect = %JobPopup
-@onready var label_job_status: Label = %LabelJobStatus
-@onready var btn_job_admin: Button = %Btn_Job_Admin
-@onready var btn_job_media: Button = %Btn_Job_Media
-@onready var btn_job_client: Button = %Btn_Job_Client
-@onready var btn_close_job: Button = %Btn_CloseJob
+@onready var job_menu: ColorRect = %JobMenu
+@onready var baotao_menu: ColorRect = %BaoTaoMenu
+@onready var tuanmei_menu: ColorRect = %TuanMeiMenu
+@onready var house_menu: ColorRect = %HouseMenu
 
 @onready var weekday_panel: ColorRect = %WeekdayPanel
 @onready var btn_work_normal: Button = %Btn_Work_Normal
@@ -140,32 +139,16 @@ var _arrow_tween: Tween = null
 @onready var btn_food_mid: Button = %Btn_Food_Mid
 @onready var btn_food_high: Button = %Btn_Food_High
 
-## 宝淘弹窗
-@onready var baotao_popup: ColorRect = %BaoTaoPopup
-@onready var label_bt_debt: Label = %LabelBTDebt
-@onready var btn_bt_skincare: Button = %Btn_BT_Skincare
-@onready var btn_bt_fashion: Button = %Btn_BT_Fashion
-@onready var btn_close_bt: Button = %Btn_CloseBT
+## 宝淘弹窗 (覆盖层模式)
 
-## 团美医美弹窗
-@onready var tuanmei_popup: ColorRect = %TuanMeiPopup
-@onready var label_tm_debt: Label = %LabelTMDebt
-@onready var btn_tm_injection: Button = %Btn_TM_Injection
-@onready var btn_tm_surgery: Button = %Btn_TM_Surgery
-@onready var btn_close_tm: Button = %Btn_CloseTM
+## 团美医美弹窗 (覆盖层模式)
 
 ## 星座弹窗
 @onready var zodiac_popup: ColorRect = %ZodiacPopup
 @onready var label_zodiac_content: Label = %LabelZContent
 @onready var btn_close_zodiac: Button = %Btn_CloseZodiac
 
-## 贝壳找房弹窗
-@onready var house_popup: ColorRect = %HousePopup
-@onready var label_house_status: Label = %LabelHouseStatus
-@onready var btn_house_village: Button = %Btn_House_Village
-@onready var btn_house_apartment: Button = %Btn_House_Apartment
-@onready var btn_house_luxury: Button = %Btn_House_Luxury
-@onready var btn_close_house: Button = %Btn_CloseHouse
+## 贝壳找房弹窗 (覆盖层模式)
 
 ## 滑动交友弹窗
 @onready var dating_popup: ColorRect = %DatingPopup
@@ -254,8 +237,9 @@ func _ready() -> void:
 	## 初始推送一批未读消息（模拟游戏开始前已有的消息）
 	_push_npc_unread_messages()
 	btn_wc_back.pressed.connect(wechat._on_close_wechat)
-	tab_contacts.pressed.connect(wechat._on_wc_tab.bind(0))
-	tab_moments.pressed.connect(wechat._on_wc_tab.bind(1))
+	tab_chats.pressed.connect(wechat._on_wc_tab.bind(0))
+	tab_contacts.pressed.connect(wechat._on_wc_tab.bind(1))
+	tab_moments.pressed.connect(wechat._on_wc_tab.bind(2))
 	btn_chat_back.pressed.connect(wechat._on_chat_back)
 	chat_input_field.pressed.connect(wechat._on_chat_send)
 	btn_pay_rent.pressed.connect(_on_pay_rent)
@@ -272,29 +256,12 @@ func _ready() -> void:
 	btn_app_dating.pressed.connect(_on_app_dating)
 
 	btn_app_job.pressed.connect(_on_app_job)
-	btn_job_admin.pressed.connect(_on_job_admin)
-	btn_job_media.pressed.connect(_on_job_media)
-	btn_job_client.pressed.connect(_on_job_client)
-	btn_close_job.pressed.connect(_on_close_job)
 
 	btn_food_low.pressed.connect(_on_food_low)
 	btn_food_mid.pressed.connect(_on_food_mid)
 	btn_food_high.pressed.connect(_on_food_high)
 
-	btn_bt_skincare.pressed.connect(_on_bt_skincare)
-	btn_bt_fashion.pressed.connect(_on_bt_fashion)
-	btn_close_bt.pressed.connect(_on_close_bt)
-
-	btn_tm_injection.pressed.connect(_on_tm_injection)
-	btn_tm_surgery.pressed.connect(_on_tm_surgery)
-	btn_close_tm.pressed.connect(_on_close_tm)
-
 	btn_close_zodiac.pressed.connect(_on_close_zodiac)
-
-	btn_house_village.pressed.connect(_on_house_village)
-	btn_house_apartment.pressed.connect(_on_house_apartment)
-	btn_house_luxury.pressed.connect(_on_house_luxury)
-	btn_close_house.pressed.connect(_on_close_house)
 
 	btn_pass.pressed.connect(_on_pass)
 	btn_like.pressed.connect(_on_like)
@@ -358,20 +325,20 @@ func _close_top_popup() -> void:
 		return
 	if diary_popup.visible:
 		diary_popup.visible = false
-	if baotao_popup.visible:
-		baotao_popup.visible = false
+	if baotao_menu.visible:
+		baotao_menu.visible = false
 		return
-	if tuanmei_popup.visible:
-		tuanmei_popup.visible = false
+	if tuanmei_menu.visible:
+		tuanmei_menu.visible = false
 		return
-	if house_popup.visible:
-		house_popup.visible = false
+	if house_menu.visible:
+		house_menu.visible = false
 		return
 	if dating_popup.visible:
 		dating_popup.visible = false
 		return
-	if job_popup.visible:
-		job_popup.visible = false
+	if job_menu.visible:
+		job_menu.visible = false
 		return
 	if zodiac_popup.visible:
 		zodiac_popup.visible = false
@@ -721,16 +688,16 @@ func _disable_app_grid() -> void:
 
 
 func _hide_all_popups() -> void:
-	baotao_popup.visible = false
-	tuanmei_popup.visible = false
+	baotao_menu.visible = false
+	tuanmei_menu.visible = false
 	zodiac_popup.visible = false
 	location_menu.visible = false
-	house_popup.visible = false
+	house_menu.visible = false
 	dating_popup.visible = false
 	wechat.force_close()
 	alipay_popup.visible = false
 	diary_popup.visible = false
-	job_popup.visible = false
+	job_menu.visible = false
 
 
 func _show_event(event: Dictionary, after_callback: Callable) -> void:
@@ -776,14 +743,6 @@ func _refresh_ui() -> void:
 	wechat._refresh_wechat_ui()
 
 
-
-func _refresh_debt_display() -> void:
-	var debt_text := "当前花呗欠款：%d" % GameManager.huabei_debt
-	label_bt_debt.text = debt_text
-	label_tm_debt.text = debt_text
-
-
-# ==================== 信号回调 ====================
 
 func _on_stats_updated() -> void:
 	_refresh_ui()
@@ -1011,12 +970,12 @@ func _disable_all() -> void:
 	month_end_popup.visible = false
 	transition_screen.visible = false
 	btn_next_week.visible = false
-	house_popup.visible = false
+	house_menu.visible = false
 	dating_popup.visible = false
 	alipay_popup.visible = false
 	diary_popup.visible = false
 	payment_popup.visible = false
-	job_popup.visible = false
+	job_menu.visible = false
 	wechat.force_close()
 	_hide_all_popups()
 	_disable_app_grid()
@@ -1415,24 +1374,220 @@ func _on_app_diary() -> void:
 	diary_popup.visible = true
 
 func _on_app_baotao() -> void:
-	_refresh_debt_display()
-	baotao_popup.visible = true
+	for child in baotao_menu.get_children():
+		child.queue_free()
+	var debt_info := "花呗欠款：%d 元" % (GameManager.huabei_debt + GameManager.huabei_installment_debt)
+	var items := [
+		{"name": "大牌护肤套装", "icon_color": Color(0.95, 0.45, 0.6), "cost": "800 元 | +5颜值 +5情绪", "action": _on_bt_skincare},
+		{"name": "快时尚穿搭", "icon_color": Color(0.3, 0.7, 0.9), "cost": "1500 元 | +8颜值 +10情绪", "action": _on_bt_fashion},
+	]
+	_build_app_overlay(baotao_menu, "宝淘", Color(0.95, 0.35, 0.35, 1), debt_info, items)
+	baotao_menu.visible = true
 
 func _on_app_tuanmei() -> void:
-	_refresh_debt_display()
-	tuanmei_popup.visible = true
+	for child in tuanmei_menu.get_children():
+		child.queue_free()
+	var debt_info := "花呗欠款：%d 元" % (GameManager.huabei_debt + GameManager.huabei_installment_debt)
+	var items := [
+		{"name": "水光针+热玛吉", "icon_color": Color(0.8, 0.4, 0.8), "cost": "6000 元 | +15颜值", "action": _on_tm_injection},
+		{"name": "全脸微调手术", "icon_color": Color(0.6, 0.2, 0.8), "cost": "20000 元 | +30颜值", "action": _on_tm_surgery},
+	]
+	_build_app_overlay(tuanmei_menu, "团美医美", Color(0.6, 0.3, 0.8, 1), debt_info, items)
+	tuanmei_menu.visible = true
 
 func _on_app_zodiac() -> void:
 	label_zodiac_content.text = "亲爱的%s宝宝，本周运势：\n请注意控制消费，警惕烂桃花哦！" % GameManager.player_zodiac
 	zodiac_popup.visible = true
 
 func _on_app_house() -> void:
-	_refresh_house_status()
-	house_popup.visible = true
+	for child in house_menu.get_children():
+		child.queue_free()
+	var housing_names: Array = ["城中村单间", "精装一居室", "CBD大平层"]
+	var house_name: String = housing_names[GameManager.housing_level]
+	var status := "当前住房：%s (月租 %d) | 押金=2个月房租" % [house_name, GameManager.base_rent]
+	var deposits: Array = [3000, 8000, 24000]
+	var rents: Array = [1500, 4000, 12000]
+	var items := []
+	for i in range(3):
+		var is_current: bool = (GameManager.housing_level == i)
+		var deposit: int = deposits[i]
+		var can_afford: bool = GameManager.money >= deposit
+		var item := {
+			"name": housing_names[i],
+			"icon_color": Color(0.2 + i * 0.3, 0.6, 0.9 - i * 0.3),
+			"cost": "月租 %d | 押金 %d" % [rents[i], deposit],
+			"current": is_current,
+		}
+		if not is_current and not can_afford:
+			item["locked"] = true
+			item["lock_reason"] = "押金不足（需 %d，当前余额 %d）" % [deposit, GameManager.money]
+		elif not is_current:
+			item["action"] = [_on_house_village, _on_house_apartment, _on_house_luxury][i]
+		items.append(item)
+	_build_app_overlay(house_menu, "贝壳找房", Color(0.15, 0.6, 0.7, 1), status, items)
+	house_menu.visible = true
 
 func _on_app_dating() -> void:
 	_refresh_dating_card()
 	dating_popup.visible = true
+
+
+# ==================== 通用App覆盖层构建器 ====================
+
+func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subtitle: String, items: Array) -> void:
+	## 外层圆角面板
+	var panel := PanelContainer.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = 10
+	panel.offset_right = -10
+	panel.offset_top = 0
+	panel.offset_bottom = 0
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.95, 0.95, 0.95, 1)
+	panel_style.set_corner_radius_all(12.0)
+	panel_style.set_content_margin_all(0)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	parent.add_child(panel)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 0)
+	panel.add_child(vbox)
+	## 顶栏
+	var top_bar := PanelContainer.new()
+	top_bar.custom_minimum_size = Vector2(0, 44)
+	var top_style := StyleBoxFlat.new()
+	top_style.bg_color = top_color
+	top_style.set_corner_radius_all(10.0)
+	top_style.set_content_margin_all(8)
+	top_style.corner_detail = 8
+	top_bar.add_theme_stylebox_override("panel", top_style)
+	vbox.add_child(top_bar)
+	var top_hbox := HBoxContainer.new()
+	top_bar.add_child(top_hbox)
+	var title_lbl := Label.new()
+	title_lbl.text = title
+	title_lbl.add_theme_font_size_override("font_size", 18)
+	title_lbl.add_theme_color_override("font_color", Color.WHITE)
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_hbox.add_child(title_lbl)
+	var close_btn := Button.new()
+	close_btn.text = "关闭"
+	close_btn.add_theme_font_size_override("font_size", 13)
+	close_btn.custom_minimum_size = Vector2(50, 30)
+	close_btn.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			parent.visible = false
+	)
+	top_hbox.add_child(close_btn)
+	## 副标题栏（花呗欠款/状态）
+	if subtitle != "":
+		var sub_bar := PanelContainer.new()
+		sub_bar.custom_minimum_size = Vector2(0, 28)
+		var sub_style := StyleBoxFlat.new()
+		sub_style.bg_color = Color(0.9, 0.9, 0.9, 1)
+		sub_style.set_content_margin_all(6)
+		sub_bar.add_theme_stylebox_override("panel", sub_style)
+		vbox.add_child(sub_bar)
+		var sub_lbl := Label.new()
+		sub_lbl.text = subtitle
+		sub_lbl.add_theme_font_size_override("font_size", 12)
+		sub_lbl.add_theme_color_override("font_color", Color(0.3, 0.3, 0.3, 1))
+		sub_bar.add_child(sub_lbl)
+	## 滚动区域
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+	var scroll_vbox := VBoxContainer.new()
+	scroll_vbox.add_theme_constant_override("separation", 4)
+	scroll_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(scroll_vbox)
+	## 商品行
+	for item in items:
+		var is_locked: bool = item.get("locked", false)
+		var is_current: bool = item.get("current", false)
+		var row := PanelContainer.new()
+		var row_style := StyleBoxFlat.new()
+		if is_locked:
+			row_style.bg_color = Color(0.88, 0.88, 0.88, 1)
+		elif is_current:
+			row_style.bg_color = Color(0.85, 0.95, 0.85, 1)
+		else:
+			row_style.bg_color = Color.WHITE
+		row_style.set_content_margin_all(10)
+		row_style.set_corner_radius_all(8.0)
+		row.add_theme_stylebox_override("panel", row_style)
+		scroll_vbox.add_child(row)
+		var row_hbox := HBoxContainer.new()
+		row_hbox.add_theme_constant_override("separation", 8)
+		row_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(row_hbox)
+		## 图标
+		var icon := ColorRect.new()
+		icon.custom_minimum_size = Vector2(36, 36)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.color = item.get("icon_color", Color.GRAY)
+		row_hbox.add_child(icon)
+		## 文字区
+		var text_vbox := VBoxContainer.new()
+		text_vbox.add_theme_constant_override("separation", 2)
+		text_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row_hbox.add_child(text_vbox)
+		var name_lbl := Label.new()
+		name_lbl.text = item["name"]
+		name_lbl.add_theme_font_size_override("font_size", 15)
+		if is_locked:
+			name_lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+		row_hbox.add_child(name_lbl)
+		var cost_lbl := Label.new()
+		cost_lbl.text = item.get("cost", "")
+		cost_lbl.add_theme_font_size_override("font_size", 11)
+		cost_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4, 1))
+		row_hbox.add_child(cost_lbl)
+		## 右侧标记
+		if is_current:
+			var cur_lbl := Label.new()
+			cur_lbl.text = "当前"
+			cur_lbl.add_theme_font_size_override("font_size", 13)
+			cur_lbl.add_theme_color_override("font_color", Color(0.2, 0.6, 0.2, 1))
+			cur_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row_hbox.add_child(cur_lbl)
+		elif is_locked:
+			var lock_lbl := Label.new()
+			lock_lbl.text = "X"
+			lock_lbl.add_theme_font_size_override("font_size", 14)
+			lock_lbl.add_theme_color_override("font_color", Color(0.8, 0.3, 0.3, 1))
+			lock_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row_hbox.add_child(lock_lbl)
+			if item.has("lock_reason"):
+				var reason_lbl := Label.new()
+				reason_lbl.text = item["lock_reason"]
+				reason_lbl.add_theme_font_size_override("font_size", 10)
+				reason_lbl.add_theme_color_override("font_color", Color(0.7, 0.3, 0.3, 1))
+				row_hbox.add_child(reason_lbl)
+		else:
+			var arrow_lbl := Label.new()
+			arrow_lbl.text = ">"
+			arrow_lbl.add_theme_font_size_override("font_size", 20)
+			arrow_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75, 1))
+			arrow_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row_hbox.add_child(arrow_lbl)
+		var arrow_mr := Control.new()
+		arrow_mr.custom_minimum_size = Vector2(12, 0)
+		row_hbox.add_child(arrow_mr)
+		## 点击
+		if not is_locked and item.has("action"):
+			var captured_action: Callable = item["action"]
+			row.mouse_filter = Control.MOUSE_FILTER_STOP
+			for child in row_hbox.get_children():
+				child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row.gui_input.connect(func(event: InputEvent) -> void:
+				if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+					parent.visible = false
+					captured_action.call()
+			)
 
 
 # ==================== 地点逻辑 ====================
@@ -1656,7 +1811,6 @@ func _on_bt_skincare() -> void:
 		GameManager.modify_stat("sanity", 5)
 		float_stat("+5 颜值 +5 情绪", 5, get_global_mouse_position())
 		show_message("大牌护肤到货！颜值+5，心情好好~")
-		_refresh_debt_display()
 	)
 
 func _on_bt_fashion() -> void:
@@ -1665,11 +1819,7 @@ func _on_bt_fashion() -> void:
 		GameManager.modify_stat("sanity", 10)
 		float_stat("+8 颜值 +10 情绪", 8, get_global_mouse_position())
 		show_message("快时尚穿搭好评！颜值+8，情绪+10")
-		_refresh_debt_display()
 	)
-
-func _on_close_bt() -> void:
-	baotao_popup.visible = false
 
 
 # ==================== 团美医美App（消费陷阱：0精力，只加花呗）====================
@@ -1680,7 +1830,6 @@ func _on_tm_injection() -> void:
 		GameManager.modify_stat("sanity", 20)
 		float_stat("+25 颜值 +20 情绪", 25, get_global_mouse_position())
 		show_message("水光针热玛吉做完！颜值暴涨，照镜子心情都变好了！")
-		_refresh_debt_display()
 	)
 
 func _on_tm_surgery() -> void:
@@ -1690,11 +1839,8 @@ func _on_tm_surgery() -> void:
 		GameManager.modify_stat("sanity", 30)
 		float_stat("+50 颜值 +30 情绪", 50, get_global_mouse_position())
 		show_message("全脸微调完成！颜值飙升！虽然情商-10（有人说你假），但自己看着超开心！")
-		_refresh_debt_display()
 	)
 
-func _on_close_tm() -> void:
-	tuanmei_popup.visible = false
 
 
 # ==================== 星座App ====================
@@ -1705,39 +1851,31 @@ func _on_close_zodiac() -> void:
 
 # ==================== 贝壳找房App ====================
 
-func _refresh_house_status() -> void:
-	var housing_names: Array = ["城中村单间", "精装一居室", "CBD大平层"]
-	var house_name: String = housing_names[GameManager.housing_level]
-	label_house_status.text = "当前住房：%s (月租 %d)" % [house_name, GameManager.base_rent]
-
 func _on_house_village() -> void:
+	GameManager.money -= 3000
 	GameManager.base_rent = 1500
 	GameManager.housing_level = 0
 	GameManager.housing_buff_sanity = 0
-	float_stat("搬家 -> 城中村", -1500, get_global_mouse_position())
-	show_message("搬家成功！下个月开始交新房租 1500。")
-	_refresh_house_status()
+	float_stat("搬家->城中村 押金-3000", -3000, get_global_mouse_position())
+	show_message("搬家成功！押金 3000 已扣，下月开始交房租 1500。")
 
 func _on_house_apartment() -> void:
+	GameManager.money -= 8000
 	GameManager.base_rent = 4000
 	GameManager.housing_level = 1
 	GameManager.housing_buff_sanity = 10
 	GameManager.modify_stat("charm", 5)
-	float_stat("+5 颜值 搬家->精装公寓", 5, get_global_mouse_position())
-	show_message("搬家成功！精装公寓，每周额外恢复 10 情绪，颜值+5！下月房租 4000。")
-	_refresh_house_status()
+	float_stat("搬家->精装公寓 押金-8000 +5颜值", 5, get_global_mouse_position())
+	show_message("搬家成功！押金 8000 已扣，精装公寓每周恢复10情绪，颜值+5！")
 
 func _on_house_luxury() -> void:
+	GameManager.money -= 24000
 	GameManager.base_rent = 12000
 	GameManager.housing_level = 2
 	GameManager.housing_buff_sanity = 25
 	GameManager.modify_stat("charm", 10)
-	float_stat("+10 颜值 搬家->CBD大平层", 10, get_global_mouse_position())
-	show_message("搬家成功！CBD大平层，每周恢复 25 情绪！下月房租 12000。")
-	_refresh_house_status()
-
-func _on_close_house() -> void:
-	house_popup.visible = false
+	float_stat("搬家->CBD大平层 押金-24000 +10颜值", 10, get_global_mouse_position())
+	show_message("搬家成功！押金 24000 已扣，CBD大平层每周恢复25情绪，颜值+10！")
 
 
 # ==================== 滑动交友App ====================
@@ -1784,72 +1922,37 @@ func _on_close_dating() -> void:
 # ==================== BOSS弯聘App ====================
 
 func _on_app_job() -> void:
-	_refresh_job_ui()
-	job_popup.visible = true
-
-func _refresh_job_ui() -> void:
-	var degree_names: Array = ["大专", "成人本科"]
-	var job_names: Array = ["初级行政", "新媒体运营", "大客户经理"]
-	label_job_status.text = "当前职位：%s | 当前学历：%s | 年龄：%d岁" % [job_names[GameManager.job_level], degree_names[GameManager.degree], GameManager.age]
-
-	## 职位A：初级行政（始终可入职）
-	if GameManager.job_level == 0:
-		btn_job_admin.text = "✅ 已入职 | 初级行政 (底薪 800~2500/周)"
-		btn_job_admin.disabled = true
-	else:
-		btn_job_admin.text = "初级行政 (底薪 800~2500/周)"
-		btn_job_admin.disabled = GameManager.job_level > 0
-
-	## 职位B：新媒体运营（需学识30）
-	if GameManager.job_level == 1:
-		btn_job_media.text = "✅ 已入职 | 新媒体运营 (底薪 2000~6000/周)"
-		btn_job_media.disabled = true
-		btn_job_media.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.5, 1))
-	elif GameManager.intellect < 30:
-		btn_job_media.text = "🔒 新媒体运营 | 学识需达到 30 (当前 %d)" % GameManager.intellect
-		btn_job_media.disabled = true
-		btn_job_media.add_theme_color_override("font_disabled_color", Color(0.8, 0.3, 0.3, 1))
-	else:
-		btn_job_media.text = "新媒体运营 (底薪 2000~6000/周) | 立即沟通"
-		btn_job_media.disabled = false
-
-	## 职位C：大客户经理（需本科学历 + 年龄<30）
-	if GameManager.job_level == 2:
-		btn_job_client.text = "✅ 已入职 | 大客户经理 (底薪 4000~12000/周)"
-		btn_job_client.disabled = true
-		btn_job_client.add_theme_color_override("font_disabled_color", Color(0.5, 0.5, 0.5, 1))
-	elif GameManager.degree < 1:
-		btn_job_client.text = "🔒 大客户经理 | 硬性要求：国家承认本科学历！"
-		btn_job_client.disabled = true
-		btn_job_client.add_theme_color_override("font_disabled_color", Color(0.9, 0.1, 0.1, 1))
-	elif GameManager.age >= 30:
-		btn_job_client.text = "🔒 大客户经理 | HR已读：抱歉，本岗位倾向于培养 30 岁以下的年轻人，且您面临婚育风险。"
-		btn_job_client.disabled = true
-		btn_job_client.add_theme_color_override("font_disabled_color", Color(0.9, 0.1, 0.1, 1))
-	else:
-		btn_job_client.text = "大客户经理 (底薪 4000~12000/周) | 立即沟通"
-		btn_job_client.disabled = false
+	for child in job_menu.get_children():
+		child.queue_free()
+	var degree_names := ["大专", "成人本科"]
+	var job_names := ["初级行政", "新媒体运营", "大客户经理"]
+	var status := "职位：%s | 学历：%s | 年龄：%d" % [job_names[GameManager.job_level], degree_names[min(GameManager.degree, 1)], GameManager.age]
+	var items := [
+		{"name": "初级行政", "icon_color": Color(0.3, 0.65, 0.35), "cost": "底薪 800~2500/周", "action": _on_job_admin, "current": GameManager.job_level == 0},
+		{"name": "新媒体运营", "icon_color": Color(0.2, 0.55, 0.9), "cost": "底薪 2000~6000/周", "action": _on_job_media,
+			"locked": GameManager.intellect < 30, "current": GameManager.job_level == 1,
+			"lock_reason": "学识需达到 30 (当前 %d)" % GameManager.intellect},
+		{"name": "大客户经理", "icon_color": Color(0.9, 0.7, 0.15), "cost": "底薪 4000~12000/周", "action": _on_job_client,
+			"locked": GameManager.degree < 1 or GameManager.age >= 30, "current": GameManager.job_level == 2,
+			"lock_reason": "需本科学历+30岁以下" if GameManager.degree < 1 else "HR：本岗位倾向培养30岁以下年轻人"},
+	]
+	_build_app_overlay(job_menu, "BOSS弯聘", Color(0.2, 0.55, 0.9, 1), status, items)
+	job_menu.visible = true
 
 func _on_job_admin() -> void:
 	GameManager.job_level = 0
 	float_stat("入职初级行政", 800, get_global_mouse_position())
 	show_message("已入职初级行政，底薪 800~2500/周。")
-	_refresh_job_ui()
 
 func _on_job_media() -> void:
 	GameManager.job_level = 1
 	float_stat("跳槽成功！底薪涨至 4000", 4000, get_global_mouse_position())
 	show_message("跳槽成功！新媒体运营底薪 2000~6000/周。")
-	_refresh_job_ui()
 
 func _on_job_client() -> void:
 	GameManager.job_level = 2
 	float_stat("成功跨越阶层！底薪涨至 8000", 8000, get_global_mouse_position())
 	show_message("成功跨越阶层！大客户经理底薪 4000~12000/周。")
-	_refresh_job_ui()
-
-func _on_close_job() -> void:
-	job_popup.visible = false
 
 
 # ==================== 通用支付拦截系统 ====================
