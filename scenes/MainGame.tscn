@@ -1390,67 +1390,6 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_7d840")
 theme_override_styles/hover = SubResource("StyleBoxFlat_utvnp")
 text = "取消支付"
 
-[node name="LabelPaymentCost2" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=731293259]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.2, 0.2, 1)
-theme_override_font_sizes/font_size = 18
-text = "请选择支付方式"
-horizontal_alignment = 1
-
-[node name="BtnPayMix2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=566316451]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(380, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_hover_color = Color(0.85, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxFlat_7fyak")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_fpdtd")
-theme_override_styles/hover = SubResource("StyleBoxFlat_1hpqh")
-text = "现金支付"
-
-[node name="BtnPayHuabei2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=1142234268]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(380, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_hover_color = Color(0.85, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxFlat_7f7ne")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_rtryj")
-theme_override_styles/hover = SubResource("StyleBoxFlat_vs82q")
-text = "全部花呗透支"
-
-[node name="BtnPayCancel2" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164/PayVBox" unique_id=670777307]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(380, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_hover_color = Color(0.85, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxFlat_qsiih")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_7d840")
-theme_override_styles/hover = SubResource("StyleBoxFlat_utvnp")
-text = "取消支付"
-
-[node name="PayVBox2" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163/@PanelContainer@112164" unique_id=138032402]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="_PanelContainer_112164" type="PanelContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup/@CenterContainer@112163" unique_id=940823865]
-custom_minimum_size = Vector2(420, 0)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_p73vr")
-
-[node name="_CenterContainer_112163" type="CenterContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/PaymentPopup" unique_id=559682441]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-
 [node name="DiaryPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1237836593]
 unique_name_in_owner = true
 visible = false
@@ -1687,24 +1626,6 @@ layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0, 0, 0, 0.6)
-
-[node name="PaymentPopup2" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=405191612]
-unique_name_in_owner = true
-visible = false
-z_index = 60
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.7)
-
-[node name="DiaryPopup2" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=194620749]
-unique_name_in_owner = true
-visible = false
-z_index = 55
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.7)
 
 [node name="Btn_NextWeek" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea" unique_id=1105591854]
 unique_name_in_owner = true
