@@ -1768,6 +1768,7 @@ func _visit_location(context: String, success_msg: String) -> void:
 func _on_food_low() -> void:
 	GameManager.monthly_food_cost += 300
 	GameManager.modify_stat("sanity", -15)
+	GameManager.add_activity("日常", "吃了挂逼生存套餐（沙县/拉面），花费300元")
 	GameManager.consecutive_poor_food += 1
 	GameManager.consecutive_overtime = 0
 	float_stat("+300 餐饮", -300, get_global_mouse_position())
@@ -1781,6 +1782,7 @@ func _on_food_low() -> void:
 func _on_food_mid() -> void:
 	GameManager.monthly_food_cost += 800
 	GameManager.modify_stat("energy", 10)
+	GameManager.add_activity("日常", "吃了打工人标配（肯德基/火锅），花费800元")
 	GameManager.consecutive_poor_food = 0
 	GameManager.consecutive_overtime = 0
 	float_stat("+800 餐饮 +10 精力", -800, get_global_mouse_position())
@@ -1789,6 +1791,7 @@ func _on_food_mid() -> void:
 func _on_food_high() -> void:
 	GameManager.monthly_food_cost += 2000
 	GameManager.modify_stat("sanity", 20)
+	GameManager.add_activity("日常", "吃了小资高档（日料/西餐），花费2000元")
 	GameManager.modify_stat("energy", 15)
 	GameManager.consecutive_poor_food = 0
 	GameManager.consecutive_overtime = 0
