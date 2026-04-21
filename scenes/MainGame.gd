@@ -1538,14 +1538,15 @@ func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subt
 		var name_lbl := Label.new()
 		name_lbl.text = item["name"]
 		name_lbl.add_theme_font_size_override("font_size", 15)
+		name_lbl.add_theme_color_override("font_color", Color(0.1, 0.1, 0.1, 1))
 		if is_locked:
 			name_lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
-		row_hbox.add_child(name_lbl)
+		text_vbox.add_child(name_lbl)
 		var cost_lbl := Label.new()
 		cost_lbl.text = item.get("cost", "")
 		cost_lbl.add_theme_font_size_override("font_size", 11)
 		cost_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4, 1))
-		row_hbox.add_child(cost_lbl)
+		text_vbox.add_child(cost_lbl)
 		## 右侧标记
 		if is_current:
 			var cur_lbl := Label.new()
