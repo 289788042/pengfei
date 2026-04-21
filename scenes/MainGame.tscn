@@ -1462,6 +1462,25 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_omf1d")
 theme_override_styles/hover = SubResource("StyleBoxFlat_j5smc")
 text = "消费"
 
+[node name="DiaryScroll" type="ScrollContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=999888771]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_kq1ox")
+
+[node name="DiaryLogContainer" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox/DiaryScroll" unique_id=999888772]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BtnCloseDiary" type="Button" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/DiaryPopup/@CenterContainer@112172/@PanelContainer@112173/DiaryVBox" unique_id=999888773]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_nnwqk")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_omf1d")
+theme_override_styles/hover = SubResource("StyleBoxFlat_j5smc")
+text = "关闭日记"
+
 [node name="LateNightPopup" type="ColorRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1541483336]
 unique_name_in_owner = true
 visible = false
