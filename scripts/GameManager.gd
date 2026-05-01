@@ -89,14 +89,12 @@ var game_finished: bool = false
 ## 是否正在等待月度结算确认
 var awaiting_month_settle: bool = false
 
-## 愧疚debuff剩余周数（每周情绪-10）
-var guilt_debuff_weeks: int = 0
 ## 妈妈关爱buff剩余周数（每周精力+20）
 var mom_care_buff_weeks: int = 0
 
-## 连续疯狂加班周数（满5触发“福报的代价”）
+## 连续疯狂加班周数（满5触发"福报的代价"）
 var consecutive_overtime: int = 0
-## 连续吃挂逼套餐周数（满5触发“恩格尔系数 0.01”）
+## 连续吃挂逼套餐周数（满5触发"恩格尔系数 0.01"）
 var consecutive_poor_food: int = 0
 
 ## 学历等级（0:大专, 1:成人本科）
@@ -108,7 +106,6 @@ var night_school_progress: int = 0
 ## 王老师上次推送消息的周数（用于隔4周推送逻辑）
 var _wang_teacher_last_push_week: int = 0
 var _family_chat_used_indices: Array = []
-
 
 
 
@@ -201,15 +198,6 @@ func advance_week() -> void:
 	# 房屋情绪恢复加成
 	if housing_buff_sanity > 0:
 		sanity = mini(sanity + housing_buff_sanity, max_sanity)
-
-	# 愧疚debuff：每周情绪-10
-	if guilt_debuff_weeks > 0:
-		sanity = maxi(sanity - 10, 0)
-		guilt_debuff_weeks -= 1
-		if sanity <= 0:
-			game_over.emit("【内欺煎熬】", "每周的愧究感像钍刀割肉一样折磨着你。\n你想起上次挂掉妈妈的电话，想起她说'行吧，你自己的事自己决定'时的沉默。\n你终于没忍住，在被子里哭了一整夜，第二天没能爬起来上班。")
-			stats_updated.emit()
-			return
 
 	# 妈妈关爱buff：每周精力+20
 	if mom_care_buff_weeks > 0:

@@ -47,10 +47,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.keycode == KEY_F2 and event.pressed:
 		# 直接用默认数据跳过开场
 		GameManager.player_name = "测试"
-		GameManager.player_zodiac = "火象"
-		GameManager.max_energy = 120
-		GameManager.energy = 120
-		GameManager.charm += 5
+		GameManager.player_zodiac = "测试"
+		GameManager.max_energy = 100
+		GameManager.energy = 100
+		# 不加任何星象加成，使用纯默认值
 		GameManager.load_npc_data()
 		get_tree().change_scene_to_file("res://scenes/MainGame.tscn")
 
@@ -99,8 +99,8 @@ func _on_start_game_pressed() -> void:
 			GameManager.modify_stat("intellect", 5)
 		"火象":
 			# 精力上限提升至 120，颜值+5
-			GameManager.max_energy = 120
-			GameManager.energy = 120
+			GameManager.max_energy = 100
+			GameManager.energy = 100
 			GameManager.modify_stat("charm", 5)
 		"水象":
 			# 情绪上限提升至 120，情商+5

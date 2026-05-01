@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://4efrj08wbmj8" path="res://scenes/MainGame.gd" id="1_8etcy"]
 [ext_resource type="Theme" uid="uid://cikxg02q2to20" path="res://UI/GlobalPixelTheme.tres" id="1_xej52"]
-[ext_resource type="Script" uid="uid://b7vav7q3jvpi5" path="res://scripts/DebugPanel.gd" id="3_p73vr"]
+[ext_resource type="Script" uid="uid://wupulnqs5tac" path="res://scripts/DebugPanel.gd" id="3_p73vr"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_smartphone"]
 bg_color = Color(0.12, 0.12, 0.14, 1)
@@ -386,39 +386,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6oxnh"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-bg_color = Color(0.29, 0.29, 0.29, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qf85o"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-bg_color = Color(0.2, 0.2, 0.2, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qnsrl"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-bg_color = Color(0.4, 0.4, 0.4, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kq1ox"]
 content_margin_left = 24.0

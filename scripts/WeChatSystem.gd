@@ -1,7 +1,6 @@
 ## WeChatSystem.gd - 微信系统管理器
 ## 负责：微信聊天、联系人、朋友圈、家庭群、NPC约会等全部微信UI逻辑
 ## 通过 _main 引用 MainGame 节点访问 UI 节点和工具函数
-class_name WeChatSystem
 extends RefCounted
 
 # ==================== 微信颜色常量 ====================
@@ -999,8 +998,6 @@ func _on_family_choice(event_idx: int, choice_idx: int) -> void:
 	# Buff/Debuff设置
 	if choice.get("set_mom_care", 0) > 0:
 		GameManager.mom_care_buff_weeks = choice["set_mom_care"]
-	if choice.get("set_guilt", 0) > 0:
-		GameManager.guilt_debuff_weeks = choice["set_guilt"]
 	# 显示结果消息
 	_main.show_message(choice["msg"], true)
 	# 移除遮罩
@@ -1074,7 +1071,7 @@ func _on_date_npc(npc_id: String) -> void:
 		_refresh_wechat_ui()
 
 	if the_cost > 0:
-		_main.request_payment(the_cost, "%s约会" % npc_name, "社交", do_date)
+		_main.alipay.request_payment(the_cost, "%s约会" % npc_name, "社交", do_date)
 	else:
 		do_date.call()
 
@@ -1088,7 +1085,7 @@ func _on_chat_wang_teacher() -> void:
 	if GameManager.energy < 50:
 		_main.show_message("精力不足（需50），没法上课了！")
 		return
-	_main.request_payment(1000, "夜校报名冲刺班", "提升", func() -> void:
+	_main.alipay.request_payment(1000, "夜校报名冲刺班", "提升", func() -> void:
 		GameManager.modify_stat("energy", -50)
 		GameManager.modify_stat("sanity", -10)
 		GameManager.night_school_progress += 1
