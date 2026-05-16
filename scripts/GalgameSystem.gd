@@ -156,9 +156,14 @@ func gal_on_click() -> void:
 			_gal_end()
 
 
+## 跳过所有对话页（测试用，Ctrl键触发）
+func skip_all() -> void:
+	_gal_end()
+
+
 ## 根据内容设置对话框颜色：旁白白色，对话黄色
 func _apply_page_color(raw: String) -> void:
-	if raw.begins_with('陌生男子：') or raw.begins_with('我：'):
+	if raw.begins_with('陌生男子：') or raw.begins_with('我：') or raw.begins_with('沈逸：'):
 		dialog_text.add_theme_color_override('default_color', Color(1.0, 0.9, 0.3, 1.0))
 	elif raw.begins_with("'"):
 		dialog_text.add_theme_color_override('default_color', Color(1.0, 0.9, 0.3, 1.0))
@@ -303,15 +308,28 @@ func _on_encounter_choice(option: Dictionary) -> void:
 		GameManager.modify_stat("energy", -cost_energy)
 	if cost_money > 0:
 		GameManager.modify_stat("money", -cost_money)
+	## 先判断是否解锁NPC，再处理属性和flag（避免get_npc_runtime误创建条目）
+	var should_unlock: bool = option.get("unlock_npc", true) and _gal_npc_id != ""
+	if should_unlock:
+		if not GameManager.is_npc_unlocked(_gal_npc_id):
+			GameManager.unlock_npc(_gal_npc_id)
+		## 邂逅加微信后，把初始消息写入NPC聊天记录
+		var init_msgs: Array = option.get("wechat_init_messages", [])
+		if init_msgs.size() == 0 and _gal_npc_id != "":
+			init_msgs = [{"sender": "npc", "text": "刚才太匆忙了，抱歉。你小心点，外面下雨了。"}]
+		if GameManager.npcs.has(_gal_npc_id):
+			for msg in init_msgs:
+				GameManager.npcs[_gal_npc_id]["messages"].append(msg)
+			GameManager.add_unread(_gal_npc_id)
 	var stat_changes: Dictionary = option.get("stat_changes", {})
 	for stat_name in stat_changes:
 		var val: int = int(stat_changes[stat_name])
-		if stat_name == "affection" and _gal_npc_id != "":
+		if stat_name == "affection" and _gal_npc_id != "" and should_unlock:
 			GameManager.get_npc_runtime(_gal_npc_id)["affection"] += val
 		else:
 			GameManager.modify_stat(stat_name, val)
 	var flag: String = option.get("flag", "")
-	if flag != "" and _gal_npc_id != "":
+	if flag != "" and _gal_npc_id != "" and should_unlock:
 		var runtime: Dictionary = GameManager.get_npc_runtime(_gal_npc_id)
 		if not runtime["flags"].has(flag):
 			runtime["flags"].append(flag)

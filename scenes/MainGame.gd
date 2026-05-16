@@ -267,6 +267,7 @@ func _ready() -> void:
 	_enter_weekday()
 
 
+
 func _on_app_wechat() -> void:
 	wechat._refresh_wechat_ui()
 	wechat._on_wc_tab(0)
@@ -298,6 +299,25 @@ func _input(event: InputEvent) -> void:
 					else:
 						galgame.dismiss_dialog()
 						get_viewport().set_input_as_handled()
+	# Space键：等同于鼠标左键点击对话框
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_SPACE:
+			if dialog_box.visible and dialog_box.modulate.a > 0.5:
+				if galgame._gal_pages.size() > 0:
+					galgame.gal_on_click()
+					get_viewport().set_input_as_handled()
+				elif not is_instance_valid(galgame._gal_choice_container):
+					galgame.dismiss_dialog()
+					get_viewport().set_input_as_handled()
+		# Ctrl键：跳过当前所有对话页
+		elif event.keycode == KEY_CTRL:
+			if dialog_box.visible and dialog_box.modulate.a > 0.5:
+				if galgame._gal_pages.size() > 0:
+					galgame.skip_all()
+					get_viewport().set_input_as_handled()
+				elif not is_instance_valid(galgame._gal_choice_container):
+					galgame.dismiss_dialog()
+					get_viewport().set_input_as_handled()
 
 ## 右键返回：按优先级关闭当前最上层弹窗
 func _close_top_popup() -> void:
@@ -883,12 +903,32 @@ func _play_transition(trans_text: String) -> void:
 	tween.tween_property(transition_screen, "modulate:a", 0.0, 0.4)
 	tween.tween_callback(func() -> void:
 		transition_screen.visible = false
-		var event := GameManager.roll_random_event("work")
-		if event.size() > 0:
-			_show_event(event, _enter_weekend)
-		else:
-			_enter_weekend()
+		if GameManager.turn_count == 1:
+			var opening_pages: Array = [
+				"墙皮在掉。",
+				"绿斑从天花板角落往下蔓延。深圳三月的回南天让人喘不过气。",
+				"我坐在城中村的单人床上，盯着手机屏幕。花呗账单页面的红色数字跳了两下：2876.32。",
+				"上个月买的那件连衣裙，穿了一次，被奶茶泼了。退不了。",
+				"朋友圈里小雅的动态又更新了。定位南山一家私房菜馆，九宫格第一张是个男人的手，腕上一块绿水鬼，正在给小雅夹菜。配文三个字：被投喂。",
+				"我把手机扣在床上。",
+				"被子和枕头发粘，晾了三天的内衣摸上去也没干。",
+				"这个六平米的隔断间实在待不下去了。",
+				"我换了条裤子，抓起包往外走。",
+			]
+			galgame.show_galgame_dialog(opening_pages, func() -> void:
+				_proceed_after_work_event()
+			)
+			return
+		_proceed_after_work_event()
 	)
+
+
+func _proceed_after_work_event() -> void:
+	var event := GameManager.roll_random_event("work")
+	if event.size() > 0:
+		_show_event(event, _enter_weekend)
+	else:
+		_enter_weekend()
 
 
 # ==================== 月度账单 ====================

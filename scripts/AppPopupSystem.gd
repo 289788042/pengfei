@@ -521,8 +521,7 @@ func _on_loc_library() -> void:
 		location_menu.visible = false
 
 		if charm_ok and intellect_ok and money_ok:
-			## 邂逅成功
-			GameManager.unlock_npc(npc_id)
+			## 邂逅成功（NPC解锁延迟到玩家选择后，由GalgameSystem._on_encounter_choice处理）
 			var pass_changes: Dictionary = encounter_data.get("pass_stat_changes", {})
 			for stat_name in pass_changes:
 				if stat_name == "affection":
