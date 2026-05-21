@@ -65,6 +65,29 @@ var _dating_bios: Array = [
 	"摄影师，只拍女朋友",
 	"摩托车爱好者，带你兜风",
 ]
+# 城市碎片事件池
+var _city_fragments: Dictionary = {}
+# NPC邂逅冷却（替代永久失败的 encounter_failed_ids）
+var _encounter_cooldowns: Dictionary = {}  # npc_id -> turn_count 可重试
+# NPC重逢台词模板
+var _reunion_lines: Array = [
+	"在{loc}又遇到了{name}，ta冲你笑了笑。你们聊了几句。",
+	"{name}看到你，主动走了过来打招呼。",
+	"远远看到{name}在做自己的事，你过去打了个招呼。",
+	"和{name}撞了个正着，两个人都笑了。",
+	"{name}递给你一瓶水，说看你气色不太好。",
+	"你帮{name}捡起了掉在地上的东西，ta说了声谢谢。",
+	"和{name}聊起了最近的工作，ta给了你一些建议。",
+	"今天在{loc}和{name}待了会儿，感觉心情好了不少。",
+	"{name}请你喝了一杯东西，你们聊得很开心。",
+	"碰巧和{name}坐在了一起，度过了愉快的一段时光。",
+	"{name}给你看了看ta手机上的照片，最近去了不少地方。",
+	"你和{name}交换了对某个话题的看法，聊得很投机。",
+	"{name}看起来心情不错，说最近发生了点好事。",
+	"你们聊起了深圳的生活，{name}说已经习惯了。",
+	"和{name}告别的时候，ta说下次再约。",
+	"{name}夸你今天看起来气色不错，你心里美滋滋的。",
+]
 
 
 # ==================== 初始化 ====================
@@ -93,6 +116,14 @@ func init(main: Node) -> void:
 	btn_work_overtime = main.btn_work_overtime
 	btn_emo_bag = main.btn_emo_bag
 	btn_emo_sleep = main.btn_emo_sleep
+
+	# 加载城市碎片事件
+	var frag_file = FileAccess.open("res://Data/city_fragments.json", FileAccess.READ)
+	if frag_file:
+		var json = JSON.new()
+		if json.parse(frag_file.get_as_text()) == OK:
+			_city_fragments = json.data
+		frag_file.close()
 
 
 # ==================== 辅助方法 ====================
@@ -183,7 +214,7 @@ func _on_app_map() -> void:
 	var map_locs: Array = [
 		{"name": "图书馆", "icon_color": Color(0.2, 0.5, 0.9), "cost": "-20精力 | +2学识 +5情绪", "action": _on_loc_library},
 		{"name": "健身房", "icon_color": Color(0.2, 0.75, 0.3), "cost": "-45精力 -200金 | +2颜值 +5情绪 体力上限+1", "action": _on_loc_gym},
-		{"name": "高档酒吧", "icon_color": Color(0.6, 0.3, 0.8), "cost": "-20精力 -500金 | +2情商 +25情绪", "action": _on_loc_bar},
+		{"name": "高档酒吧", "icon_color": Color(0.6, 0.3, 0.8), "cost": "-20精力 -500金 | +2情商 +25情绪 | 需情商>=10", "action": _on_loc_bar},
 		{"name": "宅家刷手机", "icon_color": Color(0.55, 0.55, 0.55), "cost": "-10精力 | +20情绪", "action": _on_loc_home},
 	]
 	## 构建每行
@@ -270,8 +301,8 @@ func _on_app_tuanmei() -> void:
 		child.queue_free()
 	var debt_info := "花呗欠款：%d 元" % (GameManager.huabei_debt + GameManager.huabei_installment_debt)
 	var items := [
-		{"name": "水光针+热玛吉", "icon_color": Color(0.8, 0.4, 0.8), "cost": "6000 元 | +15颜值", "action": _on_tm_injection},
-		{"name": "全脸微调手术", "icon_color": Color(0.6, 0.2, 0.8), "cost": "20000 元 | +30颜值", "action": _on_tm_surgery},
+		{"name": "水光针+热玛吉", "icon_color": Color(0.8, 0.4, 0.8), "cost": "6000 元 | +15颜值 | 需颜值<30", "action": _on_tm_injection},
+		{"name": "全脸微调手术", "icon_color": Color(0.6, 0.2, 0.8), "cost": "20000 元 | +30颜值 | 需颜值<20", "action": _on_tm_surgery},
 	]
 	_build_app_overlay(tuanmei_menu, "团美医美", Color(0.6, 0.3, 0.8, 1), debt_info, items)
 	tuanmei_menu.visible = true
@@ -312,6 +343,9 @@ func _on_app_house() -> void:
 
 
 func _on_app_dating() -> void:
+	if GameManager.charm < 10:
+		main_node().show_message("颜值太低（需>=10），没有匹配对象！先提升自己吧~")
+		return
 	_refresh_dating_card()
 	dating_popup.visible = true
 
@@ -475,137 +509,239 @@ func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subt
 			)
 
 
+# ==================== 城市碎片 & 重逢系统 ====================
+
+## 从指定地点的碎片池中随机抽取一条并触发
+func _trigger_city_fragment(location: String) -> void:
+	var pool: Array = _city_fragments.get(location, [])
+	if pool.size() == 0:
+		return
+	var filtered: Array = []
+	for f in pool:
+		if f.get("min_turn", 0) <= GameManager.turn_count:
+			filtered.append(f)
+	if filtered.size() == 0:
+		filtered = pool
+	var frag: Dictionary = filtered[randi() % filtered.size()]
+	var text: String = frag.get("text", "")
+	var effects: Dictionary = frag.get("effect", {})
+	var effect_parts: Array = []
+	for stat_name in effects:
+		var val: int = effects[stat_name]
+		if val == 0:
+			continue
+		var cn: String = GameManager.stat_names.get(stat_name, stat_name)
+		GameManager.modify_stat(stat_name, val)
+		if val > 0:
+			effect_parts.append("%s+%d" % [cn, val])
+		else:
+			effect_parts.append("%s%d" % [cn, val])
+	var msg: String = text
+	if effect_parts.size() > 0:
+		msg += "
+[color=90EE90]" + "  ".join(effect_parts) + "[/color]"
+	main_node().show_message(msg, true)
+
+## 检查是否有已解锁的NPC可以在该地点重逢
+func _check_reunion(location: String) -> Dictionary:
+	var candidates: Array = []
+	for npc in GameManager.npc_database:
+		var enc: Dictionary = npc.get("encounter", {})
+		if enc.get("location", "") != location:
+			continue
+		if enc.get("auto_unlock", false):
+			continue
+		var npc_id: String = npc.get("id", "")
+		if not GameManager.is_npc_unlocked(npc_id):
+			continue
+		candidates.append(npc)
+	if candidates.size() == 0:
+		return {}
+	return candidates[randi() % candidates.size()]
+
+## 处理NPC重逢（简短互动）
+func _handle_reunion(npc: Dictionary, location: String) -> void:
+	var npc_id: String = npc.get("id", "")
+	var npc_name: String = npc.get("name", "")
+	var loc_cn: String = {"gym": "健身房", "library": "图书馆", "bar": "酒吧", "home": "家里"}.get(location, location)
+	var template: String = _reunion_lines[randi() % _reunion_lines.size()]
+	var text: String = template.replace("{name}", npc_name).replace("{loc}", loc_cn)
+	var runtime = GameManager.get_npc_runtime(npc_id)
+	if runtime:
+		runtime["affection"] = runtime.get("affection", 0) + 3
+	GameManager.modify_stat("sanity", 3)
+	GameManager.modify_stat("eq", 1)
+	GameManager.add_activity("社交", "在%s遇到了%s，聊了几句" % [loc_cn, npc_name])
+	main_node().show_message(text + "
+[color=90EE90]好感+3 情绪+3 情商+1[/color]", true)
+
+
 # ==================== 地点逻辑 ====================
+
+## 检查指定地点是否有NPC邂逅
+func _check_encounter(location: String) -> Dictionary:
+	for npc in GameManager.npc_database:
+		var enc: Dictionary = npc.get("encounter", {})
+		if enc.get("location", "") != location:
+			continue
+		if enc.get("auto_unlock", false):
+			continue
+		var npc_id: String = npc.get("id", "")
+		if GameManager.is_npc_unlocked(npc_id):
+			continue
+		if _encounter_cooldowns.get(npc_id, 0) > GameManager.turn_count:
+			continue
+		if not enc.get("first_visit_only", false):
+			continue
+		return npc
+	return {}
+
+## 处理邂逅场景（通用版）
+func _handle_encounter(npc: Dictionary, location: String, energy_cost: int, money_cost: int) -> void:
+	var enc: Dictionary = npc.get("encounter", {})
+	var npc_id: String = npc.get("id", "")
+	var npc_name: String = npc.get("name", "")
+	var req: Dictionary = enc.get("req_stats", {})
+
+	var all_ok: bool = true
+	for stat_name in req:
+		var needed: int = int(req[stat_name])
+		var current: int = GameManager.get(stat_name) if stat_name != "money" else GameManager.money
+		if current < needed:
+			all_ok = false
+			break
+
+	if energy_cost > 0 and GameManager.energy < energy_cost:
+		main_node().show_message("精力不足（需%d）！" % energy_cost)
+		return
+
+	GameManager.modify_stat("energy", -energy_cost)
+	location_menu.visible = false
+
+	if all_ok:
+		var pass_changes: Dictionary = enc.get("pass_stat_changes", {})
+		for stat_name in pass_changes:
+			if stat_name == "affection":
+				GameManager.get_npc_runtime(npc_id)["affection"] += int(pass_changes[stat_name])
+			else:
+				GameManager.modify_stat(stat_name, int(pass_changes[stat_name]))
+
+		var pages: Array = []
+		for line in enc.get("scene_lines", []):
+			pages.append(line)
+		for line in enc.get("dialogue_lines", []):
+			pages.append(npc_name + "：" + line)
+
+		var wechat_req: Dictionary = enc.get("wechat_request", {})
+		if wechat_req.size() > 0:
+			main_node().galgame._gal_encounter_data = enc
+			main_node().galgame._gal_npc_id = npc_id
+			main_node().galgame.show_galgame_dialog(pages, main_node().galgame.start_wechat_request_phase)
+		else:
+			main_node().galgame.show_galgame_dialog(pages, func() -> void:
+				main_node().show_message("邂逅了%s，但没有进一步发展。" % npc_name, true)
+			)
+		GameManager.add_activity("社交", "在%s邂逅了%s" % [location, npc_name])
+	else:
+		var fail_pages: Array = []
+		for line in enc.get("scene_lines", []):
+			fail_pages.append(line)
+		for line in enc.get("dialogue_lines", []):
+			fail_pages.append(npc_name + "：" + line)
+		fail_pages.append("（你的属性不满足邂逅条件，擦肩而过...）")
+		_encounter_cooldowns[npc_id] = GameManager.turn_count + 4
+		main_node().galgame.show_galgame_dialog(fail_pages, func() -> void:
+			if location == "gym":
+				_normal_gym()
+			elif location == "bar":
+				_normal_bar()
+			else:
+				main_node().show_message("度过了平静的一天。", true)
+		)
 
 func _on_loc_library() -> void:
 	if GameManager.energy < 20:
 		main_node().show_message("精力不足，无法去图书馆！")
 		return
-
-	## 邂逅判定：遍历剧本库寻找 location=library 的 NPC
-	var encounter_npc: Dictionary = {}
-	var encounter_data: Dictionary = {}
-	for npc in GameManager.npc_database:
-		var enc: Dictionary = npc.get("encounter", {})
-		if enc.get("location", "") == "library" and not GameManager.is_npc_unlocked(npc.get("id", "")) and not npc.get("id", "") in GameManager.encounter_failed_ids:
-			encounter_npc = npc
-			encounter_data = enc
-			break
-
-	if encounter_npc.size() > 0:
-		var npc_id: String = encounter_npc["id"]
-		var npc_name: String = encounter_npc["name"]
-		var req: Dictionary = encounter_data.get("req_stats", {})
-		var cost: Dictionary = encounter_data.get("cost", {})
-		var energy_cost: int = cost.get("energy", 0)
-		var money_cost: int = cost.get("money", 0)
-
-		## 检查属性门槛
-		var charm_ok: bool = GameManager.charm >= req.get("charm", 0)
-		var intellect_ok: bool = GameManager.intellect >= req.get("intellect", 0)
-		var money_ok: bool = GameManager.money >= req.get("money", 0)
-
-		## 扣除基础精力 + 额外消耗
-		var total_energy: int = 20 + energy_cost
-		if GameManager.energy < total_energy:
-			main_node().show_message("精力不足（需%d），无法去图书馆！" % total_energy)
+	location_menu.visible = false
+	var roll := randf()
+	if roll < 0.20:
+		# 20%: NPC邂逅
+		var encounter_npc: Dictionary = {}
+		for npc in GameManager.npc_database:
+			var enc: Dictionary = npc.get("encounter", {})
+			if enc.get("location", "") == "library" and not GameManager.is_npc_unlocked(npc.get("id", "")) and _encounter_cooldowns.get(npc.get("id", ""), 0) <= GameManager.turn_count:
+				encounter_npc = npc
+				break
+		if encounter_npc.size() > 0:
+			_handle_encounter(encounter_npc, "library", 20, 0)
 			return
-		if money_cost > 0 and GameManager.money < money_cost:
-			main_node().show_message("金钱不足（需%d元）！" % money_cost)
+		# 尝试重逢
+		var reunion = _check_reunion("library")
+		if reunion.size() > 0:
+			GameManager.modify_stat("energy", -20)
+			_handle_reunion(reunion, "library")
+			GameManager.modify_stat("intellect", 3)
+			GameManager.modify_stat("sanity", 5)
+			GameManager.add_activity("提升", "在图书馆读书并遇到了熟人")
 			return
-
-		GameManager.modify_stat("energy", -total_energy)
-		if money_cost > 0:
-			GameManager.modify_stat("money", -money_cost)
-
-		location_menu.visible = false
-
-		if charm_ok and intellect_ok and money_ok:
-			## 邂逅成功（NPC解锁延迟到玩家选择后，由GalgameSystem._on_encounter_choice处理）
-			var pass_changes: Dictionary = encounter_data.get("pass_stat_changes", {})
-			for stat_name in pass_changes:
-				if stat_name == "affection":
-					GameManager.get_npc_runtime(npc_id)["affection"] += pass_changes[stat_name]
-				else:
-					GameManager.modify_stat(stat_name, pass_changes[stat_name])
-
-			## 保存邂逅数据供回调使用
-			main_node().galgame._gal_encounter_data = encounter_data
-			main_node().galgame._gal_npc_id = npc_id
-
-			## Phase 1：场景 + 对话 + 考验 + 通过
-			var pages: Array = []
-			## 旁白：场景描写（scene_lines）
-			for line in encounter_data.get("scene_lines", []):
-				pages.append(line)
-			## 陌生男子：对话台词（dialogue_lines）
-			for line in encounter_data.get("dialogue_lines", []):
-				pages.append("陌生男子：" + line)
-			## 陌生男子：考验问题
-			if encounter_data.get("test_question", "") != "":
-				for seg in encounter_data["test_question"].split("\n"):
-					if seg.strip_edges() != "":
-						pages.append("陌生男子：" + seg)
-			## 我：玩家通过台词（pass_lines）
-			for line in encounter_data.get("pass_lines", []):
-				pages.append("我：" + line)
-			## 混合旁白+对话（pass_result_lines）
-			for line in encounter_data.get("pass_result_lines", []):
-				if line.begins_with("'"):
-					pages.append("陌生男子：" + line)
-				else:
-					pages.append(line)
-			main_node().galgame.show_galgame_dialog(pages, main_node().galgame.start_wechat_request_phase)
-			GameManager.add_activity("社交", "在图书馆邂逅了%s" % npc_name)
-		else:
-			## 邂逅失败
-			var fail_changes: Dictionary = encounter_data.get("fail_stat_changes", {})
-			for stat_name in fail_changes:
-				GameManager.modify_stat(stat_name, fail_changes[stat_name])
-			## Galgame 逐句分页：场景 + 对话 + 失败台词
-			var fail_pages: Array = []
-			for line in encounter_data.get("scene_lines", []):
-				fail_pages.append(line)
-			for line in encounter_data.get("dialogue_lines", []):
-				fail_pages.append("陌生男子：" + line)
-			if encounter_data.get("test_question", "") != "":
-				for seg in encounter_data["test_question"].split("\n"):
-					if seg.strip_edges() != "":
-						fail_pages.append("陌生男子：" + seg)
-			for line in encounter_data.get("fail_lines", []):
-				fail_pages.append("我：" + line)
-			for line in encounter_data.get("fail_result_lines", []):
-				if line.begins_with("'"):
-					fail_pages.append("陌生男子：" + line)
-				else:
-					fail_pages.append(line)
-			GameManager.encounter_failed_ids.append(npc_id)
-			main_node().galgame.show_galgame_dialog(fail_pages, func() -> void:
-				main_node().show_message("在图书馆度过了一个充实的下午。\n[color=90EE90]学识+3 情绪+5[/color]", true)
-			)
-			GameManager.add_activity("提升", "在图书馆读书（与某人擦肩而过）")
-		return
-
-	## 正常图书馆逻辑（无邂逅或已解锁）
+	# 正常活动
 	GameManager.modify_stat("energy", -20)
 	GameManager.modify_stat("intellect", 3)
 	GameManager.modify_stat("sanity", 5)
-	GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
-	main_node().show_message("在图书馆度过了一个充实的下午。\n[color=90EE90]学识+3 情绪+5[/color]", true)
-	location_menu.visible = false
+	if roll < 0.50:
+		# 30%: 城市碎片
+		_trigger_city_fragment("library")
+		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
+	else:
+		# 50%: 纯正常
+		main_node().show_message("在图书馆度过了一个充实的下午。
+[color=90EE90]学识+3 情绪+5[/color]", true)
+		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
 
 func _on_loc_gym() -> void:
 	if GameManager.energy < 45:
 		main_node().show_message("精力不足（需45），无法去健身房！")
 		return
+	location_menu.visible = false
+	var roll := randf()
+	if roll < 0.20:
+		# 20%: NPC邂逅
+		var encounter_npc = _check_encounter("gym")
+		if encounter_npc.size() > 0:
+			_handle_encounter(encounter_npc, "gym", 45, 0)
+			return
+		var reunion = _check_reunion("gym")
+		if reunion.size() > 0:
+			main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
+				GameManager.modify_stat("energy", -45)
+				_handle_reunion(reunion, "gym")
+				GameManager.modify_stat("charm", 2)
+				GameManager.modify_stat("sanity", 5)
+				GameManager.max_energy += 1
+				GameManager.add_activity("提升", "去健身房挥汗如雨！颜值+2，精力上限+1（当前%d）" % GameManager.max_energy)
+			)
+			return
+	# 正常活动（30%碎片 / 50%纯正常）
+	if roll < 0.50:
+		main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
+			GameManager.modify_stat("energy", -45)
+			GameManager.modify_stat("charm", 2)
+			GameManager.modify_stat("sanity", 5)
+			GameManager.max_energy += 1
+			_trigger_city_fragment("gym")
+			GameManager.add_activity("提升", "去健身房挥汗如雨！颜值+2，情绪+5，精力上限永久+1（当前%d）" % GameManager.max_energy)
+		)
+	else:
+		_normal_gym()
+
+func _normal_gym() -> void:
 	main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
 		GameManager.modify_stat("energy", -45)
 		GameManager.modify_stat("charm", 2)
 		GameManager.modify_stat("sanity", 5)
-		# 永久提升精力上限+1
 		GameManager.max_energy += 1
 		main_node().float_stat("+2 颜值 +5 情绪 精力上限+1", 5, main_node().get_global_mouse_position())
-		GameManager.add_activity("提升", "去健身房挥汗如雨！颜值+2，情绪+5，精力上限永久+1（当前%d）" % GameManager.max_energy)
 		_visit_location("gym", "挥汗如雨！颜值+2，精力上限永久+1！")
 	)
 
@@ -613,6 +749,40 @@ func _on_loc_bar() -> void:
 	if GameManager.energy < 20:
 		main_node().show_message("精力不足，无法去酒吧！")
 		return
+	if GameManager.eq < 10:
+		main_node().show_message("情商太低（需>=10），在酒吧也只会尴尬地坐着！")
+		return
+	location_menu.visible = false
+	var roll := randf()
+	if roll < 0.20:
+		# 20%: NPC邂逅
+		var encounter_npc = _check_encounter("bar")
+		if encounter_npc.size() > 0:
+			_handle_encounter(encounter_npc, "bar", 20, 500)
+			return
+		var reunion = _check_reunion("bar")
+		if reunion.size() > 0:
+			main_node().alipay.request_payment(500, "酒吧消费", "社交", func() -> void:
+				GameManager.modify_stat("energy", -20)
+				_handle_reunion(reunion, "bar")
+				GameManager.modify_stat("eq", 2)
+				GameManager.modify_stat("sanity", 25)
+				GameManager.add_activity("社交", "在酒吧喝酒并遇到了熟人")
+			)
+			return
+	# 正常活动（30%碎片 / 50%纯正常）
+	if roll < 0.50:
+		main_node().alipay.request_payment(500, "酒吧消费", "社交", func() -> void:
+			GameManager.modify_stat("energy", -20)
+			GameManager.modify_stat("eq", 2)
+			GameManager.modify_stat("sanity", 25)
+			_trigger_city_fragment("bar")
+			GameManager.add_activity("社交", "在酒吧喝了一杯，感觉心情大好！")
+		)
+	else:
+		_normal_bar()
+
+func _normal_bar() -> void:
 	main_node().alipay.request_payment(500, "酒吧消费", "社交", func() -> void:
 		GameManager.modify_stat("energy", -20)
 		GameManager.modify_stat("eq", 2)
@@ -621,13 +791,24 @@ func _on_loc_bar() -> void:
 		_visit_location("bar", "在酒吧喝了一杯，感觉心情大好！")
 	)
 
-## 宅家刷手机
 func _on_loc_home() -> void:
 	GameManager.modify_stat("energy", -10)
-	GameManager.modify_stat("sanity", 20)
-	main_node().float_stat("+20 情绪", 20, main_node().get_global_mouse_position())
-	main_node().show_message("宅家刷了一整天手机，虽然眼睛酸但心情不错~", true)
 	location_menu.visible = false
+	var roll := randf()
+	if roll < 0.20:
+		# 20%: 尝试重逢（家里不太可能，但保留统一结构）
+		pass
+	if roll < 0.50:
+		# 30%: 城市碎片
+		GameManager.modify_stat("sanity", 20)
+		_trigger_city_fragment("home")
+		GameManager.add_activity("日常", "宅家刷了一整天手机")
+	else:
+		# 50%: 正常
+		GameManager.modify_stat("sanity", 20)
+		main_node().float_stat("+20 情绪", 20, main_node().get_global_mouse_position())
+		main_node().show_message("宅家刷了一整天手机，虽然眼睛酸但心情不错~", true)
+		GameManager.add_activity("日常", "宅家刷了一整天手机")
 
 
 func _visit_location(context: String, success_msg: String) -> void:
@@ -708,6 +889,9 @@ func _on_bt_fashion() -> void:
 # ==================== 团美医美App（消费陷阱）====================
 
 func _on_tm_injection() -> void:
+	if GameManager.charm >= 30:
+		main_node().show_message("你颜值已经>=30了，医生说不需要做这个项目~")
+		return
 	main_node().alipay.request_payment(6000, "水光针热玛吉", "消费", func() -> void:
 		GameManager.modify_stat("charm", 25)
 		GameManager.modify_stat("sanity", 20)
@@ -716,6 +900,9 @@ func _on_tm_injection() -> void:
 	)
 
 func _on_tm_surgery() -> void:
+	if GameManager.charm >= 20:
+		main_node().show_message("你颜值已经>=20了，做全脸微调太浪费钱了！")
+		return
 	main_node().alipay.request_payment(20000, "全脸微调手术", "消费", func() -> void:
 		GameManager.modify_stat("charm", 50)
 		GameManager.modify_stat("eq", -10)
@@ -782,14 +969,18 @@ func _on_like() -> void:
 		main_node().show_message("精力不足，没力气滑了！")
 		return
 	GameManager.modify_stat("energy", -5)
-
+	# 颜值+情商越高，被骗概率越低，遇到好结果概率越高
+	var score: int = GameManager.charm + GameManager.eq
 	var roll: int = randi() % 100
-	if roll < 70:
+	var scam_chance: int = 70 - score  # 颜值+情商每高1点，被骗概率-1%
+	if scam_chance < 20:
+		scam_chance = 20
+	if roll < scam_chance:
 		GameManager.modify_stat("money", -500)
 		GameManager.modify_stat("sanity", -15)
 		main_node().float_stat("被骗 -500 金钱 -15 情绪", -500, main_node().get_global_mouse_position())
 		main_node().show_message("遇到了骗子，被骗走 500 块饭钱，情绪 -15。", true)
-	elif roll < 90:
+	elif roll < scam_chance + 50:
 		main_node().show_message("聊了两句互相拉黑，毫无波澜。", true)
 	else:
 		GameManager.modify_stat("eq", 2)

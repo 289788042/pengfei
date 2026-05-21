@@ -155,6 +155,8 @@ var galgame: RefCounted  ## GalgameSystem (loaded dynamically)
 var alipay: RefCounted  ## AlipaySystem (loaded dynamically)
 var app: RefCounted  ## AppPopupSystem (loaded dynamically)
 var wechat: RefCounted  ## WeChatSystem (loaded dynamically)
+var spring_festival: RefCounted  ## SpringFestivalSystem (loaded dynamically)
+var _debug_panel: Control  ## DebugPanel (F1 toggle)
 
 ## 属性进度条（金钱不用进度条）
 var progress_energy: ProgressBar
@@ -168,6 +170,8 @@ var label_sanity_val: Label
 var label_charm_val: Label
 var label_intellect_val: Label
 var label_eq_val: Label
+var _skip_week_confirm: bool = false
+var _phone_dim: ColorRect = null
 var current_phase: Phase = Phase.WEEKDAY
 var _pending_event: Dictionary = {}
 var _pending_callback: Callable = Callable()
@@ -184,6 +188,7 @@ func _ready() -> void:
 	GameManager.aging_decayed.connect(_on_aging_decayed)
 	GameManager.invest_settled.connect(_on_invest_settled)
 	GameManager.spring_festival.connect(_on_spring_festival)
+	GameManager.spring_festival_boss.connect(_on_spring_festival_boss)
 
 	btn_work_normal.pressed.connect(_on_work_normal)
 	btn_work_slack.pressed.connect(_on_work_slack)
@@ -199,10 +204,16 @@ func _ready() -> void:
 	app.init(self)
 	wechat = load("res://scripts/WeChatSystem.gd").new()
 	wechat.init(self)
+	spring_festival = load("res://scripts/SpringFestivalSystem.gd").new()
+	spring_festival.init(self)
+	# 调试面板
+	_debug_panel = load("res://scripts/DebugPanel.gd").new()
+	add_child(_debug_panel)
 	btn_close_wechat.pressed.connect(wechat._on_close_wechat)
 	wechat._build_chat_items()
 	## 初始推送一批未读消息（模拟游戏开始前已有的消息）
 	_push_npc_unread_messages()
+	pass
 	btn_wc_back.pressed.connect(wechat._on_close_wechat)
 	tab_chats.pressed.connect(wechat._on_wc_tab.bind(0))
 	tab_contacts.pressed.connect(wechat._on_wc_tab.bind(1))
@@ -262,9 +273,23 @@ func _ready() -> void:
 		_btn_close_diary.pressed.connect(func() -> void: diary_popup.visible = false)
 
 	label_player_info.text = "姓名：%s | 星座：%s" % [GameManager.player_name, GameManager.player_zodiac]
+	# 创建手机暗化遮罩
+	var phone_case: Control = get_node_or_null("HBoxContainer/RightMargin/RightSystemArea/PhoneCase")
+	if phone_case:
+		_phone_dim = ColorRect.new()
+		_phone_dim.name = "PhoneDim"
+		_phone_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_phone_dim.color = Color(0, 0, 0, 0.45)
+		_phone_dim.z_index = 50
+		_phone_dim.mouse_filter = Control.MOUSE_FILTER_STOP
+		_phone_dim.visible = false
+		phone_case.add_child(_phone_dim)
 	_setup_stat_bars()
+	pass
 	_refresh_ui()
+	pass
 	_enter_weekday()
+	pass
 
 
 
@@ -389,7 +414,8 @@ func _enter_weekday() -> void:
 	current_phase = Phase.WEEKDAY
 	btn_next_week.visible = false
 	_hide_all_popups()
-	_disable_app_grid()
+	_enable_app_grid()
+	GameManager.check_auto_unlock_npcs()
 	weekday_panel.visible = true
 	btn_food_low.disabled = false
 	btn_food_mid.disabled = false
@@ -588,16 +614,20 @@ func _create_stat_bar(fill_color: Color) -> ProgressBar:
 
 func _on_stats_updated() -> void:
 	_refresh_ui()
+	pass
 
 func _on_week_advanced(_new_week: int) -> void:
 	_refresh_ui()
+	pass
 	## 推送NPC未读消息
 	_push_npc_unread_messages()
+	pass
 
 
 func _push_npc_unread_messages() -> void:
-	## 家庭群：第1周固定推送相亲局，第5周固定推送冰箱，其他70%随机
-	if GameManager.npcs.get("family_group", {}).get("unlocked", false):
+	## 家庭群：未读未清空时不推新消息
+	var _family_unread: int = GameManager.npcs.get("family_group", {}).get("unread", 0)
+	if _family_unread <= 0 and GameManager.npcs.get("family_group", {}).get("unlocked", false):
 		var should_push_event := false
 		var event_idx: int = 0
 		if GameManager.turn_count == 1:
@@ -637,8 +667,8 @@ func _push_npc_unread_messages() -> void:
 				GameManager.add_unread("wang_teacher")
 				GameManager._wang_teacher_last_push_week = GameManager.turn_count
 
-	## 家庭群闲聊：第2周起每4周推送一条（共13条，每条只出现一次）
-	if GameManager.turn_count >= 2 and (GameManager.turn_count - 2) % 4 == 0:
+	## 家庭群闲聊：未读未清空时不推新消息，第2周起每4周推送一条
+	if _family_unread <= 0 and GameManager.turn_count >= 2 and (GameManager.turn_count - 2) % 4 == 0:
 		## 合并负面闲聊和正面事件为一个大池子，随机抽取
 		var all_chats: Array = []
 		for ci in range(wechat._family_chat_chats.size()):
@@ -697,6 +727,22 @@ func _on_aging_decayed() -> void:
 
 func _on_spring_festival(msg: String) -> void:
 	show_urgent_message(msg)
+
+
+func _on_spring_festival_boss(age: int) -> void:
+	current_phase = Phase.EVENT
+	_hide_all_popups()
+	_disable_app_grid()
+	btn_next_week.visible = false
+	weekday_panel.visible = false
+	spring_festival.start_boss_fight(age, _on_spring_festival_done)
+
+
+func _on_spring_festival_done(total_sanity_cost: int, money_cost: int) -> void:
+	GameManager.finish_spring_festival(total_sanity_cost, money_cost)
+	if not GameManager.game_finished:
+		_enter_weekday()
+	pass
 
 
 func _on_game_over(cause_title: String, cause_desc: String) -> void:
@@ -790,20 +836,136 @@ func _on_game_ended(ending_type: String) -> void:
 	current_phase = Phase.ENDING
 	_disable_all()
 	label_game_over.visible = false
-	ending_panel.visible = true
-	label_ending_title.text = "【精英结局】孤独的赢家"
-	label_ending_content.text = (
-		"35岁这年，你如愿成为了别人眼中的精英。
+	ending_panel.visible = false
+	var ending: Dictionary = GameManager.last_ending
+	if ending.is_empty():
+		ending = GameManager.evaluate_ending()
+	# 结局颜色映射
+	var ending_colors: Dictionary = {
+		"true_love": Color(1.0, 0.42, 0.42),
+		"bankrupt": Color(0.6, 0.6, 0.6),
+		"corporate_slave": Color(0.85, 0.65, 0.13),
+		"influencer": Color(1.0, 0.56, 0.78),
+		"scholar": Color(0.4, 0.69, 0.96),
+		"elite": Color(1.0, 0.84, 0.0),
+		"homecoming": Color(0.4, 0.87, 0.54),
+		"ordinary": Color(0.7, 0.7, 0.7),
+	}
+	var accent: Color = ending_colors.get(ending_type, Color(1.0, 0.84, 0.0))
+	# 创建全屏结局弹窗
+	var overlay := ColorRect.new()
+	overlay.name = "EndingOverlay"
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0, 0, 0, 0.97)
+	overlay.z_index = 100
+	add_child(overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(580, 0)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.04, 0.04, 0.06, 1)
+	panel_style.set_corner_radius_all(16)
+	panel_style.set_content_margin_all(36)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	center.add_child(panel)
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 18)
+	panel.add_child(vbox)
+	# 终章标题
+	var chapter_label := Label.new()
+	chapter_label.text = "终  章"
+	chapter_label.add_theme_font_size_override("font_size", 16)
+	chapter_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+	chapter_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(chapter_label)
+	# 结局标题
+	var title_label := Label.new()
+	title_label.text = ending.get("title", "【结局】")
+	title_label.add_theme_font_size_override("font_size", 26)
+	title_label.add_theme_color_override("font_color", accent)
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title_label)
+	# 分割线
+	var sep1 := HSeparator.new()
+	sep1.add_theme_stylebox_override("separator", _create_line_style(accent))
+	vbox.add_child(sep1)
+	# 结局内容
+	var content_label := Label.new()
+	content_label.text = ending.get("content", "")
+	content_label.add_theme_font_size_override("font_size", 15)
+	content_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85, 1))
+	content_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(content_label)
+	# 分割线
+	var sep2 := HSeparator.new()
+	vbox.add_child(sep2)
+	# 终局统计
+	var romance_info: String = ""
+	for npc_id in GameManager.npcs:
+		if npc_id == "family_group" or npc_id == "wang_teacher":
+			continue
+		if GameManager.npcs[npc_id].get("level", 1) >= 2:
+			var nname: String = GameManager.npcs[npc_id].get("name", npc_id)
+			var nlv: int = GameManager.npcs[npc_id].get("level", 1)
+			romance_info += "%s(Lv.%d) " % [nname, nlv]
+	var stats_text: String = (
+		"终局统计
 "
-		+ "但看着空荡荡的高级公寓，你想起当年在城中村楼下，那个淋着雨给你送粥的笨蛋。
-"
-		+ "你赢得了世界，却唯独弄丢了那个能让你安心哭泣的人。"
+		+ "年龄：%d岁 | 金钱：%d | 花呗：%d
+" % [
+			GameManager.age,
+			GameManager.money,
+			GameManager.huabei_debt + GameManager.huabei_installment_debt,
+		]
+		+ "精力：%d/%d | 情绪：%d/%d
+" % [
+			GameManager.energy, GameManager.max_energy,
+			GameManager.sanity, GameManager.max_sanity,
+		]
+		+ "颜值：%d | 学识：%d | 情商：%d
+" % [
+			GameManager.charm, GameManager.intellect, GameManager.eq,
+		]
+		+ "职位等级：%d | 学历：%s" % [
+			GameManager.job_level,
+			"本科" if GameManager.degree >= 1 else "大专",
+		]
 	)
-	var family_lv: int = GameManager.npcs["family_group"]["level"]
-	label_ending_age.text = "终局统计 | 年龄：%d岁 | 金钱：%d | 家庭 Lv.%d" % [
-		GameManager.age, GameManager.money,
-		family_lv,
-	]
+	if romance_info != "":
+		stats_text += "
+重要的人：" + romance_info
+	var stats_label := Label.new()
+	stats_label.text = stats_text
+	stats_label.add_theme_font_size_override("font_size", 13)
+	stats_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+	stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(stats_label)
+	# 重新开始按钮
+	var btn_restart := Button.new()
+	btn_restart.text = "再来一次"
+	btn_restart.custom_minimum_size = Vector2(0, 48)
+	var restart_style := StyleBoxFlat.new()
+	restart_style.bg_color = Color(accent.r, accent.g, accent.b, 1)
+	restart_style.set_corner_radius_all(10.0)
+	btn_restart.add_theme_stylebox_override("normal", restart_style)
+	btn_restart.add_theme_color_override("font_color", Color.WHITE)
+	btn_restart.add_theme_font_size_override("font_size", 18)
+	btn_restart.pressed.connect(func() -> void:
+		get_tree().reload_current_scene()
+	)
+	vbox.add_child(btn_restart)
+
+
+func _create_line_style(line_color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(line_color.r, line_color.g, line_color.b, 0.4)
+	style.content_margin_top = 4
+	style.content_margin_bottom = 4
+	return style
 
 func _disable_all() -> void:
 	weekday_panel.visible = false
@@ -887,6 +1049,7 @@ func _get_salary(work_type: String) -> int:
 
 func _finish_workday() -> void:
 	_refresh_ui()
+	pass
 	weekday_panel.visible = false
 	_play_transition("5天的牛马生活结束了，终于熬到了周末...")
 
@@ -904,6 +1067,8 @@ func _play_transition(trans_text: String) -> void:
 	tween.tween_callback(func() -> void:
 		transition_screen.visible = false
 		if GameManager.turn_count == 1:
+			weekday_panel.visible = false
+			_enable_app_grid()
 			var opening_pages: Array = [
 				"墙皮在掉。",
 				"绿斑从天花板角落往下蔓延。深圳三月的回南天让人喘不过气。",
@@ -924,7 +1089,7 @@ func _play_transition(trans_text: String) -> void:
 
 
 func _proceed_after_work_event() -> void:
-	var event := GameManager.roll_random_event("work")
+	var event := GameManager.roll_workplace_event()
 	if event.size() > 0:
 		_show_event(event, _enter_weekend)
 	else:
@@ -980,11 +1145,15 @@ func _on_pay_rent() -> void:
 		return
 	if not GameManager.game_finished:
 		_enter_weekday()
+	pass
 
 
 # ==================== 周末按钮 ====================
 
 func _on_btn_next_week() -> void:
+	if _skip_week_confirm:
+		_proceed_next_week()
+		return
 	_show_week_confirm_popup()
 
 
@@ -1029,6 +1198,20 @@ func _show_week_confirm_popup() -> void:
 	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(desc)
 
+	var no_remind := CheckBox.new()
+	no_remind.text = "不再提醒"
+	no_remind.add_theme_font_size_override("font_size", 13)
+	no_remind.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+	no_remind.add_theme_icon_override("checked", null)
+	no_remind.add_theme_icon_override("unchecked", null)
+	var hbox_remind := HBoxContainer.new()
+	hbox_remind.add_theme_constant_override("separation", 4)
+	var spacer_l := Control.new()
+	spacer_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox_remind.add_child(spacer_l)
+	hbox_remind.add_child(no_remind)
+	vbox.add_child(hbox_remind)
+
 	var btn_confirm := Button.new()
 	btn_confirm.text = "确认，结束本周"
 	btn_confirm.custom_minimum_size = Vector2(0, 44)
@@ -1038,7 +1221,7 @@ func _show_week_confirm_popup() -> void:
 	btn_confirm.add_theme_stylebox_override("normal", confirm_style)
 	btn_confirm.add_theme_color_override("font_color", Color.WHITE)
 	btn_confirm.add_theme_font_size_override("font_size", 16)
-	btn_confirm.pressed.connect(_on_week_confirm.bind(overlay))
+	btn_confirm.pressed.connect(_on_week_confirm.bind(overlay, no_remind))
 	vbox.add_child(btn_confirm)
 
 	var btn_back := Button.new()
@@ -1055,7 +1238,9 @@ func _show_week_confirm_popup() -> void:
 
 
 ## 确认结束本周回调
-func _on_week_confirm(overlay: ColorRect) -> void:
+func _on_week_confirm(overlay: ColorRect, no_remind: CheckBox) -> void:
+	if no_remind.button_pressed:
+		_skip_week_confirm = true
 	overlay.queue_free()
 	# 深夜失眠拦截：情绪低于30时有50%概率触发
 	if GameManager.sanity < 30 and randf() < 0.5:
@@ -1070,3 +1255,4 @@ func _proceed_next_week() -> void:
 		return
 	if not GameManager.game_finished:
 		_enter_weekday()
+	pass

@@ -1,0 +1,1065 @@
+[
+  {
+    "id": "eq_01",
+    "desc": "中午吃饭时帮同事挡了一杯酒，对方说'你这人可以'。",
+    "eq": 1,
+    "sanity": 2,
+    "weight": 3
+  },
+  {
+    "id": "eq_02",
+    "desc": "开会时老板说'有不同意见的可以提'，全场沉默。你鼓起勇气说了一个想法，虽然没被采纳，但老板记住了你的名字。",
+    "eq": 2,
+    "sanity": -3,
+    "weight": 2
+  },
+  {
+    "id": "eq_03",
+    "desc": "在电梯里遇到了隔壁部门的老总，你灵机一动说了句得体的话。他多看了你一眼。",
+    "eq": 2,
+    "weight": 2
+  },
+  {
+    "id": "eq_04",
+    "desc": "同事被客户骂哭了，你递了杯水，陪她聊了十分钟。她后来在工作上帮了你不少。",
+    "eq": 2,
+    "sanity": 3,
+    "weight": 2
+  },
+  {
+    "id": "eq_05",
+    "desc": "午饭时不知道谁把你的外卖拿了。你忍住了没发火，默默重新点了一份。",
+    "eq": 1,
+    "sanity": -2,
+    "weight": 3
+  },
+  {
+    "id": "eq_06",
+    "desc": "跟保洁阿姨聊天，才知道她儿子跟你同岁，在老家开网约车。你突然觉得自己的烦恼也不算什么。",
+    "eq": 1,
+    "sanity": 2,
+    "weight": 2
+  },
+  {
+    "id": "intel_01",
+    "desc": "午休刷手机看到一个行业分析文章，你认真读完了，觉得开了点窍。",
+    "intellect": 1,
+    "weight": 4
+  },
+  {
+    "id": "intel_02",
+    "desc": "被安排整理一份数据报告，你花了三小时学会了数据透视表。",
+    "intellect": 2,
+    "energy": -5,
+    "weight": 3
+  },
+  {
+    "id": "intel_03",
+    "desc": "公司组织了一次产品培训，你全程在认真听讲（虽然旁边的人都在玩手机）。",
+    "intellect": 2,
+    "weight": 2
+  },
+  {
+    "id": "intel_04",
+    "desc": "电脑蓝屏了，你在等待IT来修的过程中用手机学了一篇Excel技巧。",
+    "intellect": 1,
+    "weight": 3
+  },
+  {
+    "id": "intel_05",
+    "desc": "隔壁工位的程序员教你写了个简单的Python脚本，工作效率翻倍。",
+    "intellect": 2,
+    "eq": 1,
+    "weight": 2
+  },
+  {
+    "id": "intel_06",
+    "desc": "翻到了公司去年的年度报告，花了半小时研究了一下业务逻辑。",
+    "intellect": 1,
+    "weight": 3
+  },
+  {
+    "id": "charm_01",
+    "desc": "穿了一件新买的衬衫上班，被三个同事夸了。",
+    "charm": 1,
+    "sanity": 3,
+    "weight": 3
+  },
+  {
+    "id": "charm_02",
+    "desc": "前台小妹问你要口红色号，你说了一个牌子。她搜了一下价格后沉默了。",
+    "charm": 2,
+    "weight": 2
+  },
+  {
+    "id": "charm_03",
+    "desc": "发现公司楼下的镜子照人很好看，以后午休都去那里补个妆。",
+    "charm": 1,
+    "sanity": 1,
+    "weight": 3
+  },
+  {
+    "id": "charm_04",
+    "desc": "下雨天在门口帮老板撑了一下伞。他看了你一眼说'小姑娘挺精神'。",
+    "charm": 1,
+    "eq": 1,
+    "weight": 2
+  },
+  {
+    "id": "charm_05",
+    "desc": "今天状态很差，黑眼圈很明显。前台以为你生病了问你还好吗。",
+    "charm": -1,
+    "sanity": -2,
+    "weight": 2
+  },
+  {
+    "id": "charm_06",
+    "desc": "午休在公司楼下走了一圈，阳光晒在脸上感觉不错。",
+    "charm": 1,
+    "energy": 5,
+    "sanity": 3,
+    "weight": 3
+  },
+  {
+    "id": "energy_01",
+    "desc": "发现了公司天台！午休上去吹了会儿风，感觉活过来了。",
+    "energy": 10,
+    "sanity": 5,
+    "weight": 3
+  },
+  {
+    "id": "energy_02",
+    "desc": "找到一条省10分钟的通勤路线，每天多睡一会儿。",
+    "energy": 5,
+    "weight": 3
+  },
+  {
+    "id": "energy_03",
+    "desc": "今天公司饮水机的水特别好喝，你喝了五杯。",
+    "energy": 3,
+    "sanity": 1,
+    "weight": 4
+  },
+  {
+    "id": "energy_04",
+    "desc": "中午趴桌上睡着了，醒来发现脸上印了键盘的痕迹。但精神好了不少。",
+    "energy": 8,
+    "charm": -1,
+    "weight": 2
+  },
+  {
+    "id": "energy_05",
+    "desc": "今天空调温度刚好，不冷不热，工作效率出奇地高。",
+    "energy": 5,
+    "intellect": 1,
+    "weight": 3
+  },
+  {
+    "id": "sanity_01",
+    "desc": "发工资了！虽然不多，但数字变大的感觉真好。",
+    "sanity": 5,
+    "weight": 3,
+    "conditions": {
+      "turn_count_min": 5
+    }
+  },
+  {
+    "id": "sanity_02",
+    "desc": "老板今天出差了，办公室气氛瞬间轻松了不少。",
+    "sanity": 5,
+    "energy": 5,
+    "weight": 2
+  },
+  {
+    "id": "sanity_03",
+    "desc": "外卖小哥递餐的时候说了句'辛苦了'。就三个字，但你觉得被看见了一样。",
+    "sanity": 3,
+    "weight": 3
+  },
+  {
+    "id": "sanity_04",
+    "desc": "下班路上看到一只流浪猫在晒太阳，蹲下来摸了摸它。",
+    "sanity": 3,
+    "weight": 3
+  },
+  {
+    "id": "sanity_05",
+    "desc": "今天一切正常。没有突发事件，没有领导找茬，没有系统崩溃。难得。",
+    "sanity": 3,
+    "weight": 4
+  },
+  {
+    "id": "sanity_06",
+    "desc": "工作群里有人发了张搞笑图片，你笑出了声。这是今天唯一一次真笑。",
+    "sanity": 2,
+    "weight": 4
+  },
+  {
+    "id": "neg_01",
+    "desc": "辛辛苦苦做的方案被领导一句话否了。'方向不对，重新做。'",
+    "sanity": -10,
+    "intellect": 1,
+    "weight": 3
+  },
+  {
+    "id": "neg_02",
+    "desc": "同事在群里@你说你负责的部分有问题。你看了看，明明是他自己没交接清楚。",
+    "sanity": -5,
+    "eq": 1,
+    "weight": 3
+  },
+  {
+    "id": "neg_03",
+    "desc": "被领导当着全组的面批评了。你咬着嘴唇没说话。",
+    "sanity": -15,
+    "eq": 1,
+    "weight": 2
+  },
+  {
+    "id": "neg_04",
+    "desc": "发现隔壁工位比你晚来半年的新人工资比你高1000。",
+    "sanity": -10,
+    "weight": 2,
+    "conditions": {
+      "turn_count_min": 26
+    }
+  },
+  {
+    "id": "neg_05",
+    "desc": "周一早上地铁被人踩了一脚，新鞋上留了个黑印。一整天心情都不好。",
+    "sanity": -3,
+    "charm": -1,
+    "weight": 3
+  },
+  {
+    "id": "neg_06",
+    "desc": "打印机卡纸了，你修了半天没修好，最后IT说你把纸塞反了。",
+    "sanity": -3,
+    "intellect": 1,
+    "weight": 3
+  },
+  {
+    "id": "neg_07",
+    "desc": "加班到九点，回去发现楼下那家你最爱吃的店关门了。",
+    "sanity": -5,
+    "weight": 3,
+    "conditions": {
+      "overtime_min": 1
+    }
+  },
+  {
+    "id": "neg_08",
+    "desc": "在茶水间听到同事在背后议论你。你假装没听到，倒了杯水就走了。",
+    "sanity": -8,
+    "eq": 2,
+    "weight": 2
+  },
+  {
+    "id": "stage_first_week",
+    "desc": "入职第一天。HR带你转了一圈，你一个人都不认识。但你好歹有工作了。",
+    "sanity": 3,
+    "energy": -5,
+    "conditions": {
+      "turn_count_max": 2
+    },
+    "weight": 10
+  },
+  {
+    "id": "stage_promotion",
+    "desc": "升职了！虽然只是小组长，但名片上终于多了一个Title。你拍了张照发给了妈。",
+    "sanity": 10,
+    "eq": 1,
+    "conditions": {
+      "job_level_min": 1
+    },
+    "weight": 5
+  },
+  {
+    "id": "stage_senior",
+    "desc": "来了快两年了，新来的实习生叫你'姐'。你突然觉得自己不再是最底层了。",
+    "sanity": 5,
+    "eq": 1,
+    "conditions": {
+      "job_level_min": 2
+    },
+    "weight": 5
+  },
+  {
+    "id": "stage_rich",
+    "desc": "这个月到手工资终于过万了。你盯着银行卡余额看了很久。",
+    "sanity": 10,
+    "conditions": {
+      "money_min": 50000
+    },
+    "weight": 5
+  },
+  {
+    "id": "stage_broke",
+    "desc": "午饭只敢点最便宜的盖浇饭。你安慰自己这是在减肥。",
+    "sanity": -5,
+    "energy": -3,
+    "conditions": {
+      "money_max": 2000
+    },
+    "weight": 5
+  },
+  {
+    "id": "stage_30",
+    "desc": "你对着电脑屏幕发了会儿呆。今年已经30了，还在写周报。",
+    "sanity": -8,
+    "intellect": 1,
+    "conditions": {
+      "age_min": 30
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_san_01",
+    "desc": "这周上班一直忧心忡忡，走在路上都走神。好在没有撞到电线杆。",
+    "sanity": -2,
+    "energy": -3,
+    "conditions": {
+      "sanity_max": 30
+    },
+    "weight": 4
+  },
+  {
+    "id": "low_san_02",
+    "desc": "躲在厕所里哭了五分钟，擦干眼泪出来继续干活。同事没发现，但你的眼睛红了一个下午。",
+    "sanity": 3,
+    "charm": -1,
+    "conditions": {
+      "sanity_max": 25
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_san_03",
+    "desc": "喝了三杯咖啡还是提不起精神。你开始怀疑是不是该去看看心理医生。",
+    "sanity": -3,
+    "energy": 2,
+    "conditions": {
+      "sanity_max": 20
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_san_04",
+    "desc": "领导发现你最近状态不对，叫你到办公室谈话。你电光火石般找到一个借口，说是家里有点事。领导拍了拍你的肩说'注意身体'。",
+    "eq": 2,
+    "sanity": 5,
+    "conditions": {
+      "sanity_max": 30,
+      "eq_min": 15
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_san_05",
+    "desc": "中午一个人在天台坐着，风吹过来的时候觉得如果能一直坐在这里就好了。",
+    "sanity": -5,
+    "conditions": {
+      "sanity_max": 15
+    },
+    "weight": 2
+  },
+  {
+    "id": "low_san_06",
+    "desc": "同事问你怎么了，你说没事。然后你意识到自己已经很久没有跟任何人说过真话了。",
+    "sanity": -3,
+    "eq": 1,
+    "conditions": {
+      "sanity_max": 30
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_san_07",
+    "desc": "凌晨三点还睡不着，刷着手机里的搞笑视频，但一个也没笑出来。",
+    "sanity": -5,
+    "energy": -5,
+    "conditions": {
+      "sanity_max": 20
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_san_08",
+    "desc": "路过公司走廊，看到墙上写着'快乐工作'的标语，你冷笑了一下。",
+    "sanity": -2,
+    "conditions": {
+      "sanity_max": 40
+    },
+    "weight": 4
+  },
+  {
+    "id": "low_san_09",
+    "desc": "今天莫名有点想哭，但忍住了。中午吃饭的时候突然释怀了一点——可能只是太累了。",
+    "sanity": 2,
+    "energy": -3,
+    "conditions": {
+      "sanity_max": 30
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_money_01",
+    "desc": "中午又吃泡面。同事问你是不是在减肥，你笑着说是啊。",
+    "sanity": -3,
+    "conditions": {
+      "money_max": 3000
+    },
+    "weight": 4
+  },
+  {
+    "id": "low_money_02",
+    "desc": "路过奶茶店，你想了一分钟，最后还是没进去。你不是不爱喝甜的，是不爱喝贵的。",
+    "sanity": -2,
+    "conditions": {
+      "money_max": 2000
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_money_03",
+    "desc": "部门团建AA制，你笑着说'今天有点事先走了'。其实哪有什么事——这个月手头紧，AA一顿人均一百多，肉疼。",
+    "sanity": -5,
+    "eq": 1,
+    "conditions": {
+      "money_max": 3000
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_money_04",
+    "desc": "双十一，你在购物车里删了又加，加了又删，最后什么也没买。",
+    "sanity": -4,
+    "charm": -1,
+    "conditions": {
+      "money_max": 5000
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_money_05",
+    "desc": "同事借钱，你犹豫了一下还是借了500。下个月饭钱怎么办到时候再说吧。",
+    "sanity": -2,
+    "eq": 2,
+    "money": -500,
+    "conditions": {
+      "money_max": 5000
+    },
+    "weight": 2
+  },
+  {
+    "id": "low_money_06",
+    "desc": "房东发来消息：下个月涨200。你盯着屏幕看了三分钟，回了个'好的'。",
+    "sanity": -8,
+    "conditions": {
+      "money_max": 8000
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_money_07",
+    "desc": "拼多多上买了个9.9的饭盒，用了一次就裂了。但至少今天中午不用泡面了。",
+    "sanity": -1,
+    "charm": -1,
+    "conditions": {
+      "money_max": 3000
+    },
+    "weight": 4
+  },
+  {
+    "id": "low_energy_01",
+    "desc": "开会的时候差点睡着，被旁边的同事用胳膊肘捅醒。你假装在翻笔记本。",
+    "energy": -5,
+    "eq": 1,
+    "conditions": {
+      "energy_max": 30
+    },
+    "weight": 4
+  },
+  {
+    "id": "low_energy_02",
+    "desc": "打字打到一半手指发麻。你看了看时间，才上午十点半。",
+    "energy": -3,
+    "conditions": {
+      "energy_max": 20
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_energy_03",
+    "desc": "中午趴桌上睡了一小时，口水流了一胳膊。但下午确实精神多了。",
+    "energy": 10,
+    "charm": -1,
+    "conditions": {
+      "energy_max": 30
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_energy_04",
+    "desc": "喝了罐红牛。效果如何不好说，但钱包又少了5块。",
+    "energy": 8,
+    "money": -5,
+    "conditions": {
+      "energy_max": 40
+    },
+    "weight": 4
+  },
+  {
+    "id": "high_eq_01",
+    "desc": "两个部门因为对接问题吵起来了，你三句话就把两边安抚住了。领导在旁边看了一眼，什么也没说。",
+    "eq": 2,
+    "sanity": 3,
+    "conditions": {
+      "eq_min": 20
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_eq_02",
+    "desc": "客户打电话来发火，你全程没打断，最后说了句'您的感受我完全理解'。客户气消了一半。",
+    "eq": 2,
+    "sanity": 2,
+    "conditions": {
+      "eq_min": 25
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_eq_03",
+    "desc": "公司年会，你端着酒杯游刃有余地跟各路领导敬了一圈。没人灌你——因为你根本没给别人开口的机会。",
+    "eq": 2,
+    "charm": 1,
+    "conditions": {
+      "eq_min": 25
+    },
+    "weight": 2
+  },
+  {
+    "id": "high_eq_04",
+    "desc": "帮同事解围了一次尴尬场面，她偷偷给你塞了块巧克力。",
+    "eq": 1,
+    "sanity": 2,
+    "conditions": {
+      "eq_min": 20
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_eq_05",
+    "desc": "部门聚餐，你负责点菜。荤素搭配，冷热均衡，人均60，全场满意。这就是生存智慧。",
+    "eq": 1,
+    "sanity": 2,
+    "energy": 3,
+    "conditions": {
+      "eq_min": 20
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_charm_01",
+    "desc": "客户点名让你去接待，说'上次那个小姑娘挺好的'。你不确定他说的'好'是哪方面。",
+    "charm": 2,
+    "sanity": -1,
+    "conditions": {
+      "charm_min": 20
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_charm_02",
+    "desc": "公司合照，你被推到了C位。你笑着说'别闹'，但站过去的时候心里还是美了一下。",
+    "charm": 1,
+    "sanity": 3,
+    "conditions": {
+      "charm_min": 25
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_charm_03",
+    "desc": "公司楼下保安大叔已经记住你了，每天早上都会说'又来这么早啊'。你笑了笑，没告诉他你是被迫的。",
+    "charm": 1,
+    "sanity": 1,
+    "conditions": {
+      "charm_min": 20
+    },
+    "weight": 4
+  },
+  {
+    "id": "high_charm_04",
+    "desc": "午休在楼下散步，被微商搭讪问你要不要做模特。你礼貌拒绝了，但偷偷开心了一下午。",
+    "charm": 2,
+    "sanity": 3,
+    "conditions": {
+      "charm_min": 30
+    },
+    "weight": 2
+  },
+  {
+    "id": "high_intel_01",
+    "desc": "开会的时候你随口说了一组数据，全桌安静了三秒。领导问你哪来的，你说'上季度报告第37页'。",
+    "intellect": 1,
+    "sanity": 3,
+    "conditions": {
+      "intellect_min": 20
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_intel_02",
+    "desc": "帮部门做了一个自动化报表模板，以后每天省半小时。领导说'你不去干技术可惜了'。",
+    "intellect": 2,
+    "eq": 1,
+    "conditions": {
+      "intellect_min": 25
+    },
+    "weight": 2
+  },
+  {
+    "id": "high_intel_03",
+    "desc": "同事电脑出问题了第一个想到的是你而不是IT。你也不知道为什么，反正修好了。",
+    "intellect": 1,
+    "eq": 1,
+    "conditions": {
+      "intellect_min": 20
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_san_01",
+    "desc": "今天状态特别好，三小时干完了平时一天的活。剩下的时间你在学新东西。",
+    "sanity": 2,
+    "intellect": 1,
+    "energy": -5,
+    "conditions": {
+      "sanity_min": 80
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_san_02",
+    "desc": "早上出门的时候哼着歌，电梯里的大叔看了你一眼。你不在乎，心情好就是心情好。",
+    "sanity": 2,
+    "charm": 1,
+    "conditions": {
+      "sanity_min": 70
+    },
+    "weight": 3
+  },
+  {
+    "id": "high_san_03",
+    "desc": "新来的实习生不知道怎么用打印机，你主动过去教了她。她叫了你一声'姐'。",
+    "sanity": 3,
+    "eq": 1,
+    "conditions": {
+      "sanity_min": 60
+    },
+    "weight": 3
+  },
+  {
+    "id": "overtime_01",
+    "desc": "凌晨两点还在改PPT，窗外只剩路灯。你给自己倒了杯水，心想这就是大城市的代价。",
+    "sanity": -5,
+    "intellect": 1,
+    "energy": -8,
+    "conditions": {
+      "overtime_min": 2
+    },
+    "weight": 3
+  },
+  {
+    "id": "overtime_02",
+    "desc": "加班到十点，打车回家。司机问'这么晚下班啊'，你说'嗯'。他没再说话。",
+    "sanity": -3,
+    "energy": -5,
+    "money": -30,
+    "conditions": {
+      "overtime_min": 2
+    },
+    "weight": 3
+  },
+  {
+    "id": "overtime_03",
+    "desc": "加班站起来的时候眼前一黑，扶着桌子缓了半分钟。你决定明天早点走——虽然你知道你不会。",
+    "sanity": -5,
+    "energy": -10,
+    "conditions": {
+      "overtime_min": 3
+    },
+    "weight": 2
+  },
+  {
+    "id": "overtime_04",
+    "desc": "工位抽屉里翻出一包过期的饼干。吃了。味道还不错。",
+    "energy": 3,
+    "sanity": -1,
+    "conditions": {
+      "overtime_min": 1
+    },
+    "weight": 4
+  },
+  {
+    "id": "huabei_01",
+    "desc": "花呗账单又来了。你深吸一口气，点了'最低还款'。",
+    "sanity": -5,
+    "conditions": {
+      "huabei_min": 3000
+    },
+    "weight": 3
+  },
+  {
+    "id": "huabei_02",
+    "desc": "这个月终于只还了最低还款。不，不对，那叫'活着'。",
+    "sanity": -2,
+    "conditions": {
+      "huabei_min": 2000
+    },
+    "weight": 3
+  },
+  {
+    "id": "huabei_03",
+    "desc": "双十一又剁手了。你安慰自己说'这是投资自己'。花呗不这么认为。",
+    "sanity": -3,
+    "charm": 1,
+    "conditions": {
+      "huabei_min": 3000
+    },
+    "weight": 3
+  },
+  {
+    "id": "huabei_04",
+    "desc": "还清了花呗！你截了个余额为0的图，犹豫了半天还是没发朋友圈。",
+    "sanity": 8,
+    "conditions": {
+      "huabei_min": 1
+    },
+    "weight": 2
+  },
+  {
+    "id": "daily_01",
+    "desc": "午休偷偷刷了会儿招聘网站，看到几个岗位工资比现在高。你投了一份简历，然后关掉了页面。",
+    "sanity": -1,
+    "intellect": 1,
+    "weight": 4
+  },
+  {
+    "id": "daily_02",
+    "desc": "同事从老家带了特产，给你分了一份。你吃着吃着突然想家了。",
+    "sanity": -2,
+    "weight": 3
+  },
+  {
+    "id": "daily_03",
+    "desc": "交完房租，你看着银行卡余额算了算，这个月又要紧巴巴地过了。",
+    "sanity": -3,
+    "weight": 4,
+    "conditions": {
+      "turn_count_min": 5
+    }
+  },
+  {
+    "id": "daily_04",
+    "desc": "今天老板不在，你提前半小时溜了。走出公司大门的那一刻，风都是甜的。",
+    "sanity": 3,
+    "energy": 3,
+    "weight": 3
+  },
+  {
+    "id": "daily_05",
+    "desc": "接了个推销电话。你竟然跟对方聊了三分钟，因为好久没人主动跟你说话了。",
+    "sanity": -1,
+    "eq": 1,
+    "weight": 4
+  },
+  {
+    "id": "daily_06",
+    "desc": "打印机旁边的绿萝又枯了一片叶子。你把它摘掉了。你跟它说'加油'，也不知道是在跟谁说。",
+    "sanity": -1,
+    "weight": 5
+  },
+  {
+    "id": "daily_07",
+    "desc": "群里有人发了个'今天谁请奶茶'的表情包，你装没看到。十分钟后有人真的请了。",
+    "sanity": 2,
+    "energy": 2,
+    "weight": 3
+  },
+  {
+    "id": "daily_08",
+    "desc": "发现了一个新的外卖优惠券，满30减15。你觉得自己今天赚到了。",
+    "sanity": 2,
+    "money": 15,
+    "weight": 4
+  },
+  {
+    "id": "daily_09",
+    "desc": "下班路上路过一家宠物店，在门口看了五分钟猫。有一只橘猫冲你伸了个懒腰。",
+    "sanity": 3,
+    "weight": 3
+  },
+  {
+    "id": "daily_10",
+    "desc": "中午吃饭的时候刷到一条短视频，教你如何用Excel画甘特图。你收藏了，虽然大概率不会看。",
+    "intellect": 1,
+    "weight": 4
+  },
+  {
+    "id": "daily_11",
+    "desc": "今天穿了双舒服的鞋上班，走路都带风。幸福的门槛有时候真的很低。",
+    "sanity": 2,
+    "energy": 3,
+    "weight": 4
+  },
+  {
+    "id": "daily_12",
+    "desc": "午休时间在楼道里跟另一个部门的同事聊了会儿天。原来大家都不容易。",
+    "sanity": 2,
+    "eq": 1,
+    "weight": 3
+  },
+  {
+    "id": "edu_01",
+    "desc": "新来的同事是985硕士，第一天就把你一周的活干完了。你笑了笑说了句'厉害'。",
+    "intellect": -1,
+    "sanity": -5,
+    "conditions": {
+      "degree_min": 0
+    },
+    "weight": 3
+  },
+  {
+    "id": "edu_02",
+    "desc": "公司内部竞聘，岗位要求写着'本科及以上'。你看了看自己的学历，默默关掉了页面。",
+    "sanity": -8,
+    "conditions": {
+      "degree_min": 0
+    },
+    "weight": 2
+  },
+  {
+    "id": "low_charm_01",
+    "desc": "新来的同事问你是不是刚毕业的。你已经来公司两年了。",
+    "charm": -1,
+    "sanity": -3,
+    "conditions": {
+      "charm_max": 10
+    },
+    "weight": 3
+  },
+  {
+    "id": "low_charm_02",
+    "desc": "今天没洗头就上班了。结果在电梯里遇到了大老板。你把头低到了胸口。",
+    "charm": -1,
+    "sanity": -2,
+    "conditions": {
+      "charm_max": 15
+    },
+    "weight": 3
+  },
+  {
+    "id": "stage_25",
+    "desc": "25岁了。你还记得刚来深圳时说的那句'三年之内一定要混出个样子'。三年过去了。",
+    "sanity": -5,
+    "intellect": 1,
+    "conditions": {
+      "age_min": 25
+    },
+    "weight": 3
+  },
+  {
+    "id": "stage_27",
+    "desc": "27岁。朋友圈里有人晒结婚证，有人晒娃，有人晒offer。你晒了一个加班餐。",
+    "sanity": -5,
+    "conditions": {
+      "age_min": 27
+    },
+    "weight": 3
+  },
+  {
+    "id": "stage_29",
+    "desc": "29岁。你妈打电话来的第一句话从'吃饭了吗'变成了'有没有对象'。",
+    "sanity": -5,
+    "eq": 1,
+    "conditions": {
+      "age_min": 29
+    },
+    "weight": 2
+  },
+  {
+    "id": "stage_savings_5w",
+    "desc": "银行卡里终于有了5万块钱。你截了个图，想了想还是存到了'梦想基金'的文件夹里。",
+    "sanity": 10,
+    "conditions": {
+      "money_min": 50000
+    },
+    "weight": 3
+  },
+  {
+    "id": "stage_savings_10w",
+    "desc": "10万了。你第一次觉得，也许这座城市真的容得下你。",
+    "sanity": 15,
+    "conditions": {
+      "money_min": 100000
+    },
+    "weight": 2
+  },
+  {
+    "id": "stage_degree",
+    "desc": "报了个在职本科的班。每周三晚上去上课，坐最后一排。但你去了。",
+    "intellect": 2,
+    "energy": -5,
+    "sanity": 3,
+    "conditions": {
+      "degree_min": 0,
+      "money_min": 8000
+    },
+    "weight": 2
+  },
+  {
+    "id": "stage_new_job",
+    "desc": "面试了一家新公司，工资翻了一倍。你辞职信写了一下午，最后只用了三行。",
+    "sanity": 15,
+    "money": 5000,
+    "conditions": {
+      "intellect_min": 25,
+      "eq_min": 20
+    },
+    "weight": 2
+  },
+  {
+    "id": "stage_night_school",
+    "desc": "晚上下班后去上了第一节夜校课。教室里坐着一群跟你差不多大的人，大家都不太好意思看对方。",
+    "intellect": 1,
+    "sanity": 2,
+    "energy": -5,
+    "conditions": {
+      "age_min": 26,
+      "intellect_min": 10
+    },
+    "weight": 3
+  },
+  {
+    "id": "gender_01",
+    "desc": "开会的时候你提了个建议，没人理。五分钟后男同事说了一模一样的话，领导说'好主意'。",
+    "sanity": -8,
+    "eq": 1,
+    "conditions": {
+      "eq_min": 10
+    },
+    "weight": 3
+  },
+  {
+    "id": "gender_02",
+    "desc": "出差名额本来是你的，结果给了另一个男同事。领导说'女孩子出差不方便'。你不太方便反驳。",
+    "sanity": -10,
+    "conditions": {
+      "eq_min": 5
+    },
+    "weight": 2
+  },
+  {
+    "id": "gender_03",
+    "desc": "电梯里男同事开了个不太合适的玩笑，其他人都在笑。你也跟着笑了一下。",
+    "sanity": -3,
+    "eq": 2,
+    "conditions": {
+      "eq_min": 15
+    },
+    "weight": 3
+  },
+  {
+    "id": "gender_04",
+    "desc": "面试的时候HR问你'有没有男朋友，打算什么时候结婚'。你愣了一秒，然后微笑着说'目前没有这个打算'。",
+    "eq": 2,
+    "sanity": -5,
+    "conditions": {
+      "age_min": 25
+    },
+    "weight": 2
+  },
+  {
+    "id": "gender_05",
+    "desc": "客户聚餐，对方一直劝酒。你推了三次推不掉，最后喝了一杯。胃疼了一晚上。",
+    "sanity": -5,
+    "energy": -5,
+    "eq": 1,
+    "conditions": {
+      "eq_min": 10
+    },
+    "weight": 3
+  },
+  {
+    "id": "commute_01",
+    "desc": "早高峰地铁，被人踩了新鞋一脚。你低头看了看，没说话。对方也没说话。深圳速度。",
+    "sanity": -2,
+    "charm": -1,
+    "weight": 4
+  },
+  {
+    "id": "commute_02",
+    "desc": "今天地铁居然有座位！你坐在那里发了一路的呆，觉得世界还是美好的。",
+    "sanity": 3,
+    "energy": 3,
+    "weight": 3
+  },
+  {
+    "id": "commute_03",
+    "desc": "在地铁上看到一个小姐姐穿搭特别好看，你偷偷拍了个照发给闺蜜。",
+    "charm": 1,
+    "sanity": 1,
+    "weight": 4
+  },
+  {
+    "id": "commute_04",
+    "desc": "下雨天鞋湿了一半，在公司用纸巾垫了一上午。下午终于干了，但味道不太好。",
+    "sanity": -2,
+    "charm": -1,
+    "weight": 3
+  },
+  {
+    "id": "commute_05",
+    "desc": "出门晚了30秒，眼睁睁看着地铁门关上。下一班要等6分钟。",
+    "sanity": -2,
+    "energy": -2,
+    "weight": 4
+  },
+  {
+    "id": "lucky_01",
+    "desc": "到公司楼下的时候，最后一份肠粉刚好是你的。后面排队的人脸都绿了。",
+    "sanity": 3,
+    "energy": 3,
+    "weight": 3
+  },
+  {
+    "id": "lucky_02",
+    "desc": "中午买刮刮乐中了20块！你觉得今天运气不错，没再买第二张。",
+    "sanity": 5,
+    "money": 20,
+    "weight": 3
+  },
+  {
+    "id": "lucky_03",
+    "desc": "工位旁边的绿萝突然长了片新叶子。你觉得自己跟它一样顽强。",
+    "sanity": 2,
+    "weight": 4
+  },
+  {
+    "id": "lucky_04",
+    "desc": "下班出公司的时候天居然还没黑！你在楼下多站了一会儿。",
+    "sanity": 3,
+    "energy": 2,
+    "weight": 4
+  },
+  {
+    "id": "lucky_05",
+    "desc": "同事请了下午茶。你拿到了最后一杯，还是你最爱的杨枝甘露。",
+    "sanity": 4,
+    "energy": 5,
+    "weight": 3
+  }
+]

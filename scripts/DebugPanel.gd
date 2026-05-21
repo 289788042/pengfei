@@ -39,7 +39,7 @@ func _ready() -> void:
 	## 标题行
 	var title_hb = HBoxContainer.new()
 	var title_label = Label.new()
-	title_label.text = "🔧 开发调试面板 (F1切换)"
+	title_label.text = "开发调试面板 (F1切换)"
 	title_label.add_theme_font_size_override("font_size", 16)
 	title_label.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0))
 	title_hb.add_child(title_label)
@@ -47,7 +47,7 @@ func _ready() -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_hb.add_child(spacer)
 	var close_btn = Button.new()
-	close_btn.text = "✕"
+	close_btn.text = "X"
 	close_btn.custom_minimum_size = Vector2(28, 28)
 	close_btn.pressed.connect(func(): _toggle_visible())
 	title_hb.add_child(close_btn)
@@ -124,7 +124,7 @@ func _build_scene_tab() -> void:
 			_add_status("已切换到工作日模式")
 	)
 
-	_add_scene_btn("跳过本周 → 下一周", func():
+	_add_scene_btn("跳过本周 -> 下一周", func():
 		var mg = _get_main_game()
 		if mg and mg.has_method("_proceed_next_week"):
 			mg._proceed_next_week()
@@ -181,8 +181,45 @@ func _build_scene_tab() -> void:
 
 	_add_scene_btn("清除邂逅失败记录", func():
 		GameManager.encounter_failed_ids.clear()
-		_add_status("已清除 %d 条失败记录" % GameManager.encounter_failed_ids.size())
+		_add_status("已清除失败记录")
 		_refresh_current_tab()
+	)
+
+	_add_spacer()
+	_add_label("春节BOSS战测试：", 15, Color(1.0, 0.6, 0.3))
+
+	_add_scene_btn("跳到12月第4周（下周=春节）", func():
+		GameManager.month = 12
+		GameManager.week_in_month = 4
+		GameManager.stats_updated.emit()
+		var mg = _get_main_game()
+		if mg and mg.has_method("_enter_weekend"):
+			mg._enter_weekend()
+		_add_status("已跳到12月第4周，点'结束本周'触发春节")
+	)
+
+	_add_scene_btn("直接触发春节BOSS战 (24岁)", func():
+		GameManager.age = 24
+		GameManager.month = 1
+		GameManager.week_in_month = 1
+		GameManager.spring_festival_boss.emit(24)
+		_add_status("春节BOSS战已触发 (24岁)")
+	)
+
+	_add_scene_btn("直接触发春节BOSS战 (28岁-妈来深圳)", func():
+		GameManager.age = 28
+		GameManager.month = 1
+		GameManager.week_in_month = 1
+		GameManager.spring_festival_boss.emit(28)
+		_add_status("春节BOSS战已触发 (28岁)")
+	)
+
+	_add_scene_btn("直接触发春节BOSS战 (32岁-最终审判)", func():
+		GameManager.age = 32
+		GameManager.month = 1
+		GameManager.week_in_month = 1
+		GameManager.spring_festival_boss.emit(32)
+		_add_status("春节BOSS战已触发 (32岁)")
 	)
 
 ## ==================== 标签2：女主属性滑块 ====================
@@ -197,6 +234,12 @@ func _build_stat_tab() -> void:
 	_add_stat_slider("精力 (energy)", "energy", 0, 200)
 	_add_stat_slider("情绪 (sanity)", "sanity", -100, 100)
 	_add_stat_slider("精力上限 (max_energy)", "max_energy", 50, 300)
+
+	_add_spacer()
+	_add_label("时间控制：", 14, Color(0.7, 0.9, 1.0))
+	_add_time_spinbox("年龄", "age", 23, 40)
+	_add_time_spinbox("月份", "month", 1, 12)
+	_add_time_spinbox("周数", "week_in_month", 1, 4)
 
 	_add_spacer()
 	_add_label("当前周: 第%d周 | 月: %d | 年龄: %d" % [GameManager.week_in_month, GameManager.month, GameManager.age], 13, Color(0.8, 0.8, 0.8))
@@ -242,7 +285,6 @@ func _build_npc_tab() -> void:
 	_add_label("男主邂逅判定一览：", 15, Color(0.7, 0.9, 1.0))
 	_add_spacer()
 
-	## 遍历 npc_database 显示判定信息
 	var has_npc: bool = false
 	for npc in GameManager.npc_database:
 		has_npc = true
@@ -257,31 +299,27 @@ func _build_npc_tab() -> void:
 		var is_unlocked: bool = GameManager.is_npc_unlocked(npc_id)
 		var failed: bool = npc_id in GameManager.encounter_failed_ids
 
-		## NPC 标题
 		var status_text: String = "未遇到"
 		if is_unlocked:
-			status_text = "已解锁✓"
+			status_text = "已解锁"
 		elif failed:
-			status_text = "已失败(不会再触发)"
-		_add_label("[%s] %s — %s" % [rarity, npc_name, status_text], 14, Color(1.0, 0.85, 0.3))
+			status_text = "已失败"
+		_add_label("[%s] %s - %s" % [rarity, npc_name, status_text], 14, Color(1.0, 0.85, 0.3))
 		_add_label("  邂逅地点: %s" % location, 12, Color(0.7, 0.7, 0.7))
 
-		## 邂逅条件（可编辑）
 		if req.size() > 0:
 			_add_spacer()
-			_add_label("  邂逅条件（可修改数值做平衡）：", 12, Color(0.7, 0.9, 1.0))
+			_add_label("  邂逅条件：", 12, Color(0.7, 0.9, 1.0))
 			for stat_name in req:
 				_add_encounter_req_editor(npc, stat_name)
 
-		## 好感度滑块
 		_add_spacer()
 		_add_npc_affection_slider(npc_id, npc_name, affection)
 
-		## 里程碑一览（可编辑）
 		var milestones: Array = npc.get("milestones", [])
 		if milestones.size() > 0:
 			_add_spacer()
-			_add_label("  里程碑（可修改阈值）：", 12, Color(0.7, 0.9, 1.0))
+			_add_label("  里程碑：", 12, Color(0.7, 0.9, 1.0))
 			for i in range(milestones.size()):
 				var ms: Dictionary = milestones[i]
 				var ms_title: String = ms.get("title", "")
@@ -292,7 +330,6 @@ func _build_npc_tab() -> void:
 	if not has_npc:
 		_add_label("暂无男主数据（检查npc_data.json）", 13, Color(0.8, 0.5, 0.5))
 
-## 编辑邂逅条件的数值
 func _add_encounter_req_editor(npc: Dictionary, stat_name: String) -> void:
 	var enc: Dictionary = npc.get("encounter", {})
 	var req: Dictionary = enc.get("req_stats", {})
@@ -304,7 +341,7 @@ func _add_encounter_req_editor(npc: Dictionary, stat_name: String) -> void:
 	hb.add_theme_constant_override("separation", 4)
 
 	var lbl = Label.new()
-	lbl.text = "    %s ≥" % stat_name
+	lbl.text = "    %s >=" % stat_name
 	lbl.custom_minimum_size.x = 80
 	lbl.add_theme_font_size_override("font_size", 12)
 	hb.add_child(lbl)
@@ -319,7 +356,7 @@ func _add_encounter_req_editor(npc: Dictionary, stat_name: String) -> void:
 	hb.add_child(spinbox)
 
 	var info_lbl = Label.new()
-	info_lbl.text = "(当前%d) %s" % [cur_val, "✓" if ok else "✗"]
+	info_lbl.text = "(当前%d) %s" % [cur_val, "OK" if ok else "X"]
 	info_lbl.add_theme_font_size_override("font_size", 12)
 	info_lbl.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4) if ok else Color(1.0, 0.4, 0.4))
 	hb.add_child(info_lbl)
@@ -327,13 +364,12 @@ func _add_encounter_req_editor(npc: Dictionary, stat_name: String) -> void:
 	spinbox.value_changed.connect(func(v: float):
 		req[stat_name] = int(v)
 		var new_ok: bool = cur_val >= int(v)
-		info_lbl.text = "(当前%d) %s" % [cur_val, "✓" if new_ok else "✗"]
+		info_lbl.text = "(当前%d) %s" % [cur_val, "OK" if new_ok else "X"]
 		info_lbl.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4) if new_ok else Color(1.0, 0.4, 0.4))
 	)
 
 	_content_vb.add_child(hb)
 
-## 编辑里程碑的好感阈值和属性要求值
 func _add_milestone_editor(npc: Dictionary, ms_index: int, ms_title: String, ms: Dictionary) -> void:
 	var aff_val: int = int(ms.get("trigger_affection", 0))
 	var req_stat: String = ms.get("req_stat", "")
@@ -343,15 +379,14 @@ func _add_milestone_editor(npc: Dictionary, ms_index: int, ms_title: String, ms:
 	hb.add_theme_constant_override("separation", 3)
 
 	var title_lbl = Label.new()
-	title_lbl.text = "    ·%s" % ms_title
+	title_lbl.text = "    .%s" % ms_title
 	title_lbl.custom_minimum_size.x = 120
 	title_lbl.add_theme_font_size_override("font_size", 11)
 	title_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	hb.add_child(title_lbl)
 
-	# 好感阈值编辑
 	var aff_lbl = Label.new()
-	aff_lbl.text = "好感≥"
+	aff_lbl.text = "好感>="
 	aff_lbl.add_theme_font_size_override("font_size", 11)
 	hb.add_child(aff_lbl)
 
@@ -367,9 +402,8 @@ func _add_milestone_editor(npc: Dictionary, ms_index: int, ms_title: String, ms:
 		ms["trigger_affection"] = int(v)
 	)
 
-	# 属性要求值编辑
 	var req_lbl = Label.new()
-	req_lbl.text = " %s≥" % req_stat
+	req_lbl.text = " %s>=" % req_stat
 	req_lbl.add_theme_font_size_override("font_size", 11)
 	hb.add_child(req_lbl)
 
@@ -422,6 +456,37 @@ func _add_npc_affection_slider(npc_id: String, npc_name: String, affection: int)
 	_content_vb.add_child(hb)
 
 ## ==================== 通用工具 ====================
+
+func _add_time_spinbox(label_text: String, stat_name: String, min_val: int, max_val: int) -> void:
+	var hb = HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 6)
+	var lbl = Label.new()
+	lbl.text = label_text
+	lbl.custom_minimum_size.x = 150
+	lbl.add_theme_font_size_override("font_size", 13)
+	hb.add_child(lbl)
+	var spin := SpinBox.new()
+	spin.min_value = min_val
+	spin.max_value = max_val
+	spin.step = 1
+	spin.value = GameManager.get(stat_name)
+	spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spin.custom_minimum_size.x = 100
+	hb.add_child(spin)
+	var val_label = Label.new()
+	val_label.text = str(int(spin.value))
+	val_label.custom_minimum_size.x = 50
+	val_label.add_theme_font_size_override("font_size", 13)
+	val_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3))
+	val_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hb.add_child(val_label)
+	spin.value_changed.connect(func(v: float):
+		val_label.text = str(int(v))
+		GameManager.set(stat_name, int(v))
+		GameManager.stats_updated.emit()
+	)
+	_content_vb.add_child(hb)
+
 func _add_label(text: String, font_size: int, color: Color) -> void:
 	var lbl = Label.new()
 	lbl.text = text
@@ -445,7 +510,7 @@ func _add_scene_btn(text: String, callback: Callable) -> void:
 	_content_vb.add_child(btn)
 
 func _add_status(msg: String) -> void:
-	_add_label("  → %s" % msg, 12, Color(0.4, 1.0, 0.6))
+	_add_label("  -> %s" % msg, 12, Color(0.4, 1.0, 0.6))
 
 func _refresh_current_tab() -> void:
 	_switch_tab(_tab_idx)

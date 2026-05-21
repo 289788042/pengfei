@@ -27,9 +27,18 @@ var _gal_choice_container: VBoxContainer = null
 var _arrow_label: Label = null
 var _arrow_tween: Tween = null
 
+## 打字机嘟嘟音效
+var _beep_player: AudioStreamPlayer = null
+var _beep_pitch_base: float = 1.0
+
 
 func init(main: Node) -> void:
 	_main = main
+	# 创建打字机音效播放器
+	_beep_player = AudioStreamPlayer.new()
+	_beep_player.volume_db = -12.0
+	main.add_child(_beep_player)
+	_beep_player.stream = _generate_beep()
 	dialog_box = main.dialog_box
 	dialog_text = main.dialog_text
 
@@ -96,6 +105,7 @@ func dismiss_dialog() -> void:
 		dialog_tween.kill()
 	dialog_box.modulate.a = 0.0
 	dialog_box.visible = false
+	_hide_phone_dim()
 
 
 # ==================== Galgame 分页对话系统 ====================
@@ -109,6 +119,13 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 	_gal_on_complete = on_complete
 	dialog_box.visible = true
 	dialog_box.modulate.a = 1.0
+	# 暗化手机区域
+	var dim: ColorRect = main_node().get("_phone_dim") as ColorRect
+	if dim:
+		dim.visible = true
+		dim.color.a = 0.0
+		var t := main_node().create_tween()
+		t.tween_property(dim, "color:a", 0.65, 0.3)
 	if is_instance_valid(_gal_choice_container):
 		_gal_choice_container.visible = false
 	dialog_text.visible = true
@@ -135,6 +152,13 @@ func _gal_type_char() -> void:
 		return
 	_gal_char_idx += 1
 	dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
+	# 嘟嘟音效（每两个字响一次，跳过空格/标点/换行）
+	if _beep_player and _gal_char_idx % 2 == 0:
+		var ch: String = _gal_full_text[_gal_char_idx - 1]
+		if ch != ' ' and ch != '
+' and ch != '，' and ch != '。' and ch != '！' and ch != '？' and ch != '、' and ch != '…' and ch != '—':
+			_beep_player.pitch_scale = _beep_pitch_base
+			_beep_player.play()
 	_gal_tween = main_node().create_tween()
 	_gal_tween.tween_interval(0.03)
 	_gal_tween.tween_callback(_gal_type_char)
@@ -206,6 +230,7 @@ func _gal_end() -> void:
 	_gal_pages.clear()
 	_gal_typing = false
 	_stop_arrow_anim()
+	_hide_phone_dim()
 	var cb: Callable = _gal_on_complete
 	_gal_on_complete = Callable()
 	var has_encounter: bool = _gal_encounter_data.size() > 0
@@ -357,3 +382,34 @@ func is_visible() -> bool:
 
 func main_node() -> Node:
 	return _main
+
+
+## 生成打字机嘟嘟音效（合成短促正弦波）
+## 隐藏手机暗化遮罩
+func _hide_phone_dim() -> void:
+	var dim: ColorRect = main_node().get("_phone_dim") as ColorRect
+	if dim:
+		dim.modulate.a = 1.0
+		var t := main_node().create_tween()
+		t.tween_property(dim, "modulate:a", 0.0, 0.3)
+		t.tween_callback(func(): dim.visible = false; dim.modulate.a = 1.0)
+
+func _generate_beep() -> AudioStreamWAV:
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = 22050
+	wav.stereo = false
+	var sample_count: int = int(22050 * 0.045)  # 45ms
+	var data := PackedByteArray()
+	data.resize(sample_count * 2)  # 16-bit = 2 bytes per sample
+	for i in range(sample_count):
+		var t: float = float(i) / 22050.0
+		var envelope: float = 1.0 - (float(i) / float(sample_count))
+		envelope = envelope * envelope  # 快速衰减
+		var val: float = sin(2.0 * PI * 520.0 * t) * 0.20 * envelope
+		var raw: int = int(val * 32767.0)
+		# 小端序写入16-bit有符号整数
+		data[i * 2] = raw & 0xFF
+		data[i * 2 + 1] = (raw >> 8) & 0xFF
+	wav.data = data
+	return wav

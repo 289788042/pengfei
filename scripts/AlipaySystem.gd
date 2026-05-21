@@ -75,6 +75,9 @@ func request_payment(cost: int, desc: String, category: String, on_success: Call
 	payment_popup.visible = true
 
 func _on_pay_mix() -> void:
+	if GameManager.money < _pending_pay_cost:
+		main_node().show_message("现金余额不足！当前余额：%d 元" % GameManager.money)
+		return
 	var cost := _pending_pay_cost
 	GameManager.money -= cost
 	GameManager.add_finance(-cost, _pending_pay_desc, false)
