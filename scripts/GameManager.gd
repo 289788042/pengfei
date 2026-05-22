@@ -137,6 +137,7 @@ var player_zodiac: String = ""
 var npcs: Dictionary = {
 	"family_group": {"name": "相亲相爱一家人 (爸妈)", "affection": 50, "level": 1, "unlocked": true, "warning_msg": "你妈昨天又在朋友圈转发了《女孩过了25岁还不结婚有多可怕》", "blocked": false, "messages": [], "last_seen_week": 0},
 	"wang_teacher": {"name": "尚德夜校-王老师", "affection": 0, "level": 1, "unlocked": true, "warning_msg": "不逼自己一把，你永远只能拿底薪！", "blocked": false, "messages": [], "last_seen_week": 0},
+	"xiao_ya": {"name": "小雅", "affection": 30, "level": 1, "unlocked": true, "warning_msg": "", "blocked": false, "messages": [{"sender": "npc", "text": "姐妹你啥时候来深圳呀？来了找我玩！"}], "last_seen_week": 0, "unread": 1},
 }
 
 # ==================== 属性名中文映射 ====================
@@ -447,6 +448,13 @@ func get_npc_data(npc_id: String) -> Dictionary:
 		if npc.get("id", "") == npc_id:
 			return npc
 	return {}
+
+
+func get_npc_name(npc_id: String) -> String:
+	for npc in npc_database:
+		if npc.get("id", "") == npc_id:
+			return npc.get("name", "")
+	return npc_id
 
 
 ## 获取/创建运行时动态数据

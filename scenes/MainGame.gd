@@ -10,6 +10,10 @@ enum Phase { WEEKDAY, WEEKEND, EVENT, MONTH_END, TRANSITION, ENDING, GAME_OVER }
 @onready var label_player_info: Label = %LabelPlayerInfo
 @onready var dialog_text: RichTextLabel = %DialogText
 @onready var dialog_box: Panel = %DialogBox
+@onready var left_dialog_box: Panel = %LeftDialogBox
+@onready var left_dialog_text: RichTextLabel = %LeftDialogText
+@onready var character_portrait: TextureRect = %CharacterPortrait
+@onready var left_bg: ColorRect = %BgImage
 @onready var label_game_over: Label = %LabelGameOver
 @onready var label_money: Label = %LabelMoney
 @onready var label_energy: Label = %LabelEnergy
@@ -71,9 +75,7 @@ enum Phase { WEEKDAY, WEEKEND, EVENT, MONTH_END, TRANSITION, ENDING, GAME_OVER }
 @onready var btn_work_slack: Button = %Btn_Work_Slack
 @onready var btn_work_overtime: Button = %Btn_Work_Overtime
 
-@onready var event_popup: ColorRect = %EventPopup
 @onready var label_event_desc: Label = %LabelEventDesc
-@onready var btn_event_confirm: Button = %Btn_EventConfirm
 
 @onready var ending_panel: ColorRect = %EndingPanel
 @onready var label_ending_title: Label = %LabelEndingTitle
@@ -173,8 +175,6 @@ var label_eq_val: Label
 var _skip_week_confirm: bool = false
 var _phone_dim: ColorRect = null
 var current_phase: Phase = Phase.WEEKDAY
-var _pending_event: Dictionary = {}
-var _pending_callback: Callable = Callable()
 # ==================== 生命周期 ====================
 
 func _ready() -> void:
@@ -193,7 +193,6 @@ func _ready() -> void:
 	btn_work_normal.pressed.connect(_on_work_normal)
 	btn_work_slack.pressed.connect(_on_work_slack)
 	btn_work_overtime.pressed.connect(_on_work_overtime)
-	btn_event_confirm.pressed.connect(_on_event_confirmed)
 	btn_next_week.pressed.connect(_on_btn_next_week)
 	# 微信系统初始化
 	galgame = load("res://scripts/GalgameSystem.gd").new()
@@ -285,6 +284,7 @@ func _ready() -> void:
 		_phone_dim.visible = false
 		phone_case.add_child(_phone_dim)
 	_setup_stat_bars()
+	left_bg = find_child("BgImage", true, false) as ColorRect
 	pass
 	_refresh_ui()
 	pass
@@ -314,35 +314,35 @@ func _input(event: InputEvent) -> void:
 			_close_top_popup()
 			get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_LEFT:
-			if dialog_box.visible and dialog_box.modulate.a > 0.5:
-				if dialog_box.get_global_rect().has_point(event.global_position):
+			# 左侧galgame对话框点击
+			if galgame.is_visible():
+				if left_dialog_box.get_global_rect().has_point(event.global_position):
 					if galgame._gal_pages.size() > 0:
 						galgame.gal_on_click()
 						get_viewport().set_input_as_handled()
 					elif is_instance_valid(galgame._gal_choice_container):
 						pass  # 选择按钮自行处理点击，不消耗事件
-					else:
-						galgame.dismiss_dialog()
-						get_viewport().set_input_as_handled()
-	# Space键：等同于鼠标左键点击对话框
+				# 右侧系统消息框点击（关闭）
+			elif dialog_box.visible and dialog_box.modulate.a > 0.5:
+				if dialog_box.get_global_rect().has_point(event.global_position):
+					galgame.dismiss_dialog()
+					get_viewport().set_input_as_handled()
+	# Space键：翻页对话 / Ctrl键：跳过所有
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_SPACE:
-			if dialog_box.visible and dialog_box.modulate.a > 0.5:
-				if galgame._gal_pages.size() > 0:
-					galgame.gal_on_click()
-					get_viewport().set_input_as_handled()
-				elif not is_instance_valid(galgame._gal_choice_container):
-					galgame.dismiss_dialog()
-					get_viewport().set_input_as_handled()
-		# Ctrl键：跳过当前所有对话页
+			if galgame.is_visible():
+				galgame.gal_on_click()
+				get_viewport().set_input_as_handled()
+			elif dialog_box.visible and dialog_box.modulate.a > 0.5:
+				galgame.dismiss_dialog()
+				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_CTRL:
-			if dialog_box.visible and dialog_box.modulate.a > 0.5:
-				if galgame._gal_pages.size() > 0:
-					galgame.skip_all()
-					get_viewport().set_input_as_handled()
-				elif not is_instance_valid(galgame._gal_choice_container):
-					galgame.dismiss_dialog()
-					get_viewport().set_input_as_handled()
+			if galgame.is_visible():
+				galgame.skip_all()
+				get_viewport().set_input_as_handled()
+			elif dialog_box.visible and dialog_box.modulate.a > 0.5:
+				galgame.dismiss_dialog()
+				get_viewport().set_input_as_handled()
 
 ## 右键返回：按优先级关闭当前最上层弹窗
 func _close_top_popup() -> void:
@@ -468,31 +468,30 @@ func _hide_all_popups() -> void:
 
 func _show_event(event: Dictionary, after_callback: Callable) -> void:
 	current_phase = Phase.EVENT
-	var full_text: String = event["desc"] + "\n\n【结算】："
+	var desc: String = event["desc"]
+	var effect_parts: Array = []
 	for key in event:
 		if key == "desc":
 			continue
 		var cn_name: String = GameManager.stat_names.get(key, key)
 		var val: int = event[key]
-		var sign_str := "+" if val >= 0 else ""
-		full_text += "\n%s %s%d" % [cn_name, sign_str, val]
 
-	label_event_desc.text = full_text
-	_pending_event = event
-	_pending_callback = after_callback
-	event_popup.visible = true
+		if val >= 0:
+			effect_parts.append("[color=90EE90]%s +%d[/color]" % [cn_name, val])
+		else:
+			effect_parts.append("[color=E88080]%s %d[/color]" % [cn_name, val])
+	var pages: Array = [desc]
+	if effect_parts.size() > 0:
+		pages.append("【结算】" + "  ".join(effect_parts))
+	galgame.show_galgame_dialog(pages, func() -> void:
+		for key in event:
+			if key == "desc":
+				continue
+			GameManager.modify_stat(key, event[key])
+		if after_callback.is_valid():
+			after_callback.call()
+	)
 
-
-func _on_event_confirmed() -> void:
-	for key in _pending_event:
-		if key == "desc":
-			continue
-		GameManager.modify_stat(key, _pending_event[key])
-	event_popup.visible = false
-	_pending_event = {}
-	if _pending_callback.is_valid():
-		_pending_callback.call()
-		_pending_callback = Callable()
 
 
 # ==================== UI 刷新 ====================
@@ -969,7 +968,6 @@ func _create_line_style(line_color: Color) -> StyleBoxFlat:
 
 func _disable_all() -> void:
 	weekday_panel.visible = false
-	event_popup.visible = false
 	location_menu.visible = false
 	month_end_popup.visible = false
 	transition_screen.visible = false
@@ -1079,6 +1077,9 @@ func _play_transition(trans_text: String) -> void:
 				"被子和枕头发粘，晾了三天的内衣摸上去也没干。",
 				"这个六平米的隔断间实在待不下去了。",
 				"我换了条裤子，抓起包往外走。",
+				"出了村口，深南大道上车水马龙。",
+				"我掏出[color=FFD700]手机[/color]，打开[color=FFD700]高德地图[/color]，看看去哪里逛一逛。",
+
 			]
 			galgame.show_galgame_dialog(opening_pages, func() -> void:
 				_proceed_after_work_event()
@@ -1089,6 +1090,9 @@ func _play_transition(trans_text: String) -> void:
 
 
 func _proceed_after_work_event() -> void:
+	if GameManager.turn_count == 1:
+		_enter_weekend()
+		return
 	var event := GameManager.roll_workplace_event()
 	if event.size() > 0:
 		_show_event(event, _enter_weekend)

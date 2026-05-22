@@ -121,9 +121,9 @@ func _show_round_choices(question: Dictionary) -> void:
 
 	# 复用 galgame 对话框显示选择按钮
 	var gal: RefCounted = _galgame
-	gal.dialog_box.visible = true
-	gal.dialog_box.modulate.a = 1.0
-	gal.dialog_text.visible = false
+	gal.left_dialog_box.visible = true
+	gal.left_dialog_box.modulate.a = 1.0
+	gal.left_dialog_text.visible = false
 
 	if is_instance_valid(gal._gal_choice_container):
 		gal._gal_choice_container.queue_free()
@@ -136,7 +136,7 @@ func _show_round_choices(question: Dictionary) -> void:
 	gal._gal_choice_container.offset_right = -16
 	gal._gal_choice_container.offset_bottom = -12
 	gal._gal_choice_container.add_theme_constant_override("separation", 8)
-	gal.dialog_box.add_child(gal._gal_choice_container)
+	gal.left_dialog_box.add_child(gal._gal_choice_container)
 
 	# 回合指示器
 	var round_label := Label.new()
@@ -199,7 +199,7 @@ func _on_round_choice(option: Dictionary) -> void:
 	if is_instance_valid(gal._gal_choice_container):
 		gal._gal_choice_container.queue_free()
 		gal._gal_choice_container = null
-	gal.dialog_text.visible = true
+	gal.left_dialog_text.visible = true
 
 	# 统计情绪变化
 	var sanity_change: int = int(option.get("sanity", 0))

@@ -69,6 +69,7 @@ var _dating_bios: Array = [
 var _city_fragments: Dictionary = {}
 # NPC邂逅冷却（替代永久失败的 encounter_failed_ids）
 var _encounter_cooldowns: Dictionary = {}  # npc_id -> turn_count 可重试
+var _frag_choice_container: VBoxContainer = null
 # NPC重逢台词模板
 var _reunion_lines: Array = [
 	"在{loc}又遇到了{name}，ta冲你笑了笑。你们聊了几句。",
@@ -512,7 +513,7 @@ func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subt
 # ==================== 城市碎片 & 重逢系统 ====================
 
 ## 从指定地点的碎片池中随机抽取一条并触发
-func _trigger_city_fragment(location: String) -> void:
+func _trigger_city_fragment(location: String, bonus_text: String = "") -> void:
 	var pool: Array = _city_fragments.get(location, [])
 	if pool.size() == 0:
 		return
@@ -524,6 +525,17 @@ func _trigger_city_fragment(location: String) -> void:
 		filtered = pool
 	var frag: Dictionary = filtered[randi() % filtered.size()]
 	var text: String = frag.get("text", "")
+	# 检查是否带选项
+	var choices: Array = frag.get("choices", [])
+	if choices.size() > 0:
+		var pages: Array = [text]
+		if bonus_text != "":
+			pages.append(bonus_text)
+		main_node().galgame.show_galgame_dialog(pages, func() -> void:
+			_show_fragment_choices(choices)
+		)
+		return
+	# 原有逻辑：无选项，直接应用效果
 	var effects: Dictionary = frag.get("effect", {})
 	var effect_parts: Array = []
 	for stat_name in effects:
@@ -533,14 +545,122 @@ func _trigger_city_fragment(location: String) -> void:
 		var cn: String = GameManager.stat_names.get(stat_name, stat_name)
 		GameManager.modify_stat(stat_name, val)
 		if val > 0:
-			effect_parts.append("%s+%d" % [cn, val])
+			effect_parts.append("[color=90EE90]%s+%d[/color]" % [cn, val])
 		else:
-			effect_parts.append("%s%d" % [cn, val])
-	var msg: String = text
+			effect_parts.append("[color=E88080]%s%d[/color]" % [cn, val])
+	var pages: Array = [text]
+	var all_effects: String = bonus_text
 	if effect_parts.size() > 0:
-		msg += "
-[color=90EE90]" + "  ".join(effect_parts) + "[/color]"
-	main_node().show_message(msg, true)
+		if all_effects != "":
+			all_effects += "  "
+		all_effects += "  ".join(effect_parts)
+	if all_effects != "":
+		pages.append(all_effects)
+	main_node().galgame.show_galgame_dialog(pages)
+
+
+## 显示碎片选项按钮
+func _show_fragment_choices(choices: Array) -> void:
+	var gal: RefCounted = main_node().galgame
+	var box: Panel = gal.left_dialog_box
+	box.visible = true
+	box.modulate.a = 1.0
+	gal.left_dialog_text.visible = false
+	# 禁用下一周按钮防止跳过
+	var skip_btn: Button = main_node().get_node_or_null("HBoxContainer/RightMargin/RightSystemArea/Btn_NextWeek")
+	if skip_btn:
+		skip_btn.disabled = true
+	if is_instance_valid(_frag_choice_container):
+		_frag_choice_container.queue_free()
+	_frag_choice_container = VBoxContainer.new()
+	_frag_choice_container.name = "FragChoiceContainer"
+	_frag_choice_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_frag_choice_container.offset_left = 20
+	_frag_choice_container.offset_top = 12
+	_frag_choice_container.offset_right = -16
+	_frag_choice_container.offset_bottom = -12
+	_frag_choice_container.add_theme_constant_override("separation", 8)
+	box.add_child(_frag_choice_container)
+	for choice in choices:
+		var btn := Button.new()
+		btn.text = choice.get("text", "...")
+		btn.add_theme_font_size_override("font_size", 20)
+		btn.custom_minimum_size.y = 48
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.15, 0.15, 0.2, 0.85)
+		style.set_corner_radius_all(10.0)
+		style.set_content_margin_all(12)
+		style.border_color = Color(0.5, 0.5, 0.6, 0.6)
+		style.set_border_width_all(1)
+		btn.add_theme_stylebox_override("normal", style)
+		var hover_style := StyleBoxFlat.new()
+		hover_style.bg_color = Color(0.25, 0.28, 0.38, 0.92)
+		hover_style.set_corner_radius_all(10.0)
+		hover_style.set_content_margin_all(12)
+		hover_style.border_color = Color(0.7, 0.75, 0.9, 0.8)
+		hover_style.set_border_width_all(1)
+		btn.add_theme_stylebox_override("hover", hover_style)
+		var pressed_style := StyleBoxFlat.new()
+		pressed_style.bg_color = Color(0.3, 0.35, 0.5, 0.95)
+		pressed_style.set_corner_radius_all(10.0)
+		pressed_style.set_content_margin_all(12)
+		btn.add_theme_stylebox_override("pressed", pressed_style)
+		var cost: Dictionary = choice.get("cost", {})
+		var cost_money: int = int(cost.get("money", 0))
+		if cost_money > 0 and GameManager.money < cost_money:
+			btn.disabled = true
+			btn.add_theme_color_override("font_color", Color(0.45, 0.45, 0.45, 0.7))
+			var dis_style := StyleBoxFlat.new()
+			dis_style.bg_color = Color(0.1, 0.1, 0.12, 0.5)
+			dis_style.set_corner_radius_all(10.0)
+			dis_style.set_content_margin_all(12)
+			btn.add_theme_stylebox_override("disabled", dis_style)
+		else:
+			btn.add_theme_color_override("font_color", Color(0.9, 0.92, 0.95, 1))
+		var captured_choice: Dictionary = choice
+		btn.pressed.connect(func() -> void: _on_fragment_choice(captured_choice))
+		_frag_choice_container.add_child(btn)
+
+
+## 碎片选项回调：应用花费和效果，显示结果
+func _on_fragment_choice(choice: Dictionary) -> void:
+	var gal: RefCounted = main_node().galgame
+	# 应用花费
+	var cost: Dictionary = choice.get("cost", {})
+	var cost_parts: Array = []
+	for stat_name in cost:
+		var val: int = int(cost[stat_name])
+		GameManager.modify_stat(stat_name, -val)
+		var cn: String = GameManager.stat_names.get(stat_name, stat_name)
+		cost_parts.append("[color=E88080]%s-%d[/color]" % [cn, val])
+	# 应用效果
+	var effects: Dictionary = choice.get("effect", {})
+	var effect_parts: Array = []
+	for stat_name in effects:
+		var val: int = int(effects[stat_name])
+		if val == 0:
+			continue
+		GameManager.modify_stat(stat_name, val)
+		var cn: String = GameManager.stat_names.get(stat_name, stat_name)
+		if val > 0:
+			effect_parts.append("[color=90EE90]%s+%d[/color]" % [cn, val])
+		else:
+			effect_parts.append("[color=E88080]%s%d[/color]" % [cn, val])
+	# 清理选项按钮
+	if is_instance_valid(_frag_choice_container):
+		_frag_choice_container.queue_free()
+		_frag_choice_container = null
+	gal.left_dialog_text.visible = true
+	# 显示结果
+	var result: String = choice.get("result", "")
+	var pages: Array = []
+	if result != "":
+		pages.append(result)
+	var all_parts: Array = cost_parts + effect_parts
+	if all_parts.size() > 0:
+		pages.append("  ".join(all_parts))
+	if pages.size() > 0:
+		gal.show_galgame_dialog(pages)
 
 ## 检查是否有已解锁的NPC可以在该地点重逢
 func _check_reunion(location: String) -> Dictionary:
@@ -691,7 +811,7 @@ func _on_loc_library() -> void:
 	GameManager.modify_stat("sanity", 5)
 	if roll < 0.50:
 		# 30%: 城市碎片
-		_trigger_city_fragment("library")
+		_trigger_city_fragment("library", "[color=90EE90]学识+3 情绪+5[/color]")
 		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
 	else:
 		# 50%: 纯正常
@@ -729,7 +849,7 @@ func _on_loc_gym() -> void:
 			GameManager.modify_stat("charm", 2)
 			GameManager.modify_stat("sanity", 5)
 			GameManager.max_energy += 1
-			_trigger_city_fragment("gym")
+			_trigger_city_fragment("gym", "[color=90EE90]颜值+2 情绪+5 精力上限+1[/color]")
 			GameManager.add_activity("提升", "去健身房挥汗如雨！颜值+2，情绪+5，精力上限永久+1（当前%d）" % GameManager.max_energy)
 		)
 	else:
@@ -776,7 +896,7 @@ func _on_loc_bar() -> void:
 			GameManager.modify_stat("energy", -20)
 			GameManager.modify_stat("eq", 2)
 			GameManager.modify_stat("sanity", 25)
-			_trigger_city_fragment("bar")
+			_trigger_city_fragment("bar", "[color=90EE90]情商+2 情绪+25[/color]")
 			GameManager.add_activity("社交", "在酒吧喝了一杯，感觉心情大好！")
 		)
 	else:
@@ -801,7 +921,7 @@ func _on_loc_home() -> void:
 	if roll < 0.50:
 		# 30%: 城市碎片
 		GameManager.modify_stat("sanity", 20)
-		_trigger_city_fragment("home")
+		_trigger_city_fragment("home", "[color=90EE90]精力恢复+40[/color]")
 		GameManager.add_activity("日常", "宅家刷了一整天手机")
 	else:
 		# 50%: 正常
@@ -812,15 +932,12 @@ func _on_loc_home() -> void:
 
 
 func _visit_location(context: String, success_msg: String) -> void:
+	location_menu.visible = false
 	var event := GameManager.roll_random_event(context)
 	if event.size() > 0:
-		location_menu.visible = false
-		main_node().show_message(success_msg, true)
 		main_node()._show_event(event, func() -> void: pass)
 	else:
 		main_node().show_message(success_msg, true)
-		location_menu.visible = false
-
 
 # ==================== 饮食系统 ====================
 

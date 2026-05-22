@@ -7,6 +7,11 @@ var _main: Node  ## MainGame 引用
 ## 飘字 / 消息 相关的 @onready 引用
 var dialog_box: Panel
 var dialog_text: RichTextLabel
+## 左侧 Galgame 对话框
+var left_dialog_box: Panel
+var left_dialog_text: RichTextLabel
+var portrait: TextureRect
+var scene_bg: ColorRect
 
 ## 对话框淡出 tween
 var dialog_tween: Tween
@@ -41,6 +46,10 @@ func init(main: Node) -> void:
 	_beep_player.stream = _generate_beep()
 	dialog_box = main.dialog_box
 	dialog_text = main.dialog_text
+	left_dialog_box = main.left_dialog_box
+	left_dialog_text = main.left_dialog_text
+	portrait = main.character_portrait
+	scene_bg = main.left_bg
 
 
 # ==================== 飘字系统 ====================
@@ -117,8 +126,8 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 	_gal_pages = pages
 	_gal_page_idx = 0
 	_gal_on_complete = on_complete
-	dialog_box.visible = true
-	dialog_box.modulate.a = 1.0
+	left_dialog_box.visible = true
+	left_dialog_box.modulate.a = 1.0
 	# 暗化手机区域
 	var dim: ColorRect = main_node().get("_phone_dim") as ColorRect
 	if dim:
@@ -128,30 +137,38 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 		t.tween_property(dim, "color:a", 0.65, 0.3)
 	if is_instance_valid(_gal_choice_container):
 		_gal_choice_container.visible = false
-	dialog_text.visible = true
+	left_dialog_text.visible = true
+	var _skip_btn: Button = main_node().get_node_or_null("HBoxContainer/RightMargin/RightSystemArea/Btn_NextWeek")
+	if _skip_btn:
+		_skip_btn.set_deferred("disabled", true)
 	_gal_start_page()
 
 
 ## 开始打字当前页
 func _gal_start_page() -> void:
 	_gal_full_text = _gal_pages[_gal_page_idx]
-	_gal_char_idx = 0
-	_gal_typing = true
-	dialog_text.text = ""
 	_apply_page_color(_gal_full_text)
 	_stop_arrow_anim()
-	_gal_type_char()
+	if _gal_full_text.find("[color=") >= 0:
+		_gal_typing = false
+		left_dialog_text.text = _gal_full_text
+		_start_arrow_anim()
+	else:
+		_gal_char_idx = 0
+		_gal_typing = true
+		left_dialog_text.text = ""
+		_gal_type_char()
 
 
 ## 打字机核心：逐字输出
 func _gal_type_char() -> void:
 	if _gal_char_idx >= _gal_full_text.length():
 		_gal_typing = false
-		dialog_text.text = _gal_full_text
+		left_dialog_text.text = _gal_full_text
 		_start_arrow_anim()
 		return
 	_gal_char_idx += 1
-	dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
+	left_dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
 	# 嘟嘟音效（每两个字响一次，跳过空格/标点/换行）
 	if _beep_player and _gal_char_idx % 2 == 0:
 		var ch: String = _gal_full_text[_gal_char_idx - 1]
@@ -170,7 +187,7 @@ func gal_on_click() -> void:
 		if _gal_tween and _gal_tween.is_valid():
 			_gal_tween.kill()
 		_gal_typing = false
-		dialog_text.text = _gal_full_text
+		left_dialog_text.text = _gal_full_text
 		_start_arrow_anim()
 	else:
 		_gal_page_idx += 1
@@ -185,14 +202,14 @@ func skip_all() -> void:
 	_gal_end()
 
 
-## 根据内容设置对话框颜色：旁白白色，对话黄色
+
 func _apply_page_color(raw: String) -> void:
-	if raw.begins_with('陌生男子：') or raw.begins_with('我：') or raw.begins_with('沈逸：'):
-		dialog_text.add_theme_color_override('default_color', Color(1.0, 0.9, 0.3, 1.0))
+	if raw.begins_with("陌生男子：") or raw.begins_with("我：") or raw.begins_with("沈逸："):
+		left_dialog_text.add_theme_color_override("default_color", Color(1.0, 0.9, 0.3, 1.0))
 	elif raw.begins_with("'"):
-		dialog_text.add_theme_color_override('default_color', Color(1.0, 0.9, 0.3, 1.0))
+		left_dialog_text.add_theme_color_override("default_color", Color(1.0, 0.9, 0.3, 1.0))
 	else:
-		dialog_text.add_theme_color_override('default_color', Color(0.94, 0.94, 0.94, 1.0))
+		left_dialog_text.add_theme_color_override("default_color", Color(0.94, 0.94, 0.94, 1.0))
 
 
 ## 箭头指示器动画：上下轻微浮动
@@ -203,8 +220,8 @@ func _start_arrow_anim() -> void:
 		_arrow_label.text = '▼'
 		_arrow_label.add_theme_font_size_override('font_size', 22)
 		_arrow_label.add_theme_color_override('font_color', Color(1, 1, 1, 0.7))
-		dialog_box.add_child(_arrow_label)
-		_arrow_label.position = Vector2(dialog_box.size.x - 50, dialog_box.size.y - 35)
+		left_dialog_box.add_child(_arrow_label)
+		_arrow_label.position = Vector2(left_dialog_box.size.x - 50, left_dialog_box.size.y - 35)
 	_arrow_label.visible = true
 	_arrow_label.modulate.a = 1.0
 	if _arrow_tween and _arrow_tween.is_valid():
@@ -230,19 +247,23 @@ func _gal_end() -> void:
 	_gal_pages.clear()
 	_gal_typing = false
 	_stop_arrow_anim()
+	var _skip_btn2: Button = main_node().get_node_or_null("HBoxContainer/RightMargin/RightSystemArea/Btn_NextWeek")
+	if _skip_btn2:
+		_skip_btn2.set_deferred("disabled", false)
 	_hide_phone_dim()
 	var cb: Callable = _gal_on_complete
 	_gal_on_complete = Callable()
 	var has_encounter: bool = _gal_encounter_data.size() > 0
 	_gal_tween = main_node().create_tween()
-	_gal_tween.tween_property(dialog_box, "modulate:a", 0.0, 0.4)
+	_gal_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.4)
 	_gal_tween.tween_callback(func() -> void:
 		dialog_box.visible = false
 		if cb.is_valid():
 			cb.call()
 		elif has_encounter:
 			_gal_encounter_data = {}
-			show_message("在图书馆度过了一个充实的下午。\n[color=90EE90]学识+3 情绪+5[/color]", true)
+			show_message("度过了一段时光。", true)
+
 	)
 
 
@@ -252,12 +273,13 @@ func _gal_end() -> void:
 func start_wechat_request_phase() -> void:
 	var wc_data: Dictionary = _gal_encounter_data.get("wechat_request", {})
 	if wc_data.size() == 0:
-		dialog_box.modulate.a = 0.0
-		dialog_box.visible = false
+		left_dialog_box.modulate.a = 0.0
+		left_dialog_box.visible = false
 		return
 	var pages: Array = []
+	var _npc_name: String = GameManager.get_npc_name(_gal_npc_id) if _gal_npc_id != "" else "陌生男子"
 	for line in wc_data.get("his_lines", []):
-		pages.append("陌生男子：" + line)
+		pages.append(_npc_name + "：" + line)
 	show_galgame_dialog(pages, _show_wechat_choices_phase)
 
 
@@ -266,12 +288,12 @@ func _show_wechat_choices_phase() -> void:
 	var wc_data: Dictionary = _gal_encounter_data.get("wechat_request", {})
 	var options: Array = wc_data.get("player_options", [])
 	if options.size() == 0:
-		dialog_box.modulate.a = 0.0
-		dialog_box.visible = false
+		left_dialog_box.modulate.a = 0.0
+		left_dialog_box.visible = false
 		return
-	dialog_box.visible = true
-	dialog_box.modulate.a = 1.0
-	dialog_text.visible = false
+	left_dialog_box.visible = true
+	left_dialog_box.modulate.a = 1.0
+	left_dialog_text.visible = false
 	if is_instance_valid(_gal_choice_container):
 		_gal_choice_container.queue_free()
 	_gal_choice_container = VBoxContainer.new()
@@ -282,7 +304,7 @@ func _show_wechat_choices_phase() -> void:
 	_gal_choice_container.offset_right = -16
 	_gal_choice_container.offset_bottom = -12
 	_gal_choice_container.add_theme_constant_override("separation", 8)
-	dialog_box.add_child(_gal_choice_container)
+	left_dialog_box.add_child(_gal_choice_container)
 	for option in options:
 		var btn := Button.new()
 		btn.text = option.get("text", "...")
@@ -361,12 +383,13 @@ func _on_encounter_choice(option: Dictionary) -> void:
 	if is_instance_valid(_gal_choice_container):
 		_gal_choice_container.queue_free()
 		_gal_choice_container = null
-	dialog_text.visible = true
+	left_dialog_text.visible = true
 	var pages: Array = []
 	pages.append("我：" + option.get("text", ""))
 	for line in option.get("reply_lines", []):
 		if line.begins_with("'"):
-			pages.append("陌生男子：" + line)
+			var _npc_name2: String = GameManager.get_npc_name(_gal_npc_id) if _gal_npc_id != "" else "éçç·å­"
+			pages.append(_npc_name2 + "ï¼" + line)
 		else:
 			pages.append(line)
 	if option.get("note", "") != "":
@@ -377,7 +400,7 @@ func _on_encounter_choice(option: Dictionary) -> void:
 # ==================== 公共访问 ====================
 
 func is_visible() -> bool:
-	return dialog_box.visible and dialog_box.modulate.a > 0.5
+	return left_dialog_box.visible and left_dialog_box.modulate.a > 0.5
 
 
 func main_node() -> Node:
