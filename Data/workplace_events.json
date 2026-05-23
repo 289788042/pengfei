@@ -156,11 +156,11 @@
   },
   {
     "id": "sanity_01",
-    "desc": "发工资了！虽然不多，但数字变大的感觉真好。",
-    "sanity": 5,
-    "weight": 3,
+    "desc": "快到发工资日了，想到银行卡即将入账，心情好了一点。",
+    "sanity": 3,
+    "weight": 2,
     "conditions": {
-      "turn_count_min": 5
+      "week_in_month_min": 3
     }
   },
   {

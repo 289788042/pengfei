@@ -141,6 +141,7 @@ func _on_close_loc() -> void:
 
 
 func _on_app_map() -> void:
+	_close_all_menus()
 	## 清除旧子节点
 	for child in location_menu.get_children():
 		child.queue_free()
@@ -225,16 +226,20 @@ func _on_app_map() -> void:
 	]
 	## 构建每行
 	for loc in map_locs:
-		var row := PanelContainer.new()
+		var wrapper := Control.new()
+		wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		wrapper.custom_minimum_size = Vector2(0, 72)
+		loc_list.add_child(wrapper)
+		var row := Panel.new()
+		row.set_anchors_preset(Control.PRESET_FULL_RECT)
 		var row_style := StyleBoxFlat.new()
 		row_style.bg_color = Color(1, 1, 1, 1)
 		row_style.set_content_margin_all(0)
 		row.add_theme_stylebox_override("panel", row_style)
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		loc_list.add_child(row)
+		wrapper.add_child(row)
 		var row_hbox := HBoxContainer.new()
+		row_hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
 		row_hbox.add_theme_constant_override("separation", 12)
-		row_hbox.custom_minimum_size = Vector2(0, 72)
 		row.add_child(row_hbox)
 		## 左侧图标占位
 		var icon_ml := Control.new()
@@ -244,7 +249,6 @@ func _on_app_map() -> void:
 		icon.custom_minimum_size = Vector2(48, 48)
 		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		icon.color = loc["icon_color"]
-		pass  # rounded placeholder
 		row_hbox.add_child(icon)
 		## 右侧信息
 		var info_vbox := VBoxContainer.new()
@@ -277,20 +281,39 @@ func _on_app_map() -> void:
 		row_hbox.add_child(arrow_mr)
 		## 点击事件
 		var captured_action: Callable = loc["action"]
-		row.gui_input.connect(func(event: InputEvent) -> void:
-			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-				_on_close_loc()
-				captured_action.call()
+		var click_btn := Button.new()
+		click_btn.name = "LocBtn_" + loc["name"]
+		click_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+		click_btn.flat = true
+		click_btn.focus_mode = Control.FOCUS_NONE
+		var btn_style := StyleBoxFlat.new()
+		btn_style.bg_color = Color(0, 0, 0, 0)
+		btn_style.set_content_margin_all(0)
+		click_btn.add_theme_stylebox_override("normal", btn_style)
+		click_btn.add_theme_stylebox_override("hover", btn_style)
+		click_btn.add_theme_stylebox_override("pressed", btn_style)
+		wrapper.add_child(click_btn)
+		click_btn.pressed.connect(func() -> void:
+			_on_close_loc()
+			captured_action.call()
 		)
 	location_menu.visible = true
 
 
+func _close_all_menus() -> void:
+	for m in [location_menu, baotao_menu, tuanmei_menu, zodiac_popup, house_menu, dating_popup, job_menu, diary_popup, late_night_popup]:
+		if is_instance_valid(m):
+			m.visible = false
+
+
 func _on_app_diary() -> void:
+	_close_all_menus()
 	_refresh_diary_ui()
 	diary_popup.visible = true
 
 
 func _on_app_baotao() -> void:
+	_close_all_menus()
 	for child in baotao_menu.get_children():
 		child.queue_free()
 	var debt_info := "花呗欠款：%d 元" % (GameManager.huabei_debt + GameManager.huabei_installment_debt)
@@ -303,6 +326,7 @@ func _on_app_baotao() -> void:
 
 
 func _on_app_tuanmei() -> void:
+	_close_all_menus()
 	for child in tuanmei_menu.get_children():
 		child.queue_free()
 	var debt_info := "花呗欠款：%d 元" % (GameManager.huabei_debt + GameManager.huabei_installment_debt)
@@ -315,11 +339,13 @@ func _on_app_tuanmei() -> void:
 
 
 func _on_app_zodiac() -> void:
+	_close_all_menus()
 	label_zodiac_content.text = "亲爱的%s宝宝，本周运势：\n请注意控制消费，警惕烂桃花哦！" % GameManager.player_zodiac
 	zodiac_popup.visible = true
 
 
 func _on_app_house() -> void:
+	_close_all_menus()
 	for child in house_menu.get_children():
 		child.queue_free()
 	var housing_names: Array = ["城中村单间", "精装一居室", "CBD大平层"]
@@ -349,6 +375,7 @@ func _on_app_house() -> void:
 
 
 func _on_app_dating() -> void:
+	_close_all_menus()
 	if GameManager.charm < 10:
 		main_node().show_message("颜值太低（需>=10），没有匹配对象！先提升自己吧~")
 		return
@@ -688,7 +715,7 @@ func _check_reunion(location: String) -> Dictionary:
 func _handle_reunion(npc: Dictionary, location: String) -> void:
 	var npc_id: String = npc.get("id", "")
 	var npc_name: String = npc.get("name", "")
-	var loc_cn: String = {"gym": "健身房", "library": "图书馆", "bar": "酒吧", "home": "家里"}.get(location, location)
+	var loc_cn: String = {"gym": "健身房", "library": "图书馆", "bar": "酒吧", "home": "家里", "park": "公园", "cafe": "咖啡厅", "market": "夜市"}.get(location, location)
 	var template: String = _reunion_lines[randi() % _reunion_lines.size()]
 	var text: String = template.replace("{name}", npc_name).replace("{loc}", loc_cn)
 	var runtime = GameManager.get_npc_runtime(npc_id)
@@ -938,7 +965,7 @@ func _on_loc_home() -> void:
 	if roll < 0.30:
 		# 30%: 城市碎片
 		GameManager.modify_stat("sanity", 20)
-		_trigger_city_fragment("home", "[color=90EE90]精力恢复+40[/color]")
+		_trigger_city_fragment("home", "[color=90EE90]情绪+20[/color]")
 		GameManager.add_activity("日常", "宅家刷了一整天手机")
 	else:
 		# 70%: 正常
@@ -1108,7 +1135,7 @@ func _visit_location(context: String, success_msg: String) -> void:
 
 func _on_food_low() -> void:
 	GameManager.monthly_food_cost += 300
-	GameManager.modify_stat("sanity", -15)
+	GameManager.modify_stat("sanity", -5)
 	GameManager.add_activity("日常", "吃了挂逼生存套餐（沙县/拉面），花费300元")
 	GameManager.consecutive_poor_food += 1
 	GameManager.consecutive_overtime = 0
@@ -1277,6 +1304,7 @@ func _on_close_dating() -> void:
 # ==================== BOSS弯聘App ====================
 
 func _on_app_job() -> void:
+	_close_all_menus()
 	for child in job_menu.get_children():
 		child.queue_free()
 	var degree_names := ["大专", "成人本科"]
@@ -1312,6 +1340,11 @@ func _on_job_client() -> void:
 
 # ==================== 日记本 UI ====================
 
+func _diary_week_str(entry: Dictionary) -> String:
+	if entry.has("age") and entry.has("month") and entry.has("week_in_month"):
+		return "%d岁 %d月第%d周" % [entry["age"], entry["month"], entry["week_in_month"]]
+	return "第%d周" % entry.get("week", 0)
+
 func _on_diary_filter(category: String) -> void:
 	_diary_filter = category
 	_refresh_diary_ui()
@@ -1327,7 +1360,7 @@ func _refresh_diary_ui() -> void:
 		var lbl := Label.new()
 		lbl.add_theme_font_size_override("font_size", 13)
 		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		lbl.text = "[第%d周 - %s] %s" % [entry["week"], entry["category"], entry["desc"]]
+		lbl.text = "[%s - %s] %s" % [_diary_week_str(entry), entry["category"], entry["desc"]]
 		match entry.get("category", ""):
 			"提升":
 				lbl.add_theme_color_override("font_color", Color(0.12, 0.35, 0.75, 1))
@@ -1346,6 +1379,7 @@ func _refresh_diary_ui() -> void:
 func _enter_late_night() -> void:
 	_pending_impulse = _impulse_pool[randi() % _impulse_pool.size()]
 	btn_emo_bag.text = _pending_impulse["text"]
+	btn_emo_sleep.text = "忍住诱惑，强迫自己睡觉 (颜值-2 情绪-10 精力-20)"
 	late_night_popup.visible = true
 
 ## 按钮 A：冲动消费换取多巴胺
@@ -1373,4 +1407,5 @@ func _on_emo_sleep() -> void:
 	main_node().float_stat("颜值-2 情绪-10 精力-20", -20, main_node().get_global_mouse_position())
 	main_node().show_message("辗转反侧到天亮，气色极差，整个人像被抽空了...", true)
 	late_night_popup.visible = false
-	main_node()._proceed_next_week()
+	if not GameManager.game_finished:
+		main_node()._proceed_next_week()

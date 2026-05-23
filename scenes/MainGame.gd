@@ -292,7 +292,7 @@ func _ready() -> void:
 
 
 func _on_app_wechat() -> void:
-	wechat._refresh_wechat_ui()
+	wechat._build_chat_items()
 	wechat._on_wc_tab(0)
 	wechat_menu.mouse_filter = Control.MOUSE_FILTER_PASS
 	wc_panel_container.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -425,6 +425,10 @@ func _enter_weekday() -> void:
 	_hide_all_popups()
 	_enable_app_grid()
 	GameManager.check_auto_unlock_npcs()
+	# 动态更新工作按钮薪资显示
+	btn_work_normal.text = "正常打卡 (精力-30, 情绪-15, 待发工资+%d)" % _get_salary("normal")
+	btn_work_slack.text = "摸鱼混日子 (精力-10, 情绪+5, 待发工资+%d)" % _get_salary("slack")
+	btn_work_overtime.text = "疯狂自愿加班 (精力-60, 情绪-30, 待发工资+%d)" % _get_salary("overtime")
 	weekday_panel.visible = true
 	btn_food_low.disabled = false
 	btn_food_mid.disabled = false
@@ -731,7 +735,8 @@ func _on_invest_settled(safe_profit: int, risk_profit: int) -> void:
 		show_message(msg)
 
 func _on_aging_decayed() -> void:
-	show_message("又过了一个月，你感觉皮肤状态变差了。(颜值 -1)")
+	# 不立即显示，延迟到工作日结束后（消息存在 pending_aging_msg 里）
+	pass
 
 func _on_spring_festival(msg: String) -> void:
 	show_urgent_message(msg)
@@ -755,6 +760,7 @@ func _on_spring_festival_done(total_sanity_cost: int, money_cost: int) -> void:
 
 func _on_game_over(cause_title: String, cause_desc: String) -> void:
 	current_phase = Phase.GAME_OVER
+	GameManager.game_finished = true
 	_disable_all()
 	label_game_over.visible = false
 	label_week.text = "游戏结束"
@@ -1058,6 +1064,19 @@ func _finish_workday() -> void:
 	_refresh_ui()
 	pass
 	weekday_panel.visible = false
+	# 显示延迟的衰老消息（在玩家做完选择后）
+	if GameManager.pending_aging_msg != "":
+		var aging_text = GameManager.pending_aging_msg
+		GameManager.pending_aging_msg = ""
+		galgame.show_message(aging_text, true)
+		_play_transition_after_aging()
+	else:
+		_play_transition("5天的牛马生活结束了，终于熬到了周末...")
+
+
+func _play_transition_after_aging() -> void:
+	# 等衰老消息打字完成后，再播放过渡
+	await get_tree().create_timer(3.5).timeout
 	_play_transition("5天的牛马生活结束了，终于熬到了周末...")
 
 

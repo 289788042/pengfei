@@ -227,6 +227,7 @@ func _create_chat_item(npc_id: String, npc_data: Dictionary) -> PanelContainer:
 	var click_btn := Button.new()
 	click_btn.flat = true
 	click_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	click_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(click_btn)
 	click_btn.pressed.connect(func() -> void:
 		if npc_id == "family_group":

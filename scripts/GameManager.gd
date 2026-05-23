@@ -18,8 +18,10 @@ signal month_ended(pending_salary: int, rent_cost: int, huabei_debt: int, food_c
 signal monthly_settled(net_change: int)
 ## 理财收益结算时发出
 signal invest_settled(safe_profit: int, risk_profit: int)
-## 岁月衰减时发出
+## 岁月衰减时发出（延迟到工作日结束后显示）
 signal aging_decayed
+## 是否有待显示的衰老消息
+var pending_aging_msg: String = ""
 ## 春节回家事件（显示扣款和情绪结算提示）
 signal spring_festival(msg: String)
 ## 春节BOSS战开始（传递当前年龄）
@@ -182,7 +184,7 @@ func modify_stat(stat_name: String, amount: int) -> void:
 
 ## 记录活动日志（category: "日常"/"提升"/"社交"/"消费"）
 func add_activity(category: String, desc: String) -> void:
-	activity_log.append({"week": turn_count, "category": category, "desc": desc})
+	activity_log.append({"week": turn_count, "month": month, "week_in_month": week_in_month, "age": age, "category": category, "desc": desc})
 
 ## 记录财务流水（is_huabei: 是否花呗支付）
 func add_finance(amount: int, desc: String, is_huabei: bool) -> void:
@@ -207,6 +209,8 @@ func advance_week() -> void:
 	week_in_month += 1
 	# 精力恢复
 	energy = max_energy
+	# 每周基础情绪恢复
+	sanity = mini(sanity + 5, max_sanity)
 	# 房屋情绪恢复加成
 	if housing_buff_sanity > 0:
 		sanity = mini(sanity + housing_buff_sanity, max_sanity)
@@ -307,9 +311,10 @@ func start_new_month() -> void:
 	var net_change: int = salary_paid - total_cost
 	monthly_settled.emit(net_change)
 
-	# 岁月催人老
-	if charm > 0:
+	# 岁月催人老（每3个月触发，延迟到工作日结束后显示）
+	if charm > 0 and month % 3 == 0:
 		charm = maxi(charm - 1, 0)
+		pending_aging_msg = "又过了一阵子，你感觉皮肤状态变差了。(颜值 -1)"
 		aging_decayed.emit()
 
 	# 清理账单
@@ -480,17 +485,16 @@ func is_npc_unlocked(npc_id: String) -> bool:
 
 ## 解锁一个 NPC
 func unlock_npc(npc_id: String) -> void:
-	if unlocked_npcs.has(npc_id):
-		return
 	var static_data := get_npc_data(npc_id)
 	var display_name: String = static_data.get("name", npc_id)
-	unlocked_npcs[npc_id] = {
-		"affection": 0,
-		"flags": [],
-		"used_daily_chats": [],
-		"chat_cooldown": 0
-	}
-	# 同步加入微信联系人列表（npcs 字典）
+	if not unlocked_npcs.has(npc_id):
+		unlocked_npcs[npc_id] = {
+			"affection": 0,
+			"flags": [],
+			"used_daily_chats": [],
+			"chat_cooldown": 0
+		}
+	# 同步加入微信联系人列表
 	if not npcs.has(npc_id):
 		npcs[npc_id] = {
 			"name": display_name,
@@ -507,9 +511,6 @@ func unlock_npc(npc_id: String) -> void:
 	npc_unlocked.emit(npc_id, display_name)
 
 
-
-
-## 增加 NPC 未读消息数
 func add_unread(npc_id: String, count: int = 1) -> void:
 	if not npcs.has(npc_id):
 		return

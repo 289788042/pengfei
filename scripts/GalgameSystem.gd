@@ -26,6 +26,7 @@ var _gal_encounter_data: Dictionary = {}
 var _is_auto_dismiss: bool = false
 var _gal_npc_id: String = ""
 var _gal_choice_container: VBoxContainer = null
+var _gal_fading_out: bool = false
 
 ## 箭头指示器
 var _arrow_label: Label = null
@@ -44,6 +45,7 @@ func init(main: Node) -> void:
 	main.add_child(_beep_player)
 	_beep_player.stream = _generate_beep()
 	left_dialog_box = main.left_dialog_box
+	left_dialog_box.z_index = 50
 	left_dialog_text = main.left_dialog_text
 	portrait = main.character_portrait
 	scene_bg = main.left_bg
@@ -144,15 +146,23 @@ func _skip_typing() -> void:
 
 
 func dismiss_dialog() -> void:
+	if _gal_fading_out:
+		return
 	if dialog_tween and dialog_tween.is_running():
 		dialog_tween.kill()
 	if _gal_tween and _gal_tween.is_valid():
 		_gal_tween.kill()
 	_gal_typing = false
+	_gal_pages.clear()
+	_stop_arrow_anim()
 	left_dialog_text.text = _gal_full_text
 	left_dialog_box.modulate.a = 0.0
 	left_dialog_box.visible = false
 	_hide_phone_dim()
+	var cb: Callable = _gal_on_complete
+	_gal_on_complete = Callable()
+	if cb.is_valid():
+		cb.call()
 
 
 # ==================== Galgame 分页对话系统 ====================
@@ -165,6 +175,7 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 	_gal_page_idx = 0
 	_gal_on_complete = on_complete
 	_is_auto_dismiss = false
+	_gal_fading_out = false
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	# 暗化手机区域
@@ -292,11 +303,14 @@ func _stop_arrow_anim() -> void:
 
 ## 结束 Galgame 对话
 func _gal_end() -> void:
+	if _gal_fading_out:
+		return
 	if _gal_tween and _gal_tween.is_valid():
 		_gal_tween.kill()
 	_gal_pages.clear()
 	_gal_typing = false
 	_stop_arrow_anim()
+	_gal_fading_out = true
 	var _skip_btn2: Button = main_node().get_node_or_null("HBoxContainer/RightMargin/RightSystemArea/Btn_NextWeek")
 	if _skip_btn2:
 		_skip_btn2.set_deferred("disabled", false)
@@ -307,6 +321,7 @@ func _gal_end() -> void:
 	_gal_tween = main_node().create_tween()
 	_gal_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.4)
 	_gal_tween.tween_callback(func() -> void:
+		_gal_fading_out = false
 		left_dialog_box.visible = false
 		if cb.is_valid():
 			cb.call()
@@ -450,7 +465,7 @@ func _on_encounter_choice(option: Dictionary) -> void:
 # ==================== 公共访问 ====================
 
 func is_visible() -> bool:
-	return left_dialog_box.visible and left_dialog_box.modulate.a > 0.5
+	return not _gal_fading_out and left_dialog_box.visible and left_dialog_box.modulate.a > 0.5
 
 
 func main_node() -> Node:
