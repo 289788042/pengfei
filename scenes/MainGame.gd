@@ -8,10 +8,8 @@ enum Phase { WEEKDAY, WEEKEND, EVENT, MONTH_END, TRANSITION, ENDING, GAME_OVER }
 
 @onready var label_week: Label = %LabelWeek
 @onready var label_player_info: Label = %LabelPlayerInfo
-@onready var dialog_text: RichTextLabel = %DialogText
-@onready var dialog_box: Panel = %DialogBox
-@onready var left_dialog_box: Panel = %LeftDialogBox
 @onready var left_dialog_text: RichTextLabel = %LeftDialogText
+@onready var left_dialog_box: Panel = %LeftDialogBox
 @onready var character_portrait: TextureRect = %CharacterPortrait
 @onready var left_bg: ColorRect = %BgImage
 @onready var label_game_over: Label = %LabelGameOver
@@ -322,25 +320,36 @@ func _input(event: InputEvent) -> void:
 						get_viewport().set_input_as_handled()
 					elif is_instance_valid(galgame._gal_choice_container):
 						pass  # 选择按钮自行处理点击，不消耗事件
+					else:
+						galgame.dismiss_dialog()
+						get_viewport().set_input_as_handled()
 				# 右侧系统消息框点击（关闭）
-			elif dialog_box.visible and dialog_box.modulate.a > 0.5:
-				if dialog_box.get_global_rect().has_point(event.global_position):
+			elif left_dialog_box.visible and left_dialog_box.modulate.a > 0.5:
+				if left_dialog_box.get_global_rect().has_point(event.global_position):
 					galgame.dismiss_dialog()
 					get_viewport().set_input_as_handled()
 	# Space键：翻页对话 / Ctrl键：跳过所有
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_SPACE:
 			if galgame.is_visible():
-				galgame.gal_on_click()
-				get_viewport().set_input_as_handled()
-			elif dialog_box.visible and dialog_box.modulate.a > 0.5:
+				if galgame._gal_pages.size() > 0:
+					galgame.gal_on_click()
+					get_viewport().set_input_as_handled()
+				else:
+					galgame.dismiss_dialog()
+					get_viewport().set_input_as_handled()
+			elif left_dialog_box.visible and left_dialog_box.modulate.a > 0.5:
 				galgame.dismiss_dialog()
 				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_CTRL:
 			if galgame.is_visible():
-				galgame.skip_all()
-				get_viewport().set_input_as_handled()
-			elif dialog_box.visible and dialog_box.modulate.a > 0.5:
+				if galgame._gal_pages.size() > 0:
+					galgame.skip_all()
+					get_viewport().set_input_as_handled()
+				else:
+					galgame.dismiss_dialog()
+					get_viewport().set_input_as_handled()
+			elif left_dialog_box.visible and left_dialog_box.modulate.a > 0.5:
 				galgame.dismiss_dialog()
 				get_viewport().set_input_as_handled()
 

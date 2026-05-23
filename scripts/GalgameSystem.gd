@@ -5,8 +5,6 @@ extends RefCounted
 var _main: Node  ## MainGame 引用
 
 ## 飘字 / 消息 相关的 @onready 引用
-var dialog_box: Panel
-var dialog_text: RichTextLabel
 ## 左侧 Galgame 对话框
 var left_dialog_box: Panel
 var left_dialog_text: RichTextLabel
@@ -25,6 +23,7 @@ var _gal_full_text: String = ""
 var _gal_tween: Tween = null
 var _gal_on_complete: Callable = Callable()
 var _gal_encounter_data: Dictionary = {}
+var _is_auto_dismiss: bool = false
 var _gal_npc_id: String = ""
 var _gal_choice_container: VBoxContainer = null
 
@@ -44,8 +43,6 @@ func init(main: Node) -> void:
 	_beep_player.volume_db = -12.0
 	main.add_child(_beep_player)
 	_beep_player.stream = _generate_beep()
-	dialog_box = main.dialog_box
-	dialog_text = main.dialog_text
 	left_dialog_box = main.left_dialog_box
 	left_dialog_text = main.left_dialog_text
 	portrait = main.character_portrait
@@ -85,35 +82,75 @@ func float_stat(text: String, amount: int, pos: Vector2) -> void:
 func show_message(text: String, galgame: bool = false) -> void:
 	if dialog_tween and dialog_tween.is_running():
 		dialog_tween.kill()
-	dialog_text.text = text
-	dialog_box.visible = true
-	dialog_box.modulate.a = 1.0
-	if not galgame:
+	if _gal_tween and _gal_tween.is_valid():
+		_gal_tween.kill()
+		_gal_typing = false
+	left_dialog_box.visible = true
+	left_dialog_box.modulate.a = 1.0
+	left_dialog_text.visible = true
+	_gal_full_text = text
+	_gal_char_idx = 0
+	_gal_typing = true
+	_is_auto_dismiss = true
+	_apply_page_color(text)
+	_stop_arrow_anim()
+	_msg_type_char()
+
+func _msg_type_char() -> void:
+	if _gal_char_idx >= _gal_full_text.length():
+		_gal_typing = false
+		left_dialog_text.text = _gal_full_text
+		# 3秒后自动渐隐消失
 		dialog_tween = main_node().create_tween()
 		dialog_tween.tween_interval(3.0)
-		dialog_tween.tween_property(dialog_box, "modulate:a", 0.0, 0.5)
-		dialog_tween.tween_callback(func(): dialog_box.visible = false)
+		dialog_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.5)
+		dialog_tween.tween_callback(func(): left_dialog_box.visible = false)
+		return
+	_gal_char_idx += 1
+	_gal_char_idx = _advance_visible_char(_gal_full_text, _gal_char_idx)
+	left_dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
+	if _beep_player and _gal_char_idx % 2 == 0:
+		var ch: String = _gal_full_text[_gal_char_idx - 1]
+		if ch != " " and ch != "
+" and ch != "," and ch != "." and ch != "!" and ch != "?":
+			_beep_player.pitch_scale = _beep_pitch_base
+			_beep_player.play()
+	_gal_tween = main_node().create_tween()
+	_gal_tween.tween_interval(0.03)
+	_gal_tween.tween_callback(_msg_type_char)
 
 
 ## 醒目红色提示（用于春节等重大事件）
 func show_urgent_message(text: String) -> void:
-	if dialog_tween and dialog_tween.is_running():
-		dialog_tween.kill()
-	dialog_text.text = "[color=red]" + text + "[/color]"
-	dialog_box.visible = true
-	dialog_box.modulate.a = 1.0
-	dialog_tween = main_node().create_tween()
-	dialog_tween.tween_interval(4.0)
-	dialog_tween.tween_property(dialog_box, "modulate:a", 0.0, 0.5)
-	dialog_tween.tween_callback(func(): dialog_box.visible = false)
+	show_message("[color=red]" + text + "[/color]")
 
 
 ## 点击对话框立即关闭
+## 跳过打字机效果，直接显示全文（show_message用）
+func _skip_typing() -> void:
+	if _gal_tween and _gal_tween.is_valid():
+		_gal_tween.kill()
+	_gal_typing = false
+	left_dialog_text.text = _gal_full_text
+	if _is_auto_dismiss:
+		# 开始3秒倒计时后消失
+		dialog_tween = main_node().create_tween()
+		dialog_tween.tween_interval(3.0)
+		dialog_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.5)
+		dialog_tween.tween_callback(func(): left_dialog_box.visible = false)
+	else:
+		_start_arrow_anim()
+
+
 func dismiss_dialog() -> void:
 	if dialog_tween and dialog_tween.is_running():
 		dialog_tween.kill()
-	dialog_box.modulate.a = 0.0
-	dialog_box.visible = false
+	if _gal_tween and _gal_tween.is_valid():
+		_gal_tween.kill()
+	_gal_typing = false
+	left_dialog_text.text = _gal_full_text
+	left_dialog_box.modulate.a = 0.0
+	left_dialog_box.visible = false
 	_hide_phone_dim()
 
 
@@ -126,6 +163,7 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 	_gal_pages = pages
 	_gal_page_idx = 0
 	_gal_on_complete = on_complete
+	_is_auto_dismiss = false
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	# 暗化手机区域
@@ -159,6 +197,20 @@ func _gal_start_page() -> void:
 		left_dialog_text.text = ""
 		_gal_type_char()
 
+
+
+## 跳过BBCode标签：将字符索引推进到标签结束后的位置
+func _skip_bbcode(text: String, idx: int) -> int:
+	if idx < text.length() and text[idx] == '[':
+		var end_pos: int = text.find(']', idx)
+		if end_pos >= 0:
+			return end_pos + 1
+	return idx
+
+## 推进到下一个可见字符（跳过BBCode标签）
+func _advance_visible_char(text: String, idx: int) -> int:
+	idx = _skip_bbcode(text, idx)
+	return idx
 
 ## 打字机核心：逐字输出
 func _gal_type_char() -> void:
@@ -257,7 +309,7 @@ func _gal_end() -> void:
 	_gal_tween = main_node().create_tween()
 	_gal_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.4)
 	_gal_tween.tween_callback(func() -> void:
-		dialog_box.visible = false
+		left_dialog_box.visible = false
 		if cb.is_valid():
 			cb.call()
 		elif has_encounter:

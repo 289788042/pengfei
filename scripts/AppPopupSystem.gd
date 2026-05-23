@@ -69,6 +69,7 @@ var _dating_bios: Array = [
 var _city_fragments: Dictionary = {}
 # NPC邂逅冷却（替代永久失败的 encounter_failed_ids）
 var _encounter_cooldowns: Dictionary = {}  # npc_id -> turn_count 可重试
+var _park_visited_week: int = -999
 var _frag_choice_container: VBoxContainer = null
 # NPC重逢台词模板
 var _reunion_lines: Array = [
@@ -217,6 +218,10 @@ func _on_app_map() -> void:
 		{"name": "健身房", "icon_color": Color(0.2, 0.75, 0.3), "cost": "-45精力 -200金 | +2颜值 +5情绪 体力上限+1", "action": _on_loc_gym},
 		{"name": "高档酒吧", "icon_color": Color(0.6, 0.3, 0.8), "cost": "-20精力 -500金 | +2情商 +25情绪 | 需情商>=10", "action": _on_loc_bar},
 		{"name": "宅家刷手机", "icon_color": Color(0.55, 0.55, 0.55), "cost": "-10精力 | +20情绪", "action": _on_loc_home},
+		{"name": "公园·深圳湾", "icon_color": Color(0.1, 0.7, 0.4), "cost": "0精力 0金 | +3情绪 精力+10", "action": _on_loc_park},
+		{"name": "咖啡厅", "icon_color": Color(0.55, 0.35, 0.15), "cost": "-5精力 -60金 | +2学识 +3情商", "action": _on_loc_cafe},
+		{"name": "夜市·大排档", "icon_color": Color(0.85, 0.55, 0.1), "cost": "0精力 -100金 | +15情绪", "action": _on_loc_market},
+		{"name": "公司加班", "icon_color": Color(0.3, 0.3, 0.7), "cost": "-40精力 | +500~800金", "action": _on_loc_overtime},
 	]
 	## 构建每行
 	for loc in map_locs:
@@ -736,6 +741,7 @@ func _handle_encounter(npc: Dictionary, location: String, energy_cost: int, mone
 		return
 
 	GameManager.modify_stat("energy", -energy_cost)
+	_encounter_cooldowns[npc_id] = GameManager.turn_count + 99
 	location_menu.visible = false
 
 	if all_ok:
@@ -929,6 +935,131 @@ func _on_loc_home() -> void:
 		main_node().float_stat("+20 情绪", 20, main_node().get_global_mouse_position())
 		main_node().show_message("宅家刷了一整天手机，虽然眼睛酸但心情不错~", true)
 		GameManager.add_activity("日常", "宅家刷了一整天手机")
+
+
+
+func _on_loc_park() -> void:
+	if _park_visited_week == GameManager.turn_count:
+		main_node().show_message("这周已经去过深圳湾了，来回太远，下周再去吧。")
+		return
+	location_menu.visible = false
+	var roll := randf()
+	if roll < 0.20:
+		var encounter_npc = _check_encounter("park")
+		if encounter_npc.size() > 0:
+			_park_visited_week = GameManager.turn_count
+			_handle_encounter(encounter_npc, "park", 0, 0)
+			return
+		var reunion = _check_reunion("park")
+		if reunion.size() > 0:
+			_park_visited_week = GameManager.turn_count
+			GameManager.modify_stat("energy", 10)
+			GameManager.modify_stat("sanity", 3)
+			_handle_reunion(reunion, "park")
+			GameManager.add_activity("日常", "在公园散步并遇到了熟人")
+			return
+	_park_visited_week = GameManager.turn_count
+	GameManager.modify_stat("energy", 10)
+	GameManager.modify_stat("sanity", 3)
+	if roll < 0.50:
+		_trigger_city_fragment("park", "[color=90EE90]精力+10 情绪+3[/color]")
+		GameManager.add_activity("日常", "在公园·深圳湾散步，精力+10，情绪+3")
+	else:
+		main_node().show_message("在深圳湾公园散了一个下午的步，海风吹散了一天的疲惫。
+[color=90EE90]精力+10 情绪+3[/color]", true)
+		GameManager.add_activity("日常", "在公园·深圳湾散步，精力+10，情绪+3")
+
+func _on_loc_cafe() -> void:
+	if GameManager.energy < 5:
+		main_node().show_message("精力不足（需5），连去咖啡厅的力气都没有了！")
+		return
+	location_menu.visible = false
+	var roll := randf()
+	if roll < 0.20:
+		var encounter_npc = _check_encounter("cafe")
+		if encounter_npc.size() > 0:
+			_handle_encounter(encounter_npc, "cafe", 5, 60)
+			return
+		var reunion = _check_reunion("cafe")
+		if reunion.size() > 0:
+			main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
+				GameManager.modify_stat("energy", -5)
+				_handle_reunion(reunion, "cafe")
+				GameManager.modify_stat("intellect", 2)
+				GameManager.modify_stat("eq", 3)
+				GameManager.add_activity("提升", "在咖啡厅学习并遇到了熟人")
+			)
+			return
+	if roll < 0.50:
+		main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
+			GameManager.modify_stat("energy", -5)
+			GameManager.modify_stat("intellect", 2)
+			GameManager.modify_stat("eq", 3)
+			_trigger_city_fragment("cafe", "[color=90EE90]学识+2 情商+3[/color]")
+			GameManager.add_activity("提升", "在咖啡厅学习，学识+2，情商+3")
+		)
+	else:
+		main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
+			GameManager.modify_stat("energy", -5)
+			GameManager.modify_stat("intellect", 2)
+			GameManager.modify_stat("eq", 3)
+			main_node().show_message("在咖啡厅安静地学习了一下午，效率出奇的高。
+[color=90EE90]学识+2 情商+3[/color]", true)
+			GameManager.add_activity("提升", "在咖啡厅学习，学识+2，情商+3")
+		)
+
+func _on_loc_market() -> void:
+	location_menu.visible = false
+	var roll := randf()
+	if roll < 0.20:
+		var encounter_npc = _check_encounter("market")
+		if encounter_npc.size() > 0:
+			_handle_encounter(encounter_npc, "market", 0, 100)
+			return
+		var reunion = _check_reunion("market")
+		if reunion.size() > 0:
+			main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
+				_handle_reunion(reunion, "market")
+				GameManager.modify_stat("sanity", 15)
+				GameManager.add_activity("美食", "在夜市吃夜宵并遇到了熟人")
+			)
+			return
+	if roll < 0.50:
+		main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
+			GameManager.modify_stat("sanity", 15)
+			_trigger_city_fragment("market", "[color=90EE90]情绪+15[/color]")
+			GameManager.add_activity("美食", "在夜市吃了夜宵，情绪+15")
+		)
+	else:
+		main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
+			GameManager.modify_stat("sanity", 15)
+			main_node().show_message("烧烤、砂锅粥、炒粉……吃得满足极了！
+[color=90EE90]情绪+15[/color]", true)
+			GameManager.add_activity("美食", "在夜市吃了夜宵，情绪+15")
+		)
+
+func _on_loc_overtime() -> void:
+	if GameManager.energy < 40:
+		main_node().show_message("精力不足（需40），加不动班了！")
+		return
+	location_menu.visible = false
+	GameManager.modify_stat("energy", -40)
+	GameManager.modify_stat("sanity", -35)
+	var overtime_pay: int = randi() % 300 + 500
+	GameManager.modify_stat("money", overtime_pay)
+	var roll := randf()
+	if roll < 0.20:
+		var event := GameManager.roll_random_event("overtime")
+		if event.size() > 0:
+			main_node()._show_event(event, func() -> void:
+				main_node().show_message("加班到深夜，虽然累但赚了%d元加班费。
+[color=90EE90]精力-40 情绪-35 金钱+%d[/color]" % [overtime_pay, overtime_pay], true)
+			)
+			GameManager.add_activity("工作", "公司加班，赚了%d元加班费" % overtime_pay)
+			return
+	main_node().show_message("加班到深夜，虽然累但赚了%d元加班费。
+[color=90EE90]精力-40 情绪-35 金钱+%d[/color]" % [overtime_pay, overtime_pay], true)
+	GameManager.add_activity("工作", "公司加班，赚了%d元加班费" % overtime_pay)
 
 
 func _visit_location(context: String, success_msg: String) -> void:

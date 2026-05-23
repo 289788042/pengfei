@@ -126,6 +126,13 @@ func _update_app_badge() -> void:
 # ==================== UI 刷新 ====================
 
 func _refresh_wechat_ui() -> void:
+	# Rebuild chat items if new NPCs were added
+	var current_npc_count: int = 0
+	for npc_id in GameManager.npcs:
+		if GameManager.npcs[npc_id].get("unlocked", false) and not GameManager.npcs[npc_id].get("blocked", false):
+			current_npc_count += 1
+	if _chat_items.size() != current_npc_count:
+		_build_chat_items()
 	for npc_id in _chat_items:
 		var npc_data: Dictionary = GameManager.npcs[npc_id]
 		var item: Dictionary = _chat_items[npc_id]
@@ -175,11 +182,11 @@ func _refresh_wechat_ui() -> void:
 				badge_panel.visible = true
 			else:
 				badge_panel.visible = false
-	var unlocked_count: int = 0
-	for npc_id in GameManager.npcs:
-		if GameManager.npcs[npc_id]["unlocked"] and not GameManager.npcs[npc_id].get("blocked", false):
-			unlocked_count += 1
-	_main.label_wc_title.text = "微信 (%d)" % unlocked_count
+	var total_unread: int = GameManager.get_total_unread()
+	if total_unread > 0:
+		_main.label_wc_title.text = "微信 (%d)" % total_unread
+	else:
+		_main.label_wc_title.text = "微信"
 	_update_app_badge()
 
 
