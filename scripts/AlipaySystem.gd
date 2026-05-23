@@ -79,7 +79,7 @@ func _on_pay_mix() -> void:
 		main_node().show_message("现金余额不足！当前余额：%d 元" % GameManager.money)
 		return
 	var cost := _pending_pay_cost
-	GameManager.money -= cost
+	GameManager.modify_stat("money", -cost)
 	GameManager.add_finance(-cost, _pending_pay_desc, false)
 	GameManager.add_activity(_pending_pay_category, _pending_pay_desc + "现金支付")
 	_finish_payment()
@@ -177,7 +177,7 @@ func _on_al_fin_safe_in() -> void:
 	if GameManager.money < 500:
 		main_node().show_message("活期余额不足 500，无法存入！")
 		return
-	GameManager.money -= 500
+	GameManager.modify_stat("money", -500)
 	GameManager.invest_safe += 500
 	GameManager.add_finance(-500, "存入稳健宝", false)
 	main_node().float_stat("-500 存入稳健宝", -500, main_node().get_global_mouse_position())
@@ -188,7 +188,7 @@ func _on_al_fin_risk_in() -> void:
 	if GameManager.money < 500:
 		main_node().show_message("活期余额不足 500，无法存入！")
 		return
-	GameManager.money -= 500
+	GameManager.modify_stat("money", -500)
 	GameManager.invest_risk += 500
 	GameManager.add_finance(-500, "存入高风险基金", false)
 	main_node().float_stat("-500 存入高风险", -500, main_node().get_global_mouse_position())
@@ -200,7 +200,7 @@ func _on_al_fin_safe_out() -> void:
 		main_node().show_message("稳健宝里没有钱可以取出！")
 		return
 	var amount := GameManager.invest_safe
-	GameManager.money += amount
+	GameManager.modify_stat("money", amount)
 	GameManager.invest_safe = 0
 	GameManager.add_finance(amount, "取出稳健宝", false)
 	main_node().float_stat("+%d 取出稳健宝" % amount, amount, main_node().get_global_mouse_position())
@@ -212,7 +212,7 @@ func _on_al_fin_risk_out() -> void:
 		main_node().show_message("高风险基金里没有钱可以取出！")
 		return
 	var amount := GameManager.invest_risk
-	GameManager.money += amount
+	GameManager.modify_stat("money", amount)
 	GameManager.invest_risk = 0
 	GameManager.add_finance(amount, "取出高风险基金", false)
 	main_node().float_stat("+%d 取出高风险" % amount, amount, main_node().get_global_mouse_position())
@@ -243,7 +243,7 @@ func _on_repay_huabei() -> void:
 		return
 
 	var remaining := mini(amount, combined_debt)
-	GameManager.money -= remaining
+	GameManager.modify_stat("money", -remaining)
 	var repay_msg := ""
 
 	# 第一步：先还未分期的花呗欠款

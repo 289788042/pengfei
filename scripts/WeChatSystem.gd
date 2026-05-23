@@ -539,7 +539,6 @@ func _on_daily_chat() -> void:
 
 	## 【兜底逻辑】
 	if available_chats.is_empty():
-		GameManager.modify_stat("energy", -5)
 		_add_chat_bubble("npc", "[对方无回复]")
 		var npc_data_dict: Dictionary = GameManager.npcs[_current_chat_npc]
 		npc_data_dict["messages"].append({"sender": "npc", "text": "[对方无回复]"})
@@ -555,7 +554,7 @@ func _on_daily_chat() -> void:
 	var npc_msg: String = ""
 	for line in text_lines:
 		npc_msg += line + "\n"
-		npc_msg = npc_msg.strip_edges()
+	npc_msg = npc_msg.strip_edges()
 	var _npc_name: String = static_data.get("name", npc_id)  # npc display name
 	_add_chat_bubble("npc", npc_msg)
 	var npc_data_dict2: Dictionary = GameManager.npcs[_current_chat_npc]

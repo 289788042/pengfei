@@ -219,7 +219,9 @@ func advance_week() -> void:
 	# 月底结算：不立刻处理，发出信号等待玩家确认
 	if week_in_month > 4:
 		awaiting_month_settle = true
-		month_ended.emit(pending_salary, rent_cost, huabei_debt, monthly_food_cost)
+		# 计算实际将扣除的金额（与 start_new_month 一致）
+		var _actual_huabei_min: int = mini(int(huabei_debt * 0.1 + 200), huabei_debt) if huabei_debt > 0 else 0
+		month_ended.emit(pending_salary, base_rent, _actual_huabei_min, monthly_food_cost)
 		return
 
 	# 正常推进
@@ -391,6 +393,8 @@ func roll_random_event(context: String) -> Dictionary:
 			return {"desc": "读到一本好书，心灵得到净化。", "sanity": 20, "intellect": 5}
 		"bar":
 			return {"desc": "在吧台被一个奇怪的人搭讪，感觉很差。", "sanity": -10}
+		"overtime":
+			return {"desc": "加班时收到老板的消息：这版方案不行，明天再改一版。", "sanity": -15}
 		_:
 			return {}
 

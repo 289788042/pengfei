@@ -106,8 +106,9 @@ func _msg_type_char() -> void:
 		dialog_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.5)
 		dialog_tween.tween_callback(func(): left_dialog_box.visible = false)
 		return
+	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	_gal_char_idx += 1
-	_gal_char_idx = _advance_visible_char(_gal_full_text, _gal_char_idx)
+	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	left_dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
 	if _beep_player and _gal_char_idx % 2 == 0:
 		var ch: String = _gal_full_text[_gal_char_idx - 1]
@@ -187,15 +188,10 @@ func _gal_start_page() -> void:
 	_gal_full_text = _gal_pages[_gal_page_idx]
 	_apply_page_color(_gal_full_text)
 	_stop_arrow_anim()
-	if _gal_full_text.find("[color=") >= 0:
-		_gal_typing = false
-		left_dialog_text.text = _gal_full_text
-		_start_arrow_anim()
-	else:
-		_gal_char_idx = 0
-		_gal_typing = true
-		left_dialog_text.text = ""
-		_gal_type_char()
+	_gal_char_idx = 0
+	_gal_typing = true
+	left_dialog_text.text = ""
+	_gal_type_char()
 
 
 
@@ -212,14 +208,16 @@ func _advance_visible_char(text: String, idx: int) -> int:
 	idx = _skip_bbcode(text, idx)
 	return idx
 
-## 打字机核心：逐字输出
+## 打字机核心：逐字输出（跳过 BBCode 标签）
 func _gal_type_char() -> void:
 	if _gal_char_idx >= _gal_full_text.length():
 		_gal_typing = false
 		left_dialog_text.text = _gal_full_text
 		_start_arrow_anim()
 		return
+	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	_gal_char_idx += 1
+	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	left_dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
 	# 嘟嘟音效（每两个字响一次，跳过空格/标点/换行）
 	if _beep_player and _gal_char_idx % 2 == 0:

@@ -739,8 +739,14 @@ func _handle_encounter(npc: Dictionary, location: String, energy_cost: int, mone
 	if energy_cost > 0 and GameManager.energy < energy_cost:
 		main_node().show_message("精力不足（需%d）！" % energy_cost)
 		return
+	if money_cost > 0 and GameManager.money < money_cost:
+		main_node().show_message("金钱不足（需%d）！" % money_cost)
+		return
 
 	GameManager.modify_stat("energy", -energy_cost)
+	# 金钱仅在遭遇成功时扣除（失败时由 fallback 函数自行处理）
+	if all_ok and money_cost > 0:
+		GameManager.modify_stat("money", -money_cost)
 	_encounter_cooldowns[npc_id] = GameManager.turn_count + 99
 	location_menu.visible = false
 
@@ -793,12 +799,7 @@ func _on_loc_library() -> void:
 	var roll := randf()
 	if roll < 0.20:
 		# 20%: NPC邂逅
-		var encounter_npc: Dictionary = {}
-		for npc in GameManager.npc_database:
-			var enc: Dictionary = npc.get("encounter", {})
-			if enc.get("location", "") == "library" and not GameManager.is_npc_unlocked(npc.get("id", "")) and _encounter_cooldowns.get(npc.get("id", ""), 0) <= GameManager.turn_count:
-				encounter_npc = npc
-				break
+		var encounter_npc: Dictionary = _check_encounter("library")
 		if encounter_npc.size() > 0:
 			_handle_encounter(encounter_npc, "library", 20, 0)
 			return
@@ -811,6 +812,13 @@ func _on_loc_library() -> void:
 			GameManager.modify_stat("sanity", 5)
 			GameManager.add_activity("提升", "在图书馆读书并遇到了熟人")
 			return
+		# 没遇到NPC，正常读书
+		GameManager.modify_stat("energy", -20)
+		GameManager.modify_stat("intellect", 3)
+		GameManager.modify_stat("sanity", 5)
+		main_node().show_message("在图书馆度过了一个充实的下午。\n\t[color=90EE90]学识+3 情绪+5[/color]", true)
+		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
+		return
 	# 正常活动
 	GameManager.modify_stat("energy", -20)
 	GameManager.modify_stat("intellect", 3)
@@ -848,6 +856,9 @@ func _on_loc_gym() -> void:
 				GameManager.add_activity("提升", "去健身房挥汗如雨！颜值+2，精力上限+1（当前%d）" % GameManager.max_energy)
 			)
 			return
+		# 没遇到NPC，正常健身
+		_normal_gym()
+		return
 	# 正常活动（30%碎片 / 50%纯正常）
 	if roll < 0.50:
 		main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
@@ -896,6 +907,9 @@ func _on_loc_bar() -> void:
 				GameManager.add_activity("社交", "在酒吧喝酒并遇到了熟人")
 			)
 			return
+		# 没遇到NPC，正常喝酒
+		_normal_bar()
+		return
 	# 正常活动（30%碎片 / 50%纯正常）
 	if roll < 0.50:
 		main_node().alipay.request_payment(500, "酒吧消费", "社交", func() -> void:
@@ -921,16 +935,13 @@ func _on_loc_home() -> void:
 	GameManager.modify_stat("energy", -10)
 	location_menu.visible = false
 	var roll := randf()
-	if roll < 0.20:
-		# 20%: 尝试重逢（家里不太可能，但保留统一结构）
-		pass
-	if roll < 0.50:
+	if roll < 0.30:
 		# 30%: 城市碎片
 		GameManager.modify_stat("sanity", 20)
 		_trigger_city_fragment("home", "[color=90EE90]精力恢复+40[/color]")
 		GameManager.add_activity("日常", "宅家刷了一整天手机")
 	else:
-		# 50%: 正常
+		# 70%: 正常
 		GameManager.modify_stat("sanity", 20)
 		main_node().float_stat("+20 情绪", 20, main_node().get_global_mouse_position())
 		main_node().show_message("宅家刷了一整天手机，虽然眼睛酸但心情不错~", true)
@@ -958,6 +969,13 @@ func _on_loc_park() -> void:
 			_handle_reunion(reunion, "park")
 			GameManager.add_activity("日常", "在公园散步并遇到了熟人")
 			return
+		# 没遇到NPC，正常散步
+		_park_visited_week = GameManager.turn_count
+		GameManager.modify_stat("energy", 10)
+		GameManager.modify_stat("sanity", 3)
+		main_node().show_message("在深圳湾公园散了一个下午的步，海风吹散了一天的疲惫。\n\t[color=90EE90]精力+10 情绪+3[/color]", true)
+		GameManager.add_activity("日常", "在公园·深圳湾散步，精力+10，情绪+3")
+		return
 	_park_visited_week = GameManager.turn_count
 	GameManager.modify_stat("energy", 10)
 	GameManager.modify_stat("sanity", 3)
@@ -990,6 +1008,15 @@ func _on_loc_cafe() -> void:
 				GameManager.add_activity("提升", "在咖啡厅学习并遇到了熟人")
 			)
 			return
+		# 没遇到NPC，正常学习
+		main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
+			GameManager.modify_stat("energy", -5)
+			GameManager.modify_stat("intellect", 2)
+			GameManager.modify_stat("eq", 3)
+			main_node().show_message("在咖啡厅安静地学习了一下午，效率出奇的高。\n\t[color=90EE90]学识+2 情商+3[/color]", true)
+			GameManager.add_activity("提升", "在咖啡厅学习，学识+2，情商+3")
+		)
+		return
 	if roll < 0.50:
 		main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
 			GameManager.modify_stat("energy", -5)
@@ -1024,6 +1051,13 @@ func _on_loc_market() -> void:
 				GameManager.add_activity("美食", "在夜市吃夜宵并遇到了熟人")
 			)
 			return
+		# 没遇到NPC，正常逛夜市
+		main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
+			GameManager.modify_stat("sanity", 15)
+			main_node().show_message("烧烤、砂锅粥、炒粉……吃得满足极了！\n\t[color=90EE90]情绪+15[/color]", true)
+			GameManager.add_activity("美食", "在夜市吃了夜宵，情绪+15")
+		)
+		return
 	if roll < 0.50:
 		main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
 			GameManager.modify_stat("sanity", 15)
@@ -1169,7 +1203,7 @@ func _on_close_zodiac() -> void:
 # ==================== 贝壳找房App ====================
 
 func _on_house_village() -> void:
-	GameManager.money -= 3000
+	GameManager.modify_stat("money", -3000)
 	GameManager.base_rent = 1500
 	GameManager.housing_level = 0
 	GameManager.housing_buff_sanity = 0
@@ -1177,7 +1211,7 @@ func _on_house_village() -> void:
 	main_node().show_message("搬家成功！押金 3000 已扣，下月开始交房租 1500。")
 
 func _on_house_apartment() -> void:
-	GameManager.money -= 8000
+	GameManager.modify_stat("money", -8000)
 	GameManager.base_rent = 4000
 	GameManager.housing_level = 1
 	GameManager.housing_buff_sanity = 10
@@ -1186,7 +1220,7 @@ func _on_house_apartment() -> void:
 	main_node().show_message("搬家成功！押金 8000 已扣，精装公寓每周恢复10情绪，颜值+5！")
 
 func _on_house_luxury() -> void:
-	GameManager.money -= 24000
+	GameManager.modify_stat("money", -24000)
 	GameManager.base_rent = 12000
 	GameManager.housing_level = 2
 	GameManager.housing_buff_sanity = 25

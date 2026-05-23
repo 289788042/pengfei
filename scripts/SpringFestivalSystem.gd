@@ -234,9 +234,9 @@ func _on_round_choice(option: Dictionary) -> void:
 ## 显示春节总结
 func _show_summary() -> void:
 	var savings_bonus: String = ""
-	if GameManager.money + _money_cost >= 50000:
+	if GameManager.money - _money_cost >= 50000:
 		savings_bonus = "\n存款丰厚，在亲戚面前倍儿有面子！(情绪 +30)"
-	elif GameManager.money + _money_cost < 10000:
+	elif GameManager.money - _money_cost < 10000:
 		savings_bonus = "\n兜里没什么钱，心里也没底气。(情绪 -20)"
 
 	var summary_pages: Array = []
