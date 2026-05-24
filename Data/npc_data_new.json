@@ -39,16 +39,33 @@
 				"reply_options": [
 					{
 						"text": "那是她老公买的吧，我们公司工资你又不是不知道",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": -3},
-						"reply_lines": ["哈哈也是，你们打工人不容易~", "改天出来坐坐！我请你喝下午茶"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": -3
+						},
+						"reply_lines": [
+							"哈哈也是，你们打工人不容易~",
+							"改天出来坐坐！我请你喝下午茶"
+						],
 						"note": "你自嘲了，她没听出来你的苦涩"
 					},
 					{
 						"text": "你最近过得怎么样？好像很久没聊了",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 3, "affection": 2},
-						"reply_lines": ["我还好呀，就是最近老公出差多有点无聊", "你呢？一个人在深圳要照顾好自己哦"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 3,
+							"affection": 2
+						},
+						"reply_lines": [
+							"我还好呀，就是最近老公出差多有点无聊",
+							"你呢？一个人在深圳要照顾好自己哦"
+						],
 						"note": "她关心你，虽然方式有点站着说话不腰疼"
 					}
 				]
@@ -64,16 +81,36 @@
 				"reply_options": [
 					{
 						"text": "真的...差不多吧（心虚）",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": -5, "affection": 1},
-						"reply_lines": ["我就说嘛！你一直都很厉害的", "等你升职了请我吃饭哦~"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": -5,
+							"affection": 1
+						},
+						"reply_lines": [
+							"我就说嘛！你一直都很厉害的",
+							"等你升职了请我吃饭哦~"
+						],
 						"note": "你骗了她，也骗了自己"
 					},
 					{
 						"text": "我妈嘛...你懂的，在老家要面子",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 2, "affection": 3, "eq": 1},
-						"reply_lines": ["唉，我妈也这样，老在亲戚面前吹牛", "其实咱们都不容易", "有空出来聊聊，别一个人扛着"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 2,
+							"affection": 3,
+							"eq": 1
+						},
+						"reply_lines": [
+							"唉，我妈也这样，老在亲戚面前吹牛",
+							"其实咱们都不容易",
+							"有空出来聊聊，别一个人扛着"
+						],
 						"note": "你说了实话，她反而更真诚了"
 					}
 				]
@@ -88,9 +125,18 @@
 				"reply_options": [
 					{
 						"text": "谢谢小雅！你一直对我最好了",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 8, "affection": 3},
-						"reply_lines": ["客气啥~你开心就好！", "等我有空去找你玩！"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 8,
+							"affection": 3
+						},
+						"reply_lines": [
+							"客气啥~你开心就好！",
+							"等我有空去找你玩！"
+						],
 						"note": "有个惦记你的人真好"
 					}
 				]
@@ -107,16 +153,34 @@
 				"reply_options": [
 					{
 						"text": "空记录确实可疑...你直接问他",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"affection": 2, "eq": 1},
-						"reply_lines": ["我不敢...万一真的是我想多了呢", "算了不说了，谢谢你听我发牢骚"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 2,
+							"eq": 1
+						},
+						"reply_lines": [
+							"我不敢...万一真的是我想多了呢",
+							"算了不说了，谢谢你听我发牢骚"
+						],
 						"note": "她的光鲜生活下也有裂痕"
 					},
 					{
 						"text": "也许真的只是客户呢，别吓自己",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": -2, "affection": 1},
-						"reply_lines": ["也是...我可能太敏感了", "毕竟他平时对我还是不错的"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": -2,
+							"affection": 1
+						},
+						"reply_lines": [
+							"也是...我可能太敏感了",
+							"毕竟他平时对我还是不错的"
+						],
 						"note": "你安慰了她，但你不确定自己说的对不对"
 					}
 				]
@@ -143,12 +207,29 @@
 					"她终于卸下了那副笑脸。",
 					"哭得像个孩子。"
 				],
-				"pass_stat_changes": {"affection": 10, "sanity": 5},
-				"pass_cost": {"energy": 10, "money": 0},
-				"fail_lines": ["你...还好吧？需要我帮忙吗？"],
-				"fail_reply_lines": ["没事，我很好。真的。", "来，自拍一张发朋友圈~"],
-				"fail_stat_changes": {"affection": 3, "sanity": -5},
-				"fail_cost": {"energy": 5, "money": 0}
+				"pass_stat_changes": {
+					"affection": 10,
+					"sanity": 5
+				},
+				"pass_cost": {
+					"energy": 10,
+					"money": 0
+				},
+				"fail_lines": [
+					"你...还好吧？需要我帮忙吗？"
+				],
+				"fail_reply_lines": [
+					"没事，我很好。真的。",
+					"来，自拍一张发朋友圈~"
+				],
+				"fail_stat_changes": {
+					"affection": 3,
+					"sanity": -5
+				},
+				"fail_cost": {
+					"energy": 5,
+					"money": 0
+				}
 			}
 		],
 		"moments": [],
@@ -161,9 +242,14 @@
 		"title": "同乡老乡/工厂小哥",
 		"encounter": {
 			"location": "gym",
-			"req_stats": {"eq": 5},
+			"req_stats": {
+				"eq": 5
+			},
 			"first_visit_only": true,
-			"cost": {"energy": 0, "money": 0},
+			"cost": {
+				"energy": 0,
+				"money": 0
+			},
 			"scene_lines": [
 				"健身房的跑步机区域。",
 				"你正在气喘吁吁地快走，旁边来了一个穿着褪色T恤的男生。",
@@ -184,7 +270,9 @@
 			"test_question": "",
 			"pass_lines": [],
 			"pass_result_lines": [],
-			"pass_stat_changes": {"affection": 5},
+			"pass_stat_changes": {
+				"affection": 5
+			},
 			"fail_lines": [],
 			"fail_result_lines": [],
 			"fail_stat_changes": {},
@@ -198,19 +286,39 @@
 						"id": "aw_accept",
 						"text": "好啊，猪脚饭管够就行",
 						"unlock_npc": true,
-						"cost": {"energy": 0, "money": 0},
-						"stat_changes": {"sanity": 3},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 3
+						},
 						"reply_lines": [
 							"阿伟笑了，露出一口不太整齐的白牙。",
 							"'管够管够！走着！'"
+						],
+						"wechat_init_messages": [
+							{
+								"sender": "npc",
+								"text": "今天健身房谢谢你那瓶水啊"
+							},
+							{
+								"sender": "npc",
+								"text": "下次约猪脚饭！我请客！"
+							}
 						]
 					},
 					{
 						"id": "aw_refuse",
 						"text": "下次吧，今天有点赶",
 						"unlock_npc": false,
-						"cost": {"energy": 0, "money": 0},
-						"stat_changes": {"eq": 2},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
+						"stat_changes": {
+							"eq": 2
+						},
 						"reply_lines": [
 							"'好嘞，没事！'",
 							"他挠了挠头，笑了笑，继续去跑步了。"
@@ -231,16 +339,34 @@
 				"reply_options": [
 					{
 						"text": "好呀，我这周可能去不了，下周吧",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 3, "affection": 2},
-						"reply_lines": ["没问题！我等着！", "你工作别太累了啊"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 3,
+							"affection": 2
+						},
+						"reply_lines": [
+							"没问题！我等着！",
+							"你工作别太累了啊"
+						],
 						"note": "阿伟虽然粗糙，但说话让你觉得踏实"
 					},
 					{
 						"text": "你怎么天天吃猪脚饭，不腻吗",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 1, "affection": 1},
-						"reply_lines": ["不腻啊！这叫讲究！", "你以为猪脚饭都一样的？"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 1,
+							"affection": 1
+						},
+						"reply_lines": [
+							"不腻啊！这叫讲究！",
+							"你以为猪脚饭都一样的？"
+						],
 						"note": "他认真地给你科普了五分钟猪脚饭的门道"
 					}
 				]
@@ -256,16 +382,34 @@
 				"reply_options": [
 					{
 						"text": "你还寄钱回家？挺孝顺的",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 2, "affection": 3},
-						"reply_lines": ["应该的，爸妈供我不容易", "你也要照顾好自己啊"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 2,
+							"affection": 3
+						},
+						"reply_lines": [
+							"应该的，爸妈供我不容易",
+							"你也要照顾好自己啊"
+						],
 						"note": "你突然觉得这个粗糙的老乡，比很多写字楼里的人都有担当"
 					},
 					{
 						"text": "够花就行，开心最重要",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": -2, "affection": 1},
-						"reply_lines": ["也谈不上开心，就是过日子", "不过认识你之后好多了嘿嘿"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": -2,
+							"affection": 1
+						},
+						"reply_lines": [
+							"也谈不上开心，就是过日子",
+							"不过认识你之后好多了嘿嘿"
+						],
 						"note": "他说这话的时候你看到'正在输入...'闪了好久"
 					}
 				]
@@ -282,16 +426,35 @@
 				"reply_options": [
 					{
 						"text": "你应该申诉的，这不是你的锅",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"affection": 5, "eq": 1},
-						"reply_lines": ["不了，申诉也没用，他是组长的老乡", "谢谢姐关心，我没事的"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 5,
+							"eq": 1
+						},
+						"reply_lines": [
+							"不了，申诉也没用，他是组长的老乡",
+							"谢谢姐关心，我没事的"
+						],
 						"note": "你替他不平，但你也知道这就是底层打工人的现实"
 					},
 					{
 						"text": "天下乌鸦一般黑，我们公司也这样",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": -1, "affection": 3},
-						"reply_lines": ["哈哈是吧", "所以我们打工人得互相关照", "改天请你吃猪脚饭！"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": -1,
+							"affection": 3
+						},
+						"reply_lines": [
+							"哈哈是吧",
+							"所以我们打工人得互相关照",
+							"改天请你吃猪脚饭！"
+						],
 						"note": "苦难成了你们之间的纽带"
 					}
 				]
@@ -323,12 +486,29 @@
 					"'我懂了。'",
 					"'那我还能请你吃猪脚饭吗？'"
 				],
-				"pass_stat_changes": {"affection": -5, "sanity": 5},
-				"pass_cost": {"energy": 10, "money": 0},
-				"fail_lines": ["阿伟...让我想想好吗？"],
-				"fail_reply_lines": ["不急，你慢慢想", "猪脚饭随时等你！"],
-				"fail_stat_changes": {"affection": 5, "sanity": -3},
-				"fail_cost": {"energy": 10, "money": 0}
+				"pass_stat_changes": {
+					"affection": -5,
+					"sanity": 5
+				},
+				"pass_cost": {
+					"energy": 10,
+					"money": 0
+				},
+				"fail_lines": [
+					"阿伟...让我想想好吗？"
+				],
+				"fail_reply_lines": [
+					"不急，你慢慢想",
+					"猪脚饭随时等你！"
+				],
+				"fail_stat_changes": {
+					"affection": 5,
+					"sanity": -3
+				},
+				"fail_cost": {
+					"energy": 10,
+					"money": 0
+				}
 			}
 		],
 		"moments": [],
@@ -341,9 +521,14 @@
 		"title": "程序员邻居",
 		"encounter": {
 			"location": "library",
-			"req_stats": {"intellect": 15},
+			"req_stats": {
+				"intellect": 15
+			},
 			"first_visit_only": true,
-			"cost": {"energy": 0, "money": 0},
+			"cost": {
+				"energy": 0,
+				"money": 0
+			},
 			"scene_lines": [
 				"你在图书馆的电脑区找了个座位。",
 				"旁边坐着一个戴黑框眼镜的男生，正在笔记本电脑上敲代码。",
@@ -365,7 +550,9 @@
 			"test_question": "",
 			"pass_lines": [],
 			"pass_result_lines": [],
-			"pass_stat_changes": {"affection": 3},
+			"pass_stat_changes": {
+				"affection": 3
+			},
 			"fail_lines": [],
 			"fail_result_lines": [],
 			"fail_stat_changes": {},
@@ -380,8 +567,13 @@
 						"id": "cm_accept",
 						"text": "好啊，以后修电脑就找你了",
 						"unlock_npc": true,
-						"cost": {"energy": 0, "money": 0},
-						"stat_changes": {"sanity": 2},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 2
+						},
 						"reply_lines": [
 							"他掏出手机，打开二维码。",
 							"微信名叫'默'，头像是只猫。",
@@ -392,7 +584,10 @@
 						"id": "cm_refuse",
 						"text": "我电脑一般不太坏",
 						"unlock_npc": false,
-						"cost": {"energy": 0, "money": 0},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
 						"stat_changes": {},
 						"reply_lines": [
 							"'哦，好吧。'",
@@ -413,16 +608,36 @@
 				"reply_options": [
 					{
 						"text": "没事，就是回来太累了，不想动",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 3, "affection": 2},
-						"reply_lines": ["哦，那就好", "我刚点了外卖，点多了", "你要不要过来吃点？"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 3,
+							"affection": 2
+						},
+						"reply_lines": [
+							"哦，那就好",
+							"我刚点了外卖，点多了",
+							"你要不要过来吃点？"
+						],
 						"note": "他不太会表达关心，但他的方式很实在"
 					},
 					{
 						"text": "你怎么看到我窗户的？",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": -1, "affection": 1},
-						"reply_lines": ["我阳台刚好对着", "不是故意看的", "...不好意思"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": -1,
+							"affection": 1
+						},
+						"reply_lines": [
+							"我阳台刚好对着",
+							"不是故意看的",
+							"...不好意思"
+						],
 						"note": "他吓得解释了三条消息"
 					}
 				]
@@ -439,16 +654,35 @@
 				"reply_options": [
 					{
 						"text": "天哪你也太好了吧！我发你",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 5, "affection": 5, "intellect": 2},
-						"reply_lines": ["没事，举手之劳", "大概明天能给你"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 5,
+							"affection": 5,
+							"intellect": 2
+						},
+						"reply_lines": [
+							"没事，举手之劳",
+							"大概明天能给你"
+						],
 						"note": "他用代码帮了你一个大忙，还说'举手之劳'"
 					},
 					{
 						"text": "谢谢，但我不太会用脚本",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 1, "affection": 2},
-						"reply_lines": ["我教你，很简单的", "就双击运行就行"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 1,
+							"affection": 2
+						},
+						"reply_lines": [
+							"我教你，很简单的",
+							"就双击运行就行"
+						],
 						"note": "他连教学方案都准备好了"
 					}
 				]
@@ -463,16 +697,35 @@
 				"reply_options": [
 					{
 						"text": "你怎么知道我在加班？",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 2, "affection": 3},
-						"reply_lines": ["你朋友圈发了工位的照片", "背景里能看到时间", "...不好意思，我太多余了"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 2,
+							"affection": 3
+						},
+						"reply_lines": [
+							"你朋友圈发了工位的照片",
+							"背景里能看到时间",
+							"...不好意思，我太多余了"
+						],
 						"note": "他是个细节控，连你照片里的时间都注意到了"
 					},
 					{
 						"text": "谢谢陈默！你真贴心",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 5, "affection": 4},
-						"reply_lines": ["...不客气", "早点回来"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 5,
+							"affection": 4
+						},
+						"reply_lines": [
+							"...不客气",
+							"早点回来"
+						],
 						"note": "他回了一个小猫表情包，大概翻了十分钟才找到的"
 					}
 				]
@@ -495,19 +748,36 @@
 				],
 				"pass_lines": [
 					"谢谢，进来坐会儿吧。",
-				 "你也不用一个人熬夜。"
+					"你也不用一个人熬夜。"
 				],
 				"pass_reply_lines": [
 					"他犹豫了两秒，进来了。",
 					"坐在你唯一的一张椅子上，两个人分着吃了一碗泡面。",
 					"全程他说的最长一句话是：'面有点坨了。'"
 				],
-				"pass_stat_changes": {"affection": 10, "sanity": 8},
-				"pass_cost": {"energy": 5, "money": 0},
-				"fail_lines": ["放门口吧，谢谢"],
-				"fail_reply_lines": ["好，晚安", "碗放门口就行，明天我来收"],
-				"fail_stat_changes": {"affection": 3, "sanity": 2},
-				"fail_cost": {"energy": 3, "money": 0}
+				"pass_stat_changes": {
+					"affection": 10,
+					"sanity": 8
+				},
+				"pass_cost": {
+					"energy": 5,
+					"money": 0
+				},
+				"fail_lines": [
+					"放门口吧，谢谢"
+				],
+				"fail_reply_lines": [
+					"好，晚安",
+					"碗放门口就行，明天我来收"
+				],
+				"fail_stat_changes": {
+					"affection": 3,
+					"sanity": 2
+				},
+				"fail_cost": {
+					"energy": 3,
+					"money": 0
+				}
 			}
 		],
 		"moments": [],
@@ -520,9 +790,14 @@
 		"title": "健身房教练",
 		"encounter": {
 			"location": "gym",
-			"req_stats": {"charm": 15},
+			"req_stats": {
+				"charm": 15
+			},
 			"first_visit_only": true,
-			"cost": {"energy": 0, "money": 0},
+			"cost": {
+				"energy": 0,
+				"money": 0
+			},
 			"scene_lines": [
 				"你在做深蹲的时候感觉有人一直在看你。",
 				"不是那种猥琐的注视，是专业的、评估性的。",
@@ -543,7 +818,9 @@
 			"test_question": "",
 			"pass_lines": [],
 			"pass_result_lines": [],
-			"pass_stat_changes": {"affection": 5},
+			"pass_stat_changes": {
+				"affection": 5
+			},
 			"fail_lines": [],
 			"fail_result_lines": [],
 			"fail_stat_changes": {},
@@ -557,8 +834,14 @@
 						"id": "ly_accept",
 						"text": "好啊，正好需要人指导一下",
 						"unlock_npc": true,
-						"cost": {"energy": 0, "money": 0},
-						"stat_changes": {"sanity": 3, "charm": 1},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 3,
+							"charm": 1
+						},
 						"reply_lines": [
 							"他打开微信，头像是一张冲浪的照片。",
 							"'我会根据你的情况制定计划。'",
@@ -569,7 +852,10 @@
 						"id": "ly_refuse",
 						"text": "我先考虑考虑吧",
 						"unlock_npc": false,
-						"cost": {"energy": 0, "money": 0},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
 						"stat_changes": {},
 						"reply_lines": [
 							"'没问题，随时来找我。'",
@@ -590,16 +876,35 @@
 				"reply_options": [
 					{
 						"text": "加班太累了，实在没力气",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 2, "affection": 2},
-						"reply_lines": ["工作重要，但身体也重要", "明天来吧，我陪你练轻松的"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 2,
+							"affection": 2
+						},
+						"reply_lines": [
+							"工作重要，但身体也重要",
+							"明天来吧，我陪你练轻松的"
+						],
 						"note": "他的关心里有恰到好处的暧昧"
 					},
 					{
 						"text": "你盯着我屁股看？",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"affection": 3, "eq": 1},
-						"reply_lines": ["职业习惯！职业习惯！", "...好吧，确实好看", "我是说训练效果好看"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 3,
+							"eq": 1
+						},
+						"reply_lines": [
+							"职业习惯！职业习惯！",
+							"...好吧，确实好看",
+							"我是说训练效果好看"
+						],
 						"note": "他被你问得语无伦次了"
 					}
 				]
@@ -614,16 +919,33 @@
 				"reply_options": [
 					{
 						"text": "好啊，多少钱？",
-						"cost": {"energy": 5, "money": -200},
-						"stat_changes": {"charm": 2, "affection": 3},
-						"reply_lines": ["280，外面卖560的", "我明天给你带过去"],
+						"cost": {
+							"energy": 5,
+							"money": -200
+						},
+						"stat_changes": {
+							"charm": 2,
+							"affection": 3
+						},
+						"reply_lines": [
+							"280，外面卖560的",
+							"我明天给你带过去"
+						],
 						"note": "你买了。不知道是真便宜还是他在赚差价"
 					},
 					{
 						"text": "我现在预算有点紧，下个月再说吧",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"affection": 1},
-						"reply_lines": ["理解理解，不急", "先吃好鸡蛋也一样的"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 1
+						},
+						"reply_lines": [
+							"理解理解，不急",
+							"先吃好鸡蛋也一样的"
+						],
 						"note": "他没有强推，这一点让你觉得他还行"
 					}
 				]
@@ -639,16 +961,37 @@
 				"reply_options": [
 					{
 						"text": "不会是我吧？",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"affection": 8, "sanity": -5},
-						"reply_lines": ["你猜对了", "从你第一天来做深蹲就注意到了", "你愿意做我女朋友吗？"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 8,
+							"sanity": -5
+						},
+						"reply_lines": [
+							"你猜对了",
+							"从你第一天来做深蹲就注意到了",
+							"你愿意做我女朋友吗？"
+						],
 						"note": "你心跳加速了。但理智告诉你，进度有点快"
 					},
 					{
 						"text": "别闹了，好好当你的教练",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"affection": -2, "sanity": 3, "eq": 2},
-						"reply_lines": ["好吧...", "但我说的真的", "不急，我等你"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": -2,
+							"sanity": 3,
+							"eq": 2
+						},
+						"reply_lines": [
+							"好吧...",
+							"但我说的真的",
+							"不急，我等你"
+						],
 						"note": "你保持了距离。他的眼神暗了一下，但很快又笑了"
 					}
 				]
@@ -679,12 +1022,29 @@
 					"'已经分手了。'",
 					"你注意到他说这句话的时候，下意识地握紧了拳头。"
 				],
-				"pass_stat_changes": {"sanity": 10, "affection": -5},
-				"pass_cost": {"energy": 10, "money": 0},
-				"fail_lines": ["哇，你会做饭？什么菜？"],
-				"fail_reply_lines": ["红烧肉！我拿手菜", "你先坐，我去厨房"],
-				"fail_stat_changes": {"affection": 5, "sanity": -3},
-				"fail_cost": {"energy": 10, "money": 0}
+				"pass_stat_changes": {
+					"sanity": 10,
+					"affection": -5
+				},
+				"pass_cost": {
+					"energy": 10,
+					"money": 0
+				},
+				"fail_lines": [
+					"哇，你会做饭？什么菜？"
+				],
+				"fail_reply_lines": [
+					"红烧肉！我拿手菜",
+					"你先坐，我去厨房"
+				],
+				"fail_stat_changes": {
+					"affection": 5,
+					"sanity": -3
+				},
+				"fail_cost": {
+					"energy": 10,
+					"money": 0
+				}
 			}
 		],
 		"moments": [
@@ -694,8 +1054,13 @@
 					"今天练了两个小时，手感超好！",
 					"配图：健身房自拍，镜子里的腹肌清晰可见"
 				],
-				"pass_stat_changes": {"sanity": 5},
-				"fail_stat_changes": {"affection": 3, "sanity": -2},
+				"pass_stat_changes": {
+					"sanity": 5
+				},
+				"fail_stat_changes": {
+					"affection": 3,
+					"sanity": -2
+				},
 				"req_stat": "charm",
 				"req_val": 20,
 				"pass_note": "你注意到他背后的镜子里有个女孩在偷偷拍他",
@@ -715,9 +1080,14 @@
 		"title": "已婚部门经理",
 		"encounter": {
 			"location": "bar",
-			"req_stats": {"eq": 15},
+			"req_stats": {
+				"eq": 15
+			},
 			"first_visit_only": true,
-			"cost": {"energy": 0, "money": 0},
+			"cost": {
+				"energy": 0,
+				"money": 0
+			},
 			"scene_lines": [
 				"酒吧的吧台灯光暧昧。",
 				"你一个人坐着，面前的鸡尾酒喝了一半。",
@@ -740,7 +1110,9 @@
 			"test_question": "",
 			"pass_lines": [],
 			"pass_result_lines": [],
-			"pass_stat_changes": {"affection": 5},
+			"pass_stat_changes": {
+				"affection": 5
+			},
 			"fail_lines": [],
 			"fail_result_lines": [],
 			"fail_stat_changes": {},
@@ -754,8 +1126,13 @@
 						"id": "aq_accept",
 						"text": "好啊",
 						"unlock_npc": true,
-						"cost": {"energy": 0, "money": 0},
-						"stat_changes": {"sanity": 3},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 3
+						},
 						"reply_lines": [
 							"他打开微信。头像是一张高尔夫球场的风景照。",
 							"你后来才注意到，相册封面是一家三口的合照。",
@@ -766,8 +1143,13 @@
 						"id": "aq_refuse",
 						"text": "今天喝多了，下次吧",
 						"unlock_npc": false,
-						"cost": {"energy": 0, "money": 0},
-						"stat_changes": {"eq": 3},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
+						"stat_changes": {
+							"eq": 3
+						},
 						"reply_lines": [
 							"'好，那我送你到门口？'",
 							"'外面不安全，一个女孩子。'",
@@ -789,16 +1171,36 @@
 				"reply_options": [
 					{
 						"text": "你才多大就说中年了",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 2, "affection": 2},
-						"reply_lines": ["哈哈也是，我还没到三十五呢", "不过结了婚就等于老了五岁", "你不懂的"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 2,
+							"affection": 2
+						},
+						"reply_lines": [
+							"哈哈也是，我还没到三十五呢",
+							"不过结了婚就等于老了五岁",
+							"你不懂的"
+						],
 						"note": "他提到了结婚，像是不经意的。但你记住了。"
 					},
 					{
 						"text": "你...结婚了吗？",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"affection": 1, "eq": 2},
-						"reply_lines": ["...嗯，结了", "但我跟她已经没什么话说了", "别误会，我不是在诉苦"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 1,
+							"eq": 2
+						},
+						"reply_lines": [
+							"...嗯，结了",
+							"但我跟她已经没什么话说了",
+							"别误会，我不是在诉苦"
+						],
 						"note": "已婚男人标准话术：我们感情不好。你信了几分？"
 					}
 				]
@@ -813,16 +1215,36 @@
 				"reply_options": [
 					{
 						"text": "好啊，在哪里？",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"affection": 5, "sanity": -3},
-						"reply_lines": ["南山那边，我开车来接你", "不早了，早点睡，明天见"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 5,
+							"sanity": -3
+						},
+						"reply_lines": [
+							"南山那边，我开车来接你",
+							"不早了，早点睡，明天见"
+						],
 						"note": "你答应了一个已婚男人的邀约。你告诉自己只是吃个饭。"
 					},
 					{
 						"text": "你老婆不会介意吗？",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"eq": 3, "sanity": 5},
-						"reply_lines": ["...", "你说得对", "是我没考虑周全", "抱歉"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"eq": 3,
+							"sanity": 5
+						},
+						"reply_lines": [
+							"...",
+							"你说得对",
+							"是我没考虑周全",
+							"抱歉"
+						],
 						"note": "你划了一条线。他退了一步。但你知道他不会放弃。"
 					}
 				]
@@ -839,16 +1261,37 @@
 				"reply_options": [
 					{
 						"text": "你对我已经很好了",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"affection": 8, "sanity": -8},
-						"reply_lines": ["真的吗？", "你是我最近唯一的亮色", "别离开我"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 8,
+							"sanity": -8
+						},
+						"reply_lines": [
+							"真的吗？",
+							"你是我最近唯一的亮色",
+							"别离开我"
+						],
 						"note": "他在你最脆弱的时候说'别离开我'。你根本无力抵抗。"
 					},
 					{
 						"text": "你该回家跟她说这些，不是跟我说",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"eq": 3, "sanity": 8},
-						"reply_lines": ["...", "你说得对", "我知道你是对的", "但我就是不想回去"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"eq": 3,
+							"sanity": 8
+						},
+						"reply_lines": [
+							"...",
+							"你说得对",
+							"我知道你是对的",
+							"但我就是不想回去"
+						],
 						"note": "你又一次划清了界限。但他总能找到新的方式靠近。"
 					}
 				]
@@ -879,12 +1322,30 @@
 					"第二天中午，他发来一条：",
 					"'昨晚抱歉，喝多了。忘了吧。'"
 				],
-				"pass_stat_changes": {"affection": -10, "sanity": 10},
-				"pass_cost": {"energy": 10, "money": 0},
-				"fail_lines": ["你不是我的错，你是我的意外"],
-				"fail_reply_lines": ["...谢谢你", "你真好", "我配不上你"],
-				"fail_stat_changes": {"affection": 10, "sanity": -15},
-				"fail_cost": {"energy": 15, "money": 0}
+				"pass_stat_changes": {
+					"affection": -10,
+					"sanity": 10
+				},
+				"pass_cost": {
+					"energy": 10,
+					"money": 0
+				},
+				"fail_lines": [
+					"你不是我的错，你是我的意外"
+				],
+				"fail_reply_lines": [
+					"...谢谢你",
+					"你真好",
+					"我配不上你"
+				],
+				"fail_stat_changes": {
+					"affection": 10,
+					"sanity": -15
+				},
+				"fail_cost": {
+					"energy": 15,
+					"money": 0
+				}
 			}
 		],
 		"moments": [
@@ -894,8 +1355,13 @@
 					"周末带娃去公园。",
 					"配图：一个小女孩在草地上追蝴蝶"
 				],
-				"pass_stat_changes": {"sanity": 5},
-				"fail_stat_changes": {"affection": 3, "sanity": -8},
+				"pass_stat_changes": {
+					"sanity": 5
+				},
+				"fail_stat_changes": {
+					"affection": 3,
+					"sanity": -8
+				},
 				"req_stat": "eq",
 				"req_val": 30,
 				"pass_note": "他有孩子。他有一个完整的家。而你只是他深夜的消遣。",
@@ -919,12 +1385,14 @@
 			"req_stats": {},
 			"first_visit_only": false,
 			"auto_unlock": true,
-			"auto_unlock_condition": {"turn_count_max": 5},
+			"auto_unlock_condition": {
+				"turn_count_max": 5
+			},
 			"scene_lines": [
 				"入职第三周，你终于记住了茶水间的咖啡机怎么用。",
 				"一个三十五六岁的女人走过来，熟练地按了双倍浓缩。",
 				"'新来的？看你不像是深圳长大的。'",
-			 "她看了你一眼，笑了一下。",
+				"她看了你一眼，笑了一下。",
 				"'我姓周，在这公司待了八年了。有什么不懂的问我。'",
 				"周姐的办公桌上放着一盆绿萝和一个相框。",
 				"相框里是她和一个十岁左右的小男孩。",
@@ -955,9 +1423,19 @@
 				"reply_options": [
 					{
 						"text": "真的吗？谢谢周姐！",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 5, "affection": 3, "eq": 1},
-						"reply_lines": ["客气啥，我当年也是这么过来的", "职场嘛，别太较真也别太佛系"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 5,
+							"affection": 3,
+							"eq": 1
+						},
+						"reply_lines": [
+							"客气啥，我当年也是这么过来的",
+							"职场嘛，别太较真也别太佛系"
+						],
 						"note": "周姐是你在公司里为数不多的真心人"
 					}
 				]
@@ -975,16 +1453,35 @@
 				"reply_options": [
 					{
 						"text": "周姐你前夫怎么了？",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"affection": 5, "eq": 2},
-						"reply_lines": ["出轨，和小三跑了", "儿子归我", "现在他在东莞开了个小厂，混得还行", "有时候觉得，不是我不好，是我选错了人"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 5,
+							"eq": 2
+						},
+						"reply_lines": [
+							"出轨，和小三跑了",
+							"儿子归我",
+							"现在他在东莞开了个小厂，混得还行",
+							"有时候觉得，不是我不好，是我选错了人"
+						],
 						"note": "她的经验是血淋淋的教训"
 					},
 					{
 						"text": "放心吧周姐，我心里有数",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"affection": 2},
-						"reply_lines": ["但愿吧", "有啥想不通的随时找我聊"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 2
+						},
+						"reply_lines": [
+							"但愿吧",
+							"有啥想不通的随时找我聊"
+						],
 						"note": "你嘴上说有数，心里其实也没底"
 					}
 				]
@@ -1001,9 +1498,18 @@
 				"reply_options": [
 					{
 						"text": "谢谢周姐关心，我会注意的",
-						"cost": {"energy": 5, "money": 0},
-						"stat_changes": {"sanity": 5, "affection": 3},
-						"reply_lines": ["这就对了", "对了，明天记得穿正式点，有大领导来视察"],
+						"cost": {
+							"energy": 5,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 5,
+							"affection": 3
+						},
+						"reply_lines": [
+							"这就对了",
+							"对了，明天记得穿正式点，有大领导来视察"
+						],
 						"note": "她总是在关键时刻提醒你"
 					}
 				]
@@ -1033,12 +1539,30 @@
 					"'后悔的是没有早点看清一些人。'",
 					"'但看清了就看清了，日子还得过。'"
 				],
-				"pass_stat_changes": {"affection": 8, "sanity": 10, "eq": 2},
-				"pass_cost": {"energy": 10, "money": -30},
-				"fail_lines": ["干杯，不说这些了"],
-				"fail_reply_lines": ["好，干杯！", "今天姐请客！"],
-				"fail_stat_changes": {"affection": 3, "sanity": 3},
-				"fail_cost": {"energy": 5, "money": 0}
+				"pass_stat_changes": {
+					"affection": 8,
+					"sanity": 10,
+					"eq": 2
+				},
+				"pass_cost": {
+					"energy": 10,
+					"money": -30
+				},
+				"fail_lines": [
+					"干杯，不说这些了"
+				],
+				"fail_reply_lines": [
+					"好，干杯！",
+					"今天姐请客！"
+				],
+				"fail_stat_changes": {
+					"affection": 3,
+					"sanity": 3
+				},
+				"fail_cost": {
+					"energy": 5,
+					"money": 0
+				}
 			}
 		],
 		"moments": [],
@@ -1051,9 +1575,15 @@
 		"title": "创业CEO/富二代",
 		"encounter": {
 			"location": "bar",
-			"req_stats": {"charm": 25, "eq": 20},
+			"req_stats": {
+				"charm": 25,
+				"eq": 20
+			},
 			"first_visit_only": true,
-			"cost": {"energy": 0, "money": 0},
+			"cost": {
+				"energy": 0,
+				"money": 0
+			},
 			"scene_lines": [
 				"酒吧最里面的卡座，灯光最暗的那个位置。",
 				"一个男人独自坐着，面前放着一杯没怎么动的威士忌。",
@@ -1077,7 +1607,9 @@
 			"test_question": "",
 			"pass_lines": [],
 			"pass_result_lines": [],
-			"pass_stat_changes": {"affection": 5},
+			"pass_stat_changes": {
+				"affection": 5
+			},
 			"fail_lines": [],
 			"fail_result_lines": [],
 			"fail_stat_changes": {},
@@ -1092,8 +1624,13 @@
 						"id": "xz_accept",
 						"text": "好啊，听起来挺有意思的",
 						"unlock_npc": true,
-						"cost": {"energy": 0, "money": 0},
-						"stat_changes": {"sanity": 5},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
+						"stat_changes": {
+							"sanity": 5
+						},
 						"reply_lines": [
 							"他打开微信。头像是一张从高处俯瞰城市的夜景。",
 							"'我助理会把邀请函发你。'",
@@ -1107,8 +1644,14 @@
 						"id": "xz_refuse",
 						"text": "谢谢，不过我不太参加这种活动",
 						"unlock_npc": false,
-						"cost": {"energy": 0, "money": 0},
-						"stat_changes": {"eq": 3, "sanity": 3},
+						"cost": {
+							"energy": 0,
+							"money": 0
+						},
+						"stat_changes": {
+							"eq": 3,
+							"sanity": 3
+						},
 						"reply_lines": [
 							"'没关系。'",
 							"他笑了笑，端起威士忌喝了一口。",
@@ -1131,16 +1674,37 @@
 				"reply_options": [
 					{
 						"text": "我上周加班来着，这周一定去",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"affection": 3, "sanity": -2},
-						"reply_lines": ["好，我把地址发你", "来之前吃点东西，这种活动通常不管饭", "我可以请你吃"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 3,
+							"sanity": -2
+						},
+						"reply_lines": [
+							"好，我把地址发你",
+							"来之前吃点东西，这种活动通常不管饭",
+							"我可以请你吃"
+						],
 						"note": "他给你的感觉不像是在追求你，更像是在评估你的价值"
 					},
 					{
 						"text": "你为什么对我这么好？",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"eq": 2, "affection": 1},
-						"reply_lines": ["...", "因为你让我想起一个人", "我以前的合伙人，她也是从底层一步步爬上来的", "可惜她后来被骗了"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"eq": 2,
+							"affection": 1
+						},
+						"reply_lines": [
+							"...",
+							"因为你让我想起一个人",
+							"我以前的合伙人，她也是从底层一步步爬上来的",
+							"可惜她后来被骗了"
+						],
 						"note": "他在暗示什么？你还来不及细想"
 					}
 				]
@@ -1156,16 +1720,36 @@
 				"reply_options": [
 					{
 						"text": "什么平台？具体说说",
-						"cost": {"energy": 15, "money": 0},
-						"stat_changes": {"affection": 5, "sanity": -5},
-						"reply_lines": ["下周来我公司详聊", "地址我发你", "别告诉别人，这是内部名额"],
+						"cost": {
+							"energy": 15,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 5,
+							"sanity": -5
+						},
+						"reply_lines": [
+							"下周来我公司详聊",
+							"地址我发你",
+							"别告诉别人，这是内部名额"
+						],
 						"note": "他在卖什么？你还不知道。但你已经开始好奇了。"
 					},
 					{
 						"text": "听起来有点像传销...",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"eq": 3, "sanity": 5},
-						"reply_lines": ["哈哈你挺警觉的", "不是传销，是资源整合", "不过你有这种判断力，我反而更欣赏你"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"eq": 3,
+							"sanity": 5
+						},
+						"reply_lines": [
+							"哈哈你挺警觉的",
+							"不是传销，是资源整合",
+							"不过你有这种判断力，我反而更欣赏你"
+						],
 						"note": "你的警觉让他调整了策略。他夸了你，但目的是让你放松警惕。"
 					}
 				]
@@ -1182,16 +1766,36 @@
 				"reply_options": [
 					{
 						"text": "你怎么知道我公司在哪？",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"eq": 2, "sanity": 3},
-						"reply_lines": ["你上次朋友圈发过定位", "我对细节比较敏感", "是我太唐突了吗？"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"eq": 2,
+							"sanity": 3
+						},
+						"reply_lines": [
+							"你上次朋友圈发过定位",
+							"我对细节比较敏感",
+							"是我太唐突了吗？"
+						],
 						"note": "和沈逸一样的说辞。你毛了一下。"
 					},
 					{
 						"text": "没事，就是工作上的事",
-						"cost": {"energy": 10, "money": 0},
-						"stat_changes": {"affection": 3, "sanity": -3},
-						"reply_lines": ["如果需要帮忙，随时找我", "我在这座城市认识不少人", "有些事，一个电话就能解决"],
+						"cost": {
+							"energy": 10,
+							"money": 0
+						},
+						"stat_changes": {
+							"affection": 3,
+							"sanity": -3
+						},
+						"reply_lines": [
+							"如果需要帮忙，随时找我",
+							"我在这座城市认识不少人",
+							"有些事，一个电话就能解决"
+						],
 						"note": "他在展示权力。而且很有效。"
 					}
 				]
@@ -1223,12 +1827,31 @@
 					"'你让我很失望。'",
 					"你走出那栋楼的时候，觉得深圳的风比任何时候都冷。"
 				],
-				"pass_stat_changes": {"affection": -30, "sanity": 15},
-				"pass_cost": {"energy": 10, "money": 0},
-				"fail_lines": ["五万...我现在没有那么多"],
-				"fail_reply_lines": ["不急，你可以先投一万试试水", "我可以先垫着，等你赚了再还我", "相信我，我不会让你亏的"],
-				"fail_stat_changes": {"affection": 10, "sanity": -10, "money": -5000},
-				"fail_cost": {"energy": 15, "money": -5000}
+				"pass_stat_changes": {
+					"affection": -30,
+					"sanity": 15
+				},
+				"pass_cost": {
+					"energy": 10,
+					"money": 0
+				},
+				"fail_lines": [
+					"五万...我现在没有那么多"
+				],
+				"fail_reply_lines": [
+					"不急，你可以先投一万试试水",
+					"我可以先垫着，等你赚了再还我",
+					"相信我，我不会让你亏的"
+				],
+				"fail_stat_changes": {
+					"affection": 10,
+					"sanity": -10,
+					"money": -5000
+				},
+				"fail_cost": {
+					"energy": 15,
+					"money": -5000
+				}
 			}
 		],
 		"moments": [
@@ -1239,8 +1862,13 @@
 					"深圳的冬天真好，18度。",
 					"配图：绿茵场上的球杆，旁边是一辆保时捷的钥匙"
 				],
-				"pass_stat_changes": {"sanity": 5},
-				"fail_stat_changes": {"affection": 5, "sanity": -5},
+				"pass_stat_changes": {
+					"sanity": 5
+				},
+				"fail_stat_changes": {
+					"affection": 5,
+					"sanity": -5
+				},
 				"req_stat": "eq",
 				"req_val": 35,
 				"pass_note": "他在展示生活方式，用来筛选对他感兴趣的人。你不是鱼，不用咬钩。",

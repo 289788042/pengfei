@@ -788,6 +788,10 @@ func _handle_encounter(npc: Dictionary, location: String, energy_cost: int, mone
 	_encounter_cooldowns[npc_id] = GameManager.turn_count + 99
 	location_menu.visible = false
 
+	# 邂逅成功时立即将NPC加入微信联系人（不再等后续流程）
+	if all_ok and npc_id != "" and not GameManager.npcs.has(npc_id):
+		GameManager.unlock_npc(npc_id)
+
 	if all_ok:
 		var pass_changes: Dictionary = enc.get("pass_stat_changes", {})
 		for stat_name in pass_changes:
@@ -882,7 +886,7 @@ func _on_loc_gym() -> void:
 	var encounter_npc = _check_encounter("gym")
 	if encounter_npc.size() > 0:
 		main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
-			_handle_encounter(encounter_npc, "gym", 45, 200)
+			_handle_encounter(encounter_npc, "gym", 45, 0)
 		)
 		return
 	# 随机内容
