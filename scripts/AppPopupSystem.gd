@@ -856,7 +856,7 @@ func _on_loc_library() -> void:
 		GameManager.modify_stat("energy", -20)
 		GameManager.modify_stat("intellect", 3)
 		GameManager.modify_stat("sanity", 5)
-		main_node().show_message("在图书馆度过了一个充实的下午。\n\t[color=90EE90]学识+3 情绪+5[/color]", true)
+		main_node().show_message(GameManager.get_location_narrative("library", "[color=90EE90]学识+3 情绪+5[/color]"), true)
 		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
 		return
 	# 正常活动
@@ -869,8 +869,7 @@ func _on_loc_library() -> void:
 		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
 	else:
 		# 50%: 纯正常
-		main_node().show_message("在图书馆度过了一个充实的下午。
-[color=90EE90]学识+3 情绪+5[/color]", true)
+		main_node().show_message(GameManager.get_location_narrative("library", "[color=90EE90]学识+3 情绪+5[/color]"), true)
 		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
 
 func _on_loc_gym() -> void:
@@ -920,8 +919,9 @@ func _normal_gym() -> void:
 		GameManager.modify_stat("charm", 2)
 		GameManager.modify_stat("sanity", 5)
 		GameManager.max_energy += 1
-		main_node().float_stat("+2 颜值 +5 情绪 精力上限+1", 5, main_node().get_global_mouse_position())
-		_visit_location("gym", "挥汗如雨！颜值+2，精力上限永久+1！")
+		var _n := GameManager.get_location_narrative("gym", "[color=90EE90]颜值+2 情绪+5 精力上限+1[/color]")
+		main_node().show_message(_n, true)
+		GameManager.add_activity("提升", "去健身房挥汗如雨！颜值+2，精力上限+1")
 	)
 
 func _on_loc_bar() -> void:
@@ -971,8 +971,9 @@ func _normal_bar() -> void:
 		GameManager.modify_stat("energy", -20)
 		GameManager.modify_stat("eq", 2)
 		GameManager.modify_stat("sanity", 25)
-		main_node().float_stat("+2 情商 +25 情绪", 25, main_node().get_global_mouse_position())
-		_visit_location("bar", "在酒吧喝了一杯，感觉心情大好！")
+		var _n := GameManager.get_location_narrative("bar", "[color=90EE90]情商+2 情绪+25[/color]")
+		main_node().show_message(_n, true)
+		GameManager.add_activity("社交", "在酒吧喝了一杯，心情大好！")
 	)
 
 func _on_loc_home() -> void:
@@ -989,7 +990,7 @@ func _on_loc_home() -> void:
 		# 70%: 正常
 		GameManager.modify_stat("sanity", 20)
 		main_node().float_stat("+20 情绪", 20, main_node().get_global_mouse_position())
-		main_node().show_message("宅家刷了一整天手机，虽然眼睛酸但心情不错~", true)
+		main_node().show_message(GameManager.get_location_narrative("home", "[color=90EE90]情绪+20[/color]"), true)
 		GameManager.add_activity("日常", "宅家刷了一整天手机")
 
 
@@ -1022,7 +1023,7 @@ func _on_loc_park() -> void:
 		_park_visited_week = GameManager.turn_count
 		GameManager.modify_stat("energy", 10)
 		GameManager.modify_stat("sanity", 3)
-		main_node().show_message("在深圳湾公园散了一个下午的步，海风吹散了一天的疲惫。\n\t[color=90EE90]精力+10 情绪+3[/color]", true)
+		main_node().show_message(GameManager.get_location_narrative("park", "[color=90EE90]精力+10 情绪+3[/color]"), true)
 		GameManager.add_activity("日常", "在公园·深圳湾散步，精力+10，情绪+3")
 		return
 	_park_visited_week = GameManager.turn_count
@@ -1032,8 +1033,7 @@ func _on_loc_park() -> void:
 		_trigger_city_fragment("park", "[color=90EE90]精力+10 情绪+3[/color]")
 		GameManager.add_activity("日常", "在公园·深圳湾散步，精力+10，情绪+3")
 	else:
-		main_node().show_message("在深圳湾公园散了一个下午的步，海风吹散了一天的疲惫。
-[color=90EE90]精力+10 情绪+3[/color]", true)
+		main_node().show_message(GameManager.get_location_narrative("park", "[color=90EE90]精力+10 情绪+3[/color]"), true)
 		GameManager.add_activity("日常", "在公园·深圳湾散步，精力+10，情绪+3")
 
 func _on_loc_cafe() -> void:
@@ -1065,7 +1065,7 @@ func _on_loc_cafe() -> void:
 			GameManager.modify_stat("energy", -5)
 			GameManager.modify_stat("intellect", 2)
 			GameManager.modify_stat("eq", 3)
-			main_node().show_message("在咖啡厅安静地学习了一下午，效率出奇的高。\n\t[color=90EE90]学识+2 情商+3[/color]", true)
+			main_node().show_message(GameManager.get_location_narrative("cafe", "[color=90EE90]学识+2 情商+3[/color]"), true)
 			GameManager.add_activity("提升", "在咖啡厅学习，学识+2，情商+3")
 		)
 		return
@@ -1082,8 +1082,7 @@ func _on_loc_cafe() -> void:
 			GameManager.modify_stat("energy", -5)
 			GameManager.modify_stat("intellect", 2)
 			GameManager.modify_stat("eq", 3)
-			main_node().show_message("在咖啡厅安静地学习了一下午，效率出奇的高。
-[color=90EE90]学识+2 情商+3[/color]", true)
+			main_node().show_message(GameManager.get_location_narrative("cafe", "[color=90EE90]学识+2 情商+3[/color]"), true)
 			GameManager.add_activity("提升", "在咖啡厅学习，学识+2，情商+3")
 		)
 
@@ -1109,7 +1108,7 @@ func _on_loc_market() -> void:
 		# 没遇到NPC，正常逛夜市
 		main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
 			GameManager.modify_stat("sanity", 15)
-			main_node().show_message("烧烤、砂锅粥、炒粉……吃得满足极了！\n\t[color=90EE90]情绪+15[/color]", true)
+			main_node().show_message(GameManager.get_location_narrative("market", "[color=90EE90]情绪+15[/color]"), true)
 			GameManager.add_activity("美食", "在夜市吃了夜宵，情绪+15")
 		)
 		return
@@ -1122,8 +1121,7 @@ func _on_loc_market() -> void:
 	else:
 		main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
 			GameManager.modify_stat("sanity", 15)
-			main_node().show_message("烧烤、砂锅粥、炒粉……吃得满足极了！
-[color=90EE90]情绪+15[/color]", true)
+			main_node().show_message(GameManager.get_location_narrative("market", "[color=90EE90]情绪+15[/color]"), true)
 			GameManager.add_activity("美食", "在夜市吃了夜宵，情绪+15")
 		)
 
@@ -1142,13 +1140,11 @@ func _on_loc_overtime() -> void:
 		var event := GameManager.roll_random_event("overtime")
 		if event.size() > 0:
 			main_node()._show_event(event, func() -> void:
-				main_node().show_message("加班到深夜，虽然累但赚了%d元加班费。
-[color=90EE90]精力-40 情绪-35 金钱+%d[/color]" % [overtime_pay, overtime_pay], true)
+				main_node().show_message(GameManager.get_location_narrative("overtime", "") % overtime_pay, true)
 			)
 			GameManager.add_activity("工作", "公司加班，赚了%d元加班费" % overtime_pay)
 			return
-	main_node().show_message("加班到深夜，虽然累但赚了%d元加班费。
-[color=90EE90]精力-40 情绪-35 金钱+%d[/color]" % [overtime_pay, overtime_pay], true)
+	main_node().show_message(GameManager.get_location_narrative("overtime", "") % overtime_pay, true)
 	GameManager.add_activity("工作", "公司加班，赚了%d元加班费" % overtime_pay)
 
 

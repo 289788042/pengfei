@@ -122,6 +122,8 @@ var _family_chat_used_indices: Array = []
 var workplace_events: Array = []
 ## 近3周触发的微事件ID（防重复）
 var _recent_work_events: Array = []
+## 地点叙事文案池
+var location_narratives: Dictionary = {}
 
 
 
@@ -159,6 +161,7 @@ var stat_names: Dictionary = {
 func _ready() -> void:
 	load_npc_data()
 	load_workplace_events()
+	load_location_narratives()
 
 ## 修改指定属性的值
 func modify_stat(stat_name: String, amount: int) -> void:
@@ -553,6 +556,31 @@ func load_workplace_events() -> void:
 	workplace_events = json.data
 	f.close()
 	print("GameManager: 已加载 %d 条职场微事件" % workplace_events.size())
+
+## 加载地点叙事文案
+func load_location_narratives() -> void:
+	var f := FileAccess.open("res://Data/location_narratives.json", FileAccess.READ)
+	if not f:
+		push_warning("GameManager: 无法打开 location_narratives.json")
+		return
+	var json := JSON.new()
+	if json.parse(f.get_as_text()) != OK:
+		push_warning("GameManager: location_narratives.json 解析失败")
+		f.close()
+		return
+	location_narratives = json.data
+	f.close()
+	print("GameManager: 已加载 %d 个地点叙事" % location_narratives.size())
+
+## 获取某地点的随机叙事文案（stats_text为属性变化文本）
+func get_location_narrative(loc_id: String, stats_text: String) -> String:
+	if not location_narratives.has(loc_id):
+		return stats_text
+	var pool: Array = location_narratives[loc_id]
+	if pool.is_empty():
+		return stats_text
+	return pool[randi() % pool.size()]
+
 
 
 ## 有效属性名（用于过滤微事件字典）
