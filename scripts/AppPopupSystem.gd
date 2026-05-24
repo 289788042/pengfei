@@ -881,7 +881,9 @@ func _on_loc_gym() -> void:
 	# 首次邂逅确定性触发
 	var encounter_npc = _check_encounter("gym")
 	if encounter_npc.size() > 0:
-		_handle_encounter(encounter_npc, "gym", 45, 0)
+		main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
+			_handle_encounter(encounter_npc, "gym", 45, 200)
+		)
 		return
 	# 随机内容
 	var roll := randf()
