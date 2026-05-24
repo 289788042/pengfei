@@ -463,14 +463,19 @@ func _update_weekend_ui() -> void:
 
 
 func _enable_app_grid() -> void:
-	btn_app_map.disabled = false
-	btn_app_wechat.disabled = false
-	btn_app_baotao.disabled = false
-	btn_app_tuanmei.disabled = false
-	btn_app_zodiac.disabled = false
-	btn_app_house.disabled = false
-	btn_app_dating.disabled = false
-	btn_app_job.disabled = false
+	btn_app_map.disabled = not GameManager.is_app_unlocked("map")
+	btn_app_wechat.disabled = not GameManager.is_app_unlocked("wechat")
+	btn_app_baotao.disabled = not GameManager.is_app_unlocked("baotao")
+	btn_app_tuanmei.disabled = not GameManager.is_app_unlocked("tuanmei")
+	btn_app_zodiac.disabled = not GameManager.is_app_unlocked("zodiac")
+	btn_app_house.disabled = not GameManager.is_app_unlocked("house")
+	btn_app_dating.disabled = not GameManager.is_app_unlocked("dating")
+	btn_app_job.disabled = not GameManager.is_app_unlocked("job")
+	# 检查新解锁的APP并通知
+	var new_unlocks := GameManager.get_new_unlocks()
+	if new_unlocks.size() > 0:
+		galgame.show_message("手机上新装了一个APP..." + "
+" + new_unlocks[0], true)
 
 
 func _disable_app_grid() -> void:
