@@ -453,8 +453,8 @@ func _on_encounter_choice(option: Dictionary) -> void:
 	pages.append("我：" + option.get("text", ""))
 	for line in option.get("reply_lines", []):
 		if line.begins_with("'"):
-			var _npc_name2: String = GameManager.get_npc_name(_gal_npc_id) if _gal_npc_id != "" else "éçç·å­"
-			pages.append(_npc_name2 + "ï¼" + line)
+			var _npc_name2: String = GameManager.get_npc_name(_gal_npc_id) if _gal_npc_id != "" else "陌生男子"
+			pages.append(_npc_name2 + "：" + line)
 		else:
 			pages.append(line)
 	if option.get("note", "") != "":
