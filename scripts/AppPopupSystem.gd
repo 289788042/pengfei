@@ -141,6 +141,9 @@ func _on_close_loc() -> void:
 
 
 func _on_app_map() -> void:
+	if main_node().current_phase == main_node().Phase.WEEKEND and GameManager.weekend_actions <= 0:
+		main_node().show_message("本周行动次数已用完！")
+		return
 	_close_all_menus()
 	## 清除旧子节点
 	for child in location_menu.get_children():
@@ -728,6 +731,14 @@ func _handle_reunion(npc: Dictionary, location: String) -> void:
 [color=90EE90]好感+3 情绪+3 情商+1[/color]", true)
 
 
+# ==================== 周末行动次数 ====================
+
+func _use_weekend_action() -> void:
+	GameManager.weekend_actions -= 1
+	main_node()._update_weekend_ui()
+	GameManager.stats_updated.emit()
+
+
 # ==================== 地点逻辑 ====================
 
 ## 检查指定地点是否有NPC邂逅
@@ -823,13 +834,15 @@ func _on_loc_library() -> void:
 		main_node().show_message("精力不足，无法去图书馆！")
 		return
 	location_menu.visible = false
+	_use_weekend_action()
+	# 首次邂逅确定性触发
+	var encounter_npc: Dictionary = _check_encounter("library")
+	if encounter_npc.size() > 0:
+		_handle_encounter(encounter_npc, "library", 20, 0)
+		return
+	# 随机内容
 	var roll := randf()
 	if roll < 0.20:
-		# 20%: NPC邂逅
-		var encounter_npc: Dictionary = _check_encounter("library")
-		if encounter_npc.size() > 0:
-			_handle_encounter(encounter_npc, "library", 20, 0)
-			return
 		# 尝试重逢
 		var reunion = _check_reunion("library")
 		if reunion.size() > 0:
@@ -865,13 +878,15 @@ func _on_loc_gym() -> void:
 		main_node().show_message("精力不足（需45），无法去健身房！")
 		return
 	location_menu.visible = false
+	_use_weekend_action()
+	# 首次邂逅确定性触发
+	var encounter_npc = _check_encounter("gym")
+	if encounter_npc.size() > 0:
+		_handle_encounter(encounter_npc, "gym", 45, 0)
+		return
+	# 随机内容
 	var roll := randf()
 	if roll < 0.20:
-		# 20%: NPC邂逅
-		var encounter_npc = _check_encounter("gym")
-		if encounter_npc.size() > 0:
-			_handle_encounter(encounter_npc, "gym", 45, 0)
-			return
 		var reunion = _check_reunion("gym")
 		if reunion.size() > 0:
 			main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
@@ -917,13 +932,15 @@ func _on_loc_bar() -> void:
 		main_node().show_message("情商太低（需>=10），在酒吧也只会尴尬地坐着！")
 		return
 	location_menu.visible = false
+	_use_weekend_action()
+	# 首次邂逅确定性触发
+	var encounter_npc = _check_encounter("bar")
+	if encounter_npc.size() > 0:
+		_handle_encounter(encounter_npc, "bar", 20, 500)
+		return
+	# 随机内容
 	var roll := randf()
 	if roll < 0.20:
-		# 20%: NPC邂逅
-		var encounter_npc = _check_encounter("bar")
-		if encounter_npc.size() > 0:
-			_handle_encounter(encounter_npc, "bar", 20, 500)
-			return
 		var reunion = _check_reunion("bar")
 		if reunion.size() > 0:
 			main_node().alipay.request_payment(500, "酒吧消费", "社交", func() -> void:
@@ -959,6 +976,7 @@ func _normal_bar() -> void:
 	)
 
 func _on_loc_home() -> void:
+	_use_weekend_action()
 	GameManager.modify_stat("energy", -10)
 	location_menu.visible = false
 	var roll := randf()
@@ -981,13 +999,17 @@ func _on_loc_park() -> void:
 		main_node().show_message("这周已经去过深圳湾了，来回太远，下周再去吧。")
 		return
 	location_menu.visible = false
+	_use_weekend_action()
+	# 首次邂逅确定性触发
+	var encounter_npc = _check_encounter("park")
+	if encounter_npc.size() > 0:
+		_park_visited_week = GameManager.turn_count
+		_handle_encounter(encounter_npc, "park", 0, 0)
+		return
+	# 随机内容
+	_park_visited_week = GameManager.turn_count
 	var roll := randf()
 	if roll < 0.20:
-		var encounter_npc = _check_encounter("park")
-		if encounter_npc.size() > 0:
-			_park_visited_week = GameManager.turn_count
-			_handle_encounter(encounter_npc, "park", 0, 0)
-			return
 		var reunion = _check_reunion("park")
 		if reunion.size() > 0:
 			_park_visited_week = GameManager.turn_count
@@ -1019,12 +1041,15 @@ func _on_loc_cafe() -> void:
 		main_node().show_message("精力不足（需5），连去咖啡厅的力气都没有了！")
 		return
 	location_menu.visible = false
+	_use_weekend_action()
+	# 首次邂逅确定性触发
+	var encounter_npc = _check_encounter("cafe")
+	if encounter_npc.size() > 0:
+		_handle_encounter(encounter_npc, "cafe", 5, 60)
+		return
+	# 随机内容
 	var roll := randf()
 	if roll < 0.20:
-		var encounter_npc = _check_encounter("cafe")
-		if encounter_npc.size() > 0:
-			_handle_encounter(encounter_npc, "cafe", 5, 60)
-			return
 		var reunion = _check_reunion("cafe")
 		if reunion.size() > 0:
 			main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
@@ -1064,12 +1089,15 @@ func _on_loc_cafe() -> void:
 
 func _on_loc_market() -> void:
 	location_menu.visible = false
+	_use_weekend_action()
+	# 首次邂逅确定性触发
+	var encounter_npc = _check_encounter("market")
+	if encounter_npc.size() > 0:
+		_handle_encounter(encounter_npc, "market", 0, 100)
+		return
+	# 随机内容
 	var roll := randf()
 	if roll < 0.20:
-		var encounter_npc = _check_encounter("market")
-		if encounter_npc.size() > 0:
-			_handle_encounter(encounter_npc, "market", 0, 100)
-			return
 		var reunion = _check_reunion("market")
 		if reunion.size() > 0:
 			main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
@@ -1104,6 +1132,7 @@ func _on_loc_overtime() -> void:
 		main_node().show_message("精力不足（需40），加不动班了！")
 		return
 	location_menu.visible = false
+	_use_weekend_action()
 	GameManager.modify_stat("energy", -40)
 	GameManager.modify_stat("sanity", -35)
 	var overtime_pay: int = randi() % 300 + 500

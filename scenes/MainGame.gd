@@ -442,6 +442,24 @@ func _enter_weekend() -> void:
 	current_phase = Phase.WEEKEND
 	btn_next_week.visible = true
 	_enable_app_grid()
+	# 重置周末行动次数
+	GameManager.weekend_actions = GameManager.max_weekend_actions
+	_update_weekend_ui()
+
+
+func _update_weekend_ui() -> void:
+	var remaining := GameManager.weekend_actions
+	btn_next_week.text = "⏭ 结束本周 (剩余 %d 次行动)" % remaining
+	if remaining <= 0:
+		btn_app_map.disabled = true
+		btn_app_dating.disabled = true
+		btn_app_baotao.disabled = true
+		btn_app_tuanmei.disabled = true
+	else:
+		btn_app_map.disabled = false
+		btn_app_dating.disabled = false
+		btn_app_baotao.disabled = false
+		btn_app_tuanmei.disabled = false
 
 
 func _enable_app_grid() -> void:

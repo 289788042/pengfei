@@ -46,6 +46,10 @@ var rent_cost: int = 2000
 var base_rent: int = 1500
 ## 本月累计餐饮开销
 var monthly_food_cost: int = 0
+## 周末剩余行动次数
+var weekend_actions: int = 0
+## 周末最大行动次数
+var max_weekend_actions: int = 3
 
 # ==================== 核心数值变量 ====================
 
