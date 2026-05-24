@@ -101,6 +101,38 @@ var last_ending: Dictionary = {}
 ## 是否正在等待月度结算确认
 var awaiting_month_settle: bool = false
 
+## APP渐进解锁：app_id -> 所需最小turn_count
+var _app_unlock_turn: Dictionary = {
+	"map": 1, "wechat": 1, "job": 1, "diary": 1,
+	"baotao": 3, "dating": 5, "tuanmei": 9, "zodiac": 13, "house": 17,
+}
+## APP解锁通知文案
+var _app_unlock_msg: Dictionary = {
+	"baotao": "同事推荐了一个叫「宝淘」的APP，说上面护肤品质价比很高。",
+	"dating": "妈妈微信转了个链接：「这个相亲APP不错，你试试？」",
+	"tuanmei": "朋友圈刷到一条医美广告，你鬼使神差地点了进去...",
+	"zodiac": "加班到很晚，无聊刷到了星座APP。也许该看看运势？",
+	"house": "中介的电话打了进来：「哥，考虑换个好点的房子吗？」",
+}
+## 已播报过的解锁（只通知一次）
+var _announced_unlocks: Dictionary = {}
+
+## 检查某APP是否已解锁
+func is_app_unlocked(app_id: String) -> bool:
+	if not _app_unlock_turn.has(app_id):
+		return true
+	return turn_count >= _app_unlock_turn[app_id]
+
+## 获取本次新解锁的APP通知（首次触发时返回文案列表）
+func get_new_unlocks() -> Array:
+	var result: Array = []
+	for app_id in _app_unlock_turn:
+		if turn_count >= _app_unlock_turn[app_id] and not _announced_unlocks.has(app_id):
+			_announced_unlocks[app_id] = true
+			if _app_unlock_msg.has(app_id):
+				result.append(_app_unlock_msg[app_id])
+	return result
+
 ## 妈妈关爱buff剩余周数（每周精力+20）
 var mom_care_buff_weeks: int = 0
 
@@ -162,6 +194,10 @@ func _ready() -> void:
 	load_npc_data()
 	load_workplace_events()
 	load_location_narratives()
+	# 标记初始APP为已解锁（不需要通知）
+	for app_id in _app_unlock_turn:
+		if _app_unlock_turn[app_id] <= 1:
+			_announced_unlocks[app_id] = true
 
 ## 修改指定属性的值
 func modify_stat(stat_name: String, amount: int) -> void:
