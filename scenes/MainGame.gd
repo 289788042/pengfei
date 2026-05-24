@@ -456,10 +456,10 @@ func _update_weekend_ui() -> void:
 		btn_app_baotao.disabled = true
 		btn_app_tuanmei.disabled = true
 	else:
-		btn_app_map.disabled = false
-		btn_app_dating.disabled = false
-		btn_app_baotao.disabled = false
-		btn_app_tuanmei.disabled = false
+		btn_app_map.disabled = not GameManager.is_app_unlocked("map")
+		btn_app_dating.disabled = not GameManager.is_app_unlocked("dating")
+		btn_app_baotao.disabled = not GameManager.is_app_unlocked("baotao")
+		btn_app_tuanmei.disabled = not GameManager.is_app_unlocked("tuanmei")
 
 
 func _enable_app_grid() -> void:
