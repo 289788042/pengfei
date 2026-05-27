@@ -12,6 +12,7 @@ enum Phase { WEEKDAY, WEEKEND, EVENT, MONTH_END, TRANSITION, ENDING, GAME_OVER }
 @onready var left_dialog_box: Panel = %LeftDialogBox
 @onready var character_portrait: TextureRect = %CharacterPortrait
 @onready var left_bg: ColorRect = %BgImage
+@onready var bg_texture: TextureRect = %BgTexture
 @onready var label_game_over: Label = %LabelGameOver
 @onready var label_money: Label = %LabelMoney
 @onready var label_energy: Label = %LabelEnergy

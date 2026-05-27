@@ -10,6 +10,7 @@ var left_dialog_box: Panel
 var left_dialog_text: RichTextLabel
 var portrait: TextureRect
 var scene_bg: ColorRect
+var bg_texture: TextureRect
 
 ## 对话框淡出 tween
 var dialog_tween: Tween
@@ -49,6 +50,7 @@ func init(main: Node) -> void:
 	left_dialog_text = main.left_dialog_text
 	portrait = main.character_portrait
 	scene_bg = main.left_bg
+	bg_texture = main.bg_texture
 
 
 # ==================== 飘字系统 ====================
@@ -168,7 +170,7 @@ func dismiss_dialog() -> void:
 # ==================== Galgame 分页对话系统 ====================
 
 ## 启动 Galgame 分页对话（pages: 每页一个字符串）
-func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> void:
+func show_galgame_dialog(pages: Array, on_complete: Callable = Callable(), bg_path: String = "") -> void:
 	if _gal_tween and _gal_tween.is_valid():
 		_gal_tween.kill()
 	_gal_pages = pages
@@ -176,6 +178,10 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 	_gal_on_complete = on_complete
 	_is_auto_dismiss = false
 	_gal_fading_out = false
+	if bg_path != "":
+		set_encounter_bg(bg_path)
+	else:
+		clear_encounter_bg()
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	# 暗化手机区域
@@ -323,6 +329,7 @@ func _gal_end() -> void:
 	_gal_tween.tween_callback(func() -> void:
 		_gal_fading_out = false
 		left_dialog_box.visible = false
+		clear_encounter_bg()
 		if cb.is_valid():
 			cb.call()
 		elif has_encounter:
@@ -461,6 +468,21 @@ func _on_encounter_choice(option: Dictionary) -> void:
 		pages.append(option["note"])
 	show_galgame_dialog(pages)
 
+
+# ==================== 邂逅背景图管理 ====================
+
+func set_encounter_bg(texture_path: String) -> void:
+	var tex := load(texture_path) as Texture2D
+	if tex and bg_texture:
+		bg_texture.texture = tex
+		bg_texture.visible = true
+		scene_bg.visible = false
+
+func clear_encounter_bg() -> void:
+	if bg_texture:
+		bg_texture.visible = false
+		bg_texture.texture = null
+	scene_bg.visible = true
 
 # ==================== 公共访问 ====================
 

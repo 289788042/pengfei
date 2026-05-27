@@ -741,6 +741,14 @@ func _use_weekend_action() -> void:
 
 # ==================== 地点逻辑 ====================
 
+## 获取地点邂逅背景图路径
+func _get_encounter_bg(location: String) -> String:
+	var bg_map: Dictionary = {
+		"gym": "res://Assets/Backgrounds/gym/Gym_bg_sunny1.jpg",
+		"library": "res://Assets/Backgrounds/library/Bookshop_bg_day1.png",
+	}
+	return bg_map.get(location, "")
+
 ## 检查指定地点是否有NPC邂逅
 func _check_encounter(location: String) -> Dictionary:
 	for npc in GameManager.npc_database:
@@ -810,11 +818,11 @@ func _handle_encounter(npc: Dictionary, location: String, energy_cost: int, mone
 		if wechat_req.size() > 0:
 			main_node().galgame._gal_encounter_data = enc
 			main_node().galgame._gal_npc_id = npc_id
-			main_node().galgame.show_galgame_dialog(pages, main_node().galgame.start_wechat_request_phase)
+			main_node().galgame.show_galgame_dialog(pages, main_node().galgame.start_wechat_request_phase, _get_encounter_bg(location))
 		else:
 			main_node().galgame.show_galgame_dialog(pages, func() -> void:
 				main_node().show_message("邂逅了%s，但没有进一步发展。" % npc_name, true)
-			)
+			, _get_encounter_bg(location))
 		GameManager.add_activity("社交", "在%s邂逅了%s" % [location, npc_name])
 	else:
 		var fail_pages: Array = []
@@ -831,7 +839,7 @@ func _handle_encounter(npc: Dictionary, location: String, energy_cost: int, mone
 				_normal_bar()
 			else:
 				main_node().show_message("度过了平静的一天。", true)
-		)
+		, _get_encounter_bg(location))
 
 func _on_loc_library() -> void:
 	if GameManager.energy < 20:

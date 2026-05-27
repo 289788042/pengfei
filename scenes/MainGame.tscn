@@ -708,6 +708,17 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 1.5
 
+[node name="BgTexture" type="TextureRect" parent="HBoxContainer/LeftWorldArea" unique_id=2233445566]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 6
+visible = false
+
 [node name="BgImage" type="ColorRect" parent="HBoxContainer/LeftWorldArea" unique_id=1215509953]
 unique_name_in_owner = true
 layout_mode = 1
