@@ -46,12 +46,9 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.keycode == KEY_F2 and event.pressed:
 		# 直接用默认数据跳过开场
+		GameManager.reset_game()
 		GameManager.player_name = "测试"
 		GameManager.player_zodiac = "测试"
-		GameManager.max_energy = 100
-		GameManager.energy = 100
-		# 不加任何星象加成，使用纯默认值
-		GameManager.load_npc_data()
 		get_tree().change_scene_to_file("res://scenes/MainGame.tscn")
 
 
@@ -82,10 +79,15 @@ func _on_unlocked() -> void:
 
 ## 点击"开始深漂生活"按钮时调用
 func _on_start_game_pressed() -> void:
+	if selected_zodiac == "":
+		return
+
 	# 读取玩家姓名，为空则使用默认名"林小满"
 	var name_text: String = input_name.text.strip_edges()
 	if name_text == "":
 		name_text = "林小满"
+
+	GameManager.reset_game()
 
 	# 将玩家信息写入全局单例
 	GameManager.player_name = name_text
@@ -99,8 +101,8 @@ func _on_start_game_pressed() -> void:
 			GameManager.modify_stat("intellect", 5)
 		"火象":
 			# 精力上限提升至 120，颜值+5
-			GameManager.max_energy = 100
-			GameManager.energy = 100
+			GameManager.max_energy = 120
+			GameManager.energy = 120
 			GameManager.modify_stat("charm", 5)
 		"水象":
 			# 情绪上限提升至 120，情商+5

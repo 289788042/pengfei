@@ -32,6 +32,7 @@ var _pending_pay_cost: int = 0
 var _pending_pay_desc: String = ""
 var _pending_pay_category: String = ""
 var _pending_pay_callback: Callable = Callable()
+var _last_payment_changes: Dictionary = {}
 
 # ==================== 初始化 ====================
 
@@ -62,6 +63,10 @@ func main_node() -> Node:
 	return _main
 
 
+func get_last_payment_changes() -> Dictionary:
+	return _last_payment_changes.duplicate()
+
+
 # ==================== 通用支付拦截系统 ====================
 
 func request_payment(cost: int, desc: String, category: String, on_success: Callable) -> void:
@@ -69,10 +74,14 @@ func request_payment(cost: int, desc: String, category: String, on_success: Call
 	_pending_pay_desc = desc
 	_pending_pay_category = category
 	_pending_pay_callback = on_success
+	_last_payment_changes = {}
 	label_payment_cost.text = "请选择支付方式\n（本次消费：%d 元）" % cost
 	# 隐藏可能遮挡支付弹窗的微信菜单
 	_main.wechat_menu.visible = false
-	payment_popup.visible = true
+	if main_node().has_method("set_ui_layer_visible"):
+		main_node().set_ui_layer_visible(payment_popup, true)
+	else:
+		payment_popup.visible = true
 
 func _on_pay_mix() -> void:
 	if GameManager.money < _pending_pay_cost:
@@ -80,22 +89,30 @@ func _on_pay_mix() -> void:
 		return
 	var cost := _pending_pay_cost
 	GameManager.modify_stat("money", -cost)
+	_last_payment_changes = {"money": -cost}
 	GameManager.add_finance(-cost, _pending_pay_desc, false)
 	GameManager.add_activity(_pending_pay_category, _pending_pay_desc + "现金支付")
 	_finish_payment()
 func _on_pay_huabei() -> void:
 	GameManager.huabei_debt += _pending_pay_cost
 	GameManager.credit_debt = GameManager.huabei_debt
+	_last_payment_changes = {"credit_debt": _pending_pay_cost}
 	GameManager.add_finance(-_pending_pay_cost, _pending_pay_desc, true)
 	GameManager.add_activity(_pending_pay_category, _pending_pay_desc + "（花呗透支）")
 	_finish_payment()
 
 func _on_pay_cancel() -> void:
-	payment_popup.visible = false
+	if main_node().has_method("set_ui_layer_visible"):
+		main_node().set_ui_layer_visible(payment_popup, false)
+	else:
+		payment_popup.visible = false
 	_pending_pay_callback = Callable()
 
 func _finish_payment() -> void:
-	payment_popup.visible = false
+	if main_node().has_method("set_ui_layer_visible"):
+		main_node().set_ui_layer_visible(payment_popup, false)
+	else:
+		payment_popup.visible = false
 	var cb := _pending_pay_callback
 	_pending_pay_callback = Callable()
 	if cb.is_valid():
@@ -170,7 +187,10 @@ func _refresh_alipay_log() -> void:
 		alipay_log_container.add_child(lbl)
 
 func _on_close_alipay() -> void:
-	alipay_popup.visible = false
+	if main_node().has_method("set_ui_layer_visible"):
+		main_node().set_ui_layer_visible(alipay_popup, false)
+	else:
+		alipay_popup.visible = false
 
 # 支服了宝 - 理财操作
 func _on_al_fin_safe_in() -> void:

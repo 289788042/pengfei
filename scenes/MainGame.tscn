@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://4efrj08wbmj8" path="res://scenes/MainGame.gd" id="1_8etcy"]
 [ext_resource type="Theme" uid="uid://cikxg02q2to20" path="res://UI/GlobalPixelTheme.tres" id="1_xej52"]
 [ext_resource type="Script" uid="uid://wupulnqs5tac" path="res://scripts/DebugPanel.gd" id="3_p73vr"]
+[ext_resource type="Texture2D" path="res://Assets/UI/phone_wallpaper.png" id="wallpaper_ad800b"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
 bg_color = Color(0, 0, 0, 0.75)
@@ -26,7 +27,7 @@ shadow_size = 15
 shadow_offset = Vector2(0, 4)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_phone_screen"]
-bg_color = Color(0.94, 0.94, 0.96, 1)
+bg_color = Color(0.1, 0.1, 0.15, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
@@ -708,8 +709,9 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 1.5
 
-[node name="BgTexture" type="TextureRect" parent="HBoxContainer/LeftWorldArea" unique_id=2233445566]
+[node name="BgTexture" type="TextureRect" parent="HBoxContainer/LeftWorldArea" unique_id=-2061521730]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -717,7 +719,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 stretch_mode = 6
-visible = false
 
 [node name="BgImage" type="ColorRect" parent="HBoxContainer/LeftWorldArea" unique_id=1215509953]
 unique_name_in_owner = true
@@ -810,6 +811,16 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_phone_screen")
 
+[node name="Wallpaper" type="TextureRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("wallpaper_ad800b")
+stretch_mode = 6
+
 [node name="ScreenContent" type="VBoxContainer" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=971623383]
 layout_mode = 1
 anchors_preset = 15
@@ -825,14 +836,14 @@ size_flags_vertical = 4
 
 [node name="CarrierLabel" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/StatusBar" unique_id=991181643]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_font_sizes/font_size = 12
 text = "中国移动 5G"
 
 [node name="BatteryLabel" type="Label" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen/ScreenContent/StatusBar" unique_id=1541276876]
 layout_mode = 2
 size_flags_horizontal = 8
-theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_font_sizes/font_size = 12
 text = "🔋 100%"
 
@@ -2097,21 +2108,21 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "挂逼生存套餐 (沙县/拉面) -> 费用:300, 情绪-5"
+text = "挂逼生存套餐 (沙县/拉面) -> 本月餐饮账单+300, 情绪-5"
 
 [node name="Btn_Food_Mid" type="Button" parent="WeekdayPanel/WeekdayVBox/FoodSection" unique_id=1599680787]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "打工人标配 (肯德基/火锅) -> 费用:800, 精力+10"
+text = "打工人标配 (肯德基/火锅) -> 本月餐饮账单+800, 精力+10"
 
 [node name="Btn_Food_High" type="Button" parent="WeekdayPanel/WeekdayVBox/FoodSection" unique_id=1046623365]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-text = "小资高档 (日料/西餐) -> 费用:2000, 情绪+20, 精力+15"
+text = "小资高档 (日料/西餐) -> 本月餐饮账单+2000, 情绪+20, 精力+15"
 
 [node name="SepFood" type="HSeparator" parent="WeekdayPanel/WeekdayVBox" unique_id=72746084]
 layout_mode = 2

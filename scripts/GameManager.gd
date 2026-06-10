@@ -179,6 +179,7 @@ var npcs: Dictionary = {
 	"wang_teacher": {"name": "尚德夜校-王老师", "affection": 0, "level": 1, "unlocked": true, "warning_msg": "不逼自己一把，你永远只能拿底薪！", "blocked": false, "messages": [], "last_seen_week": 0},
 	"xiao_ya": {"name": "小雅", "affection": 30, "level": 1, "unlocked": true, "warning_msg": "", "blocked": false, "messages": [{"sender": "npc", "text": "姐妹你啥时候来深圳呀？来了找我玩！"}], "last_seen_week": 0, "unread": 1},
 }
+var _initial_npcs_template: Dictionary = {}
 
 # ==================== 属性名中文映射 ====================
 
@@ -191,13 +192,82 @@ var stat_names: Dictionary = {
 # ==================== 核心函数 ====================
 
 func _ready() -> void:
-	load_npc_data()
-	load_workplace_events()
-	load_location_narratives()
-	# 标记初始APP为已解锁（不需要通知）
+	_initial_npcs_template = npcs.duplicate(true)
+	reset_game()
+
+
+## 开始新局时重置所有运行时状态，避免全局单例残留上一局数据
+func reset_game() -> void:
+	pending_aging_msg = ""
+	age = 23
+	month = 1
+	week_in_month = 1
+	turn_count = 1
+	rent_cost = 2000
+	base_rent = 1500
+	monthly_food_cost = 0
+	weekend_actions = 0
+	max_weekend_actions = 3
+
+	money = 3000
+	pending_salary = 0
+	credit_debt = 0
+	huabei_debt = 0
+	huabei_installment_debt = 0
+	huabei_installment_months_left = 0
+	huabei_installment_monthly_pay = 0
+	activity_log = []
+	financial_log = []
+	max_energy = 100
+	max_sanity = 100
+	energy = 100
+	sanity = 100
+	charm = 10
+	intellect = 10
+	eq = 10
+
+	housing_level = 0
+	housing_buff_sanity = 0
+	invest_safe = 0
+	invest_risk = 0
+
+	game_finished = false
+	awaiting_ending_choice = false
+	last_ending = {}
+	awaiting_month_settle = false
+
+	_announced_unlocks = {}
 	for app_id in _app_unlock_turn:
 		if _app_unlock_turn[app_id] <= 1:
 			_announced_unlocks[app_id] = true
+
+	mom_care_buff_weeks = 0
+	consecutive_overtime = 0
+	consecutive_poor_food = 0
+	degree = 0
+	job_level = 0
+	night_school_progress = 0
+	_wang_teacher_last_push_week = 0
+	_family_chat_used_indices = []
+	_recent_work_events = []
+
+	npc_database = []
+	workplace_events = []
+	location_narratives = {}
+	unlocked_npcs = {}
+	encounter_failed_ids = []
+	if _initial_npcs_template.is_empty():
+		_initial_npcs_template = npcs.duplicate(true)
+	npcs = _initial_npcs_template.duplicate(true)
+
+	player_name = ""
+	player_zodiac = ""
+
+	load_npc_data()
+	load_workplace_events()
+	load_location_narratives()
+	_sync_initial_npc_runtime()
+	stats_updated.emit()
 
 ## 修改指定属性的值
 func modify_stat(stat_name: String, amount: int) -> void:
@@ -319,8 +389,9 @@ func start_new_month() -> void:
 			money -= min_payment
 			huabei_debt -= min_payment
 		else:
-			huabei_debt -= money
-			money = 0
+			var available_payment := maxi(money, 0)
+			huabei_debt -= available_payment
+			money -= available_payment
 			sanity -= 50
 			if sanity <= 0:
 				sanity = 0
@@ -469,14 +540,21 @@ func load_npc_data() -> void:
 			for npc in json2.data:
 				npc_database.append(npc)
 		f2.close()
-	# 初始化自动解锁NPC的运行时数据
-	for npc in npc_database:
-		var enc: Dictionary = npc.get("encounter", {})
-		if enc.get("auto_unlock", false):
-			var npc_id: String = npc.get("id", "")
-			if not unlocked_npcs.has(npc_id):
-				unlocked_npcs[npc_id] = {"affection": 0, "flags": []}
 	print("GameManager: 已加载 %d 个NPC剧本" % npc_database.size())
+
+
+func _sync_initial_npc_runtime() -> void:
+	for npc_id in npcs:
+		if not npcs[npc_id].get("unlocked", false):
+			continue
+		if unlocked_npcs.has(npc_id):
+			continue
+		unlocked_npcs[npc_id] = {
+			"affection": npcs[npc_id].get("affection", 0),
+			"flags": [],
+			"used_daily_chats": [],
+			"chat_cooldown": 0,
+		}
 
 
 ## 检查自动解锁NPC（每周开始时调用）
@@ -753,7 +831,7 @@ func check_behavior_death() -> Dictionary:
 
 ## 预计月末资产（账本显示用，含理财资产总额）
 func get_projected_balance() -> int:
-	return money + pending_salary + invest_safe + invest_risk - base_rent - huabei_debt - monthly_food_cost
+	return money + pending_salary + invest_safe + invest_risk - base_rent - monthly_food_cost - huabei_debt - huabei_installment_debt
 
 ## 评估33岁终局结局（优先级从高到低，首个匹配生效）
 func evaluate_ending() -> Dictionary:

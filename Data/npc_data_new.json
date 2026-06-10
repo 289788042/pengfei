@@ -1386,7 +1386,7 @@
 			"first_visit_only": false,
 			"auto_unlock": true,
 			"auto_unlock_condition": {
-				"turn_count_max": 5
+				"turn_count_min": 3
 			},
 			"scene_lines": [
 				"入职第三周，你终于记住了茶水间的咖啡机怎么用。",

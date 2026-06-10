@@ -28,6 +28,8 @@ var _is_auto_dismiss: bool = false
 var _gal_npc_id: String = ""
 var _gal_choice_container: VBoxContainer = null
 var _gal_fading_out: bool = false
+var _gal_pending_end_callback: Callable = Callable()
+var _gal_pending_has_encounter: bool = false
 
 ## 箭头指示器
 var _arrow_label: Label = null
@@ -36,6 +38,9 @@ var _arrow_tween: Tween = null
 ## 打字机嘟嘟音效
 var _beep_player: AudioStreamPlayer = null
 var _beep_pitch_base: float = 1.0
+## 环境音播放器（雨声等）
+var _ambient_player: AudioStreamPlayer = null
+var _ambient_tween: Tween = null
 
 
 func init(main: Node) -> void:
@@ -44,13 +49,44 @@ func init(main: Node) -> void:
 	_beep_player = AudioStreamPlayer.new()
 	_beep_player.volume_db = -12.0
 	main.add_child(_beep_player)
-	_beep_player.stream = _generate_beep()
+	if DisplayServer.get_name() != "headless":
+		_beep_player.stream = _generate_beep()
+	_ambient_player = AudioStreamPlayer.new()
+	_ambient_player.volume_db = -40.0
+	main.add_child(_ambient_player)
 	left_dialog_box = main.left_dialog_box
 	left_dialog_box.z_index = 50
 	left_dialog_text = main.left_dialog_text
 	portrait = main.character_portrait
 	scene_bg = main.left_bg
 	bg_texture = main.bg_texture
+
+
+func dispose() -> void:
+	if dialog_tween and dialog_tween.is_valid():
+		dialog_tween.kill()
+	if _gal_tween and _gal_tween.is_valid():
+		_gal_tween.kill()
+	if _arrow_tween and _arrow_tween.is_valid():
+		_arrow_tween.kill()
+	if _ambient_tween and _ambient_tween.is_valid():
+		_ambient_tween.kill()
+	if _bg_fade_tween and _bg_fade_tween.is_valid():
+		_bg_fade_tween.kill()
+	if is_instance_valid(_beep_player):
+		_beep_player.stop()
+		_beep_player.stream = null
+		_beep_player.queue_free()
+	if is_instance_valid(_ambient_player):
+		_ambient_player.stop()
+		_ambient_player.stream = null
+		_ambient_player.queue_free()
+	_beep_player = null
+	_ambient_player = null
+	_gal_on_complete = Callable()
+	_gal_pending_end_callback = Callable()
+	_gal_pending_has_encounter = false
+	_main = null
 
 
 # ==================== 飘字系统 ====================
@@ -108,13 +144,13 @@ func _msg_type_char() -> void:
 		dialog_tween = main_node().create_tween()
 		dialog_tween.tween_interval(3.0)
 		dialog_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.5)
-		dialog_tween.tween_callback(func(): left_dialog_box.visible = false)
+		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; clear_location_bg())
 		return
 	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	_gal_char_idx += 1
 	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	left_dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
-	if _beep_player and _gal_char_idx % 2 == 0:
+	if _beep_player and _beep_player.stream and _gal_char_idx % 2 == 0:
 		var ch: String = _gal_full_text[_gal_char_idx - 1]
 		if ch != " " and ch != "
 " and ch != "," and ch != "." and ch != "!" and ch != "?":
@@ -142,7 +178,7 @@ func _skip_typing() -> void:
 		dialog_tween = main_node().create_tween()
 		dialog_tween.tween_interval(3.0)
 		dialog_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.5)
-		dialog_tween.tween_callback(func(): left_dialog_box.visible = false)
+		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; clear_location_bg())
 	else:
 		_start_arrow_anim()
 
@@ -163,6 +199,8 @@ func dismiss_dialog() -> void:
 	_hide_phone_dim()
 	var cb: Callable = _gal_on_complete
 	_gal_on_complete = Callable()
+	_gal_pending_end_callback = Callable()
+	_gal_pending_has_encounter = false
 	if cb.is_valid():
 		cb.call()
 
@@ -170,7 +208,7 @@ func dismiss_dialog() -> void:
 # ==================== Galgame 分页对话系统 ====================
 
 ## 启动 Galgame 分页对话（pages: 每页一个字符串）
-func show_galgame_dialog(pages: Array, on_complete: Callable = Callable(), bg_path: String = "") -> void:
+func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> void:
 	if _gal_tween and _gal_tween.is_valid():
 		_gal_tween.kill()
 	_gal_pages = pages
@@ -178,10 +216,8 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable(), bg_pa
 	_gal_on_complete = on_complete
 	_is_auto_dismiss = false
 	_gal_fading_out = false
-	if bg_path != "":
-		set_encounter_bg(bg_path)
-	else:
-		clear_encounter_bg()
+	_gal_pending_end_callback = Callable()
+	_gal_pending_has_encounter = false
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	# 暗化手机区域
@@ -237,7 +273,7 @@ func _gal_type_char() -> void:
 	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	left_dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
 	# 嘟嘟音效（每两个字响一次，跳过空格/标点/换行）
-	if _beep_player and _gal_char_idx % 2 == 0:
+	if _beep_player and _beep_player.stream and _gal_char_idx % 2 == 0:
 		var ch: String = _gal_full_text[_gal_char_idx - 1]
 		if ch != ' ' and ch != '
 ' and ch != '，' and ch != '。' and ch != '！' and ch != '？' and ch != '、' and ch != '…' and ch != '—':
@@ -266,7 +302,7 @@ func gal_on_click() -> void:
 
 ## 跳过所有对话页（测试用，Ctrl键触发）
 func skip_all() -> void:
-	_gal_end()
+	_gal_end(true)
 
 
 
@@ -308,15 +344,26 @@ func _stop_arrow_anim() -> void:
 
 
 ## 结束 Galgame 对话
-func _gal_end() -> void:
+func _gal_end(immediate: bool = false) -> void:
 	if _gal_fading_out:
+		if immediate:
+			if _gal_tween and _gal_tween.is_valid():
+				_gal_tween.kill()
+			_gal_fading_out = false
+			left_dialog_box.modulate.a = 0.0
+			left_dialog_box.visible = false
+			clear_location_bg()
+			var pending_cb: Callable = _gal_pending_end_callback
+			var pending_has_encounter: bool = _gal_pending_has_encounter
+			_gal_pending_end_callback = Callable()
+			_gal_pending_has_encounter = false
+			_finish_gal_end(pending_cb, pending_has_encounter)
 		return
 	if _gal_tween and _gal_tween.is_valid():
 		_gal_tween.kill()
 	_gal_pages.clear()
 	_gal_typing = false
 	_stop_arrow_anim()
-	_gal_fading_out = true
 	var _skip_btn2: Button = main_node().get_node_or_null("HBoxContainer/RightMargin/RightSystemArea/Btn_NextWeek")
 	if _skip_btn2:
 		_skip_btn2.set_deferred("disabled", false)
@@ -324,19 +371,39 @@ func _gal_end() -> void:
 	var cb: Callable = _gal_on_complete
 	_gal_on_complete = Callable()
 	var has_encounter: bool = _gal_encounter_data.size() > 0
+	_gal_pending_end_callback = cb
+	_gal_pending_has_encounter = has_encounter
+	if immediate:
+		_gal_fading_out = false
+		left_dialog_box.modulate.a = 0.0
+		left_dialog_box.visible = false
+		clear_location_bg()
+		_gal_pending_end_callback = Callable()
+		_gal_pending_has_encounter = false
+		_finish_gal_end(cb, has_encounter)
+		return
+	_gal_fading_out = true
 	_gal_tween = main_node().create_tween()
 	_gal_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.4)
 	_gal_tween.tween_callback(func() -> void:
 		_gal_fading_out = false
 		left_dialog_box.visible = false
-		clear_encounter_bg()
-		if cb.is_valid():
-			cb.call()
-		elif has_encounter:
-			_gal_encounter_data = {}
-			show_message("度过了一段时光。", true)
+		clear_location_bg()
+		var pending_cb: Callable = _gal_pending_end_callback
+		var pending_has_encounter: bool = _gal_pending_has_encounter
+		_gal_pending_end_callback = Callable()
+		_gal_pending_has_encounter = false
+		_finish_gal_end(pending_cb, pending_has_encounter)
 
 	)
+
+
+func _finish_gal_end(cb: Callable, has_encounter: bool) -> void:
+	if cb.is_valid():
+		cb.call()
+	elif has_encounter:
+		_gal_encounter_data = {}
+		show_message("度过了一段时光。", true)
 
 
 # ==================== 邂逅系统 ====================
@@ -469,20 +536,87 @@ func _on_encounter_choice(option: Dictionary) -> void:
 	show_galgame_dialog(pages)
 
 
-# ==================== 邂逅背景图管理 ====================
+# ==================== 场景背景图 + 环境音管理 ====================
 
-func set_encounter_bg(texture_path: String) -> void:
+var _bg_fade_tween: Tween = null
+
+func show_location_bg(texture_path: String) -> void:
+	if main_node().has_method("show_location_bg"):
+		main_node().show_location_bg(texture_path)
+		_play_ambient_for_bg(texture_path)
+		return
 	var tex := load(texture_path) as Texture2D
-	if tex and bg_texture:
-		bg_texture.texture = tex
-		bg_texture.visible = true
-		scene_bg.visible = false
+	if not tex or not bg_texture:
+		return
+	bg_texture.texture = tex
+	scene_bg.visible = false
+	bg_texture.visible = true
+	bg_texture.modulate.a = 0.0
+	if _bg_fade_tween and _bg_fade_tween.is_valid():
+		_bg_fade_tween.kill()
+	_bg_fade_tween = main_node().create_tween()
+	_bg_fade_tween.tween_property(bg_texture, "modulate:a", 1.0, 0.5)
+	_play_ambient_for_bg(texture_path)
 
-func clear_encounter_bg() -> void:
-	if bg_texture:
+func clear_location_bg() -> void:
+	if _gal_pages.size() > 0 or is_instance_valid(_gal_choice_container):
+		return
+	if main_node().has_method("return_to_home_environment"):
+		_stop_ambient()
+		main_node().return_to_home_environment("dialog_clear")
+		return
+	if not bg_texture or not bg_texture.visible:
+		return
+	_stop_ambient()
+	if _bg_fade_tween and _bg_fade_tween.is_valid():
+		_bg_fade_tween.kill()
+	_bg_fade_tween = main_node().create_tween()
+	_bg_fade_tween.tween_property(bg_texture, "modulate:a", 0.0, 0.5)
+	_bg_fade_tween.tween_callback(func():
 		bg_texture.visible = false
 		bg_texture.texture = null
-	scene_bg.visible = true
+		scene_bg.visible = true
+	)
+
+func _play_ambient_for_bg(texture_path: String) -> void:
+	var ambients: Dictionary = {
+		# Add entries here when ambient audio assets are available.
+	}
+	var matched_key: String = ""
+	for key in ambients:
+		if key.to_lower() in texture_path.to_lower():
+			matched_key = key
+			break
+	if matched_key == "":
+		_stop_ambient()
+		return
+	var audio_path: String = ambients[matched_key]
+	if not ResourceLoader.exists(audio_path):
+		return
+	var stream := load(audio_path) as AudioStream
+	if not stream:
+		return
+	if _ambient_player.stream == stream and _ambient_player.playing:
+		return
+	_ambient_player.stream = stream
+	_ambient_player.volume_db = -40.0
+	_ambient_player.play()
+	if _ambient_tween and _ambient_tween.is_valid():
+		_ambient_tween.kill()
+	_ambient_tween = main_node().create_tween()
+	_ambient_tween.tween_property(_ambient_player, "volume_db", -8.0, 1.5)
+
+func _stop_ambient() -> void:
+	if not _ambient_player or not _ambient_player.playing:
+		return
+	if _ambient_tween and _ambient_tween.is_valid():
+		_ambient_tween.kill()
+	_ambient_tween = main_node().create_tween()
+	_ambient_tween.tween_property(_ambient_player, "volume_db", -40.0, 1.0)
+	_ambient_tween.tween_callback(func():
+		_ambient_player.stop()
+		_ambient_player.stream = null
+	)
 
 # ==================== 公共访问 ====================
 

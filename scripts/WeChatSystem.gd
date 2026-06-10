@@ -98,6 +98,46 @@ func force_close() -> void:
 	_main.wc_chat_view.visible = false
 
 
+func _remove_colored_result_segments(line: String) -> String:
+	var cleaned := line
+	var start := cleaned.find("[color=")
+	while start >= 0:
+		var end := cleaned.find("[/color]", start)
+		if end < 0:
+			break
+		cleaned = (cleaned.substr(0, start) + cleaned.substr(end + 8)).strip_edges()
+		start = cleaned.find("[color=")
+	return cleaned
+
+
+func _strip_embedded_result_text(text: String) -> String:
+	var kept: Array = []
+	for line in text.split("\n"):
+		var trimmed := line.strip_edges()
+		if trimmed.begins_with("（") and (trimmed.find("+") >= 0 or trimmed.find("-") >= 0):
+			continue
+		if trimmed.find("[color=90EE90]") >= 0 or trimmed.find("[color=E88080]") >= 0:
+			var cleaned_line := _remove_colored_result_segments(line)
+			if cleaned_line != "":
+				kept.append(cleaned_line)
+			continue
+		kept.append(line)
+	return "\n".join(kept).strip_edges()
+
+
+func _show_stat_result(changes: Dictionary, on_complete: Callable = Callable()) -> void:
+	if is_instance_valid(_main) and _main.has_method("show_stat_result"):
+		_main.show_stat_result(changes, on_complete)
+	elif on_complete.is_valid():
+		on_complete.call()
+
+
+func _action_service():
+	if is_instance_valid(_main):
+		return _main.get("action_service")
+	return null
+
+
 ## 更新手机桌面微信图标的红色角标
 func _update_app_badge() -> void:
 	var total: int = GameManager.get_total_unread()
@@ -605,6 +645,7 @@ func _on_reply_selected(option: Dictionary) -> void:
 	var cost: Dictionary = option.get("cost", {})
 	var cost_energy: int = int(cost.get("energy", 0))
 	var cost_money: int = int(cost.get("money", 0))
+	var result_changes: Dictionary = {}
 	if cost_energy > 0 and GameManager.energy < cost_energy:
 		_main.show_floating_text("太累了，没精力回复...", Color.RED, _main.get_global_mouse_position())
 		return
@@ -615,8 +656,10 @@ func _on_reply_selected(option: Dictionary) -> void:
 	## 扣除资源
 	if cost_energy > 0:
 		GameManager.modify_stat("energy", -cost_energy)
+		result_changes["energy"] = int(result_changes.get("energy", 0)) - cost_energy
 	if cost_money > 0:
 		GameManager.modify_stat("money", -cost_money)
+		result_changes["money"] = int(result_changes.get("money", 0)) - cost_money
 
 	## 应用属性变化
 	var stat_changes: Dictionary = option.get("stat_changes", {})
@@ -626,6 +669,7 @@ func _on_reply_selected(option: Dictionary) -> void:
 			GameManager.get_npc_runtime(_current_chat_npc)["affection"] += val
 		else:
 			GameManager.modify_stat(stat_name, val)
+		result_changes[stat_name] = int(result_changes.get(stat_name, 0)) + val
 
 	## 显示玩家回复
 	var player_text: String = option.get("text", "")
@@ -653,6 +697,8 @@ func _on_reply_selected(option: Dictionary) -> void:
 	## 销毁选项按钮，恢复常驻按钮
 	_clear_reply_buttons()
 	_refresh_wechat_ui()
+	if not result_changes.is_empty():
+		_show_stat_result(result_changes)
 
 
 func _clear_reply_buttons() -> void:
@@ -886,16 +932,7 @@ func _show_family_chat_display(msg: Dictionary) -> void:
 	vbox.add_child(title)
 	## 闲聊内容
 	var desc := Label.new()
-	var effect_hint: String = ""
-	if sanity_effect > 0:
-		effect_hint = "\n(情绪 +%d)" % sanity_effect
-	elif sanity_effect < 0:
-		effect_hint = "\n(情绪 %d)" % sanity_effect
-	if money_effect > 0:
-		effect_hint += "\n(金钱 +%d)" % money_effect
-	elif money_effect < 0:
-		effect_hint += "\n(金钱 %d)" % money_effect
-	desc.text = chat_text + effect_hint
+	desc.text = chat_text
 	desc.add_theme_font_size_override("font_size", 15)
 	desc.add_theme_color_override("font_color", Color(0.2, 0.2, 0.2, 1))
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -921,6 +958,7 @@ func _show_family_chat_display(msg: Dictionary) -> void:
 	btn.pressed.connect(func() -> void:
 		var ov := _main.get_node_or_null("FamilyChatOverlay")
 		if ov: ov.queue_free()
+		_show_stat_result({"sanity": sanity_effect, "money": money_effect})
 	)
 	vbox.add_child(btn)
 
@@ -996,22 +1034,28 @@ func _on_family_choice(event_idx: int, choice_idx: int) -> void:
 			_main.show_message("金钱不足，无法这样做！")
 			return
 	# 应用属性效果
+	var result_changes: Dictionary = {}
 	for stat in effects:
 		GameManager.modify_stat(stat, effects[stat])
+		result_changes[stat] = int(result_changes.get(stat, 0)) + int(effects[stat])
 	# 设置亲情变化
 	var affection_gain: int = choice.get("affection_gain", 0)
 	if affection_gain != 0:
 		GameManager.add_npc_affection("family_group", affection_gain)
+		result_changes["family_affection"] = int(result_changes.get("family_affection", 0)) + affection_gain
 	# Buff/Debuff设置
 	if choice.get("set_mom_care", 0) > 0:
 		GameManager.mom_care_buff_weeks = choice["set_mom_care"]
-	# 显示结果消息
-	_main.show_message(choice["msg"], true)
 	# 移除遮罩
 	var overlay_node := _main.get_node_or_null("FamilyEventOverlay")
 	if overlay_node:
 		overlay_node.queue_free()
 	_refresh_wechat_ui()
+	# 显示结果消息，再单独显示数值结算
+	var clean_msg := _strip_embedded_result_text(choice["msg"])
+	_main.show_galgame_dialog([clean_msg], func() -> void:
+		_show_stat_result(result_changes)
+	)
 
 
 func _on_chat_npc(npc_id: String) -> void:
@@ -1089,20 +1133,67 @@ func _on_chat_wang_teacher() -> void:
 	if GameManager.night_school_progress >= 12:
 		_main.show_message("你已经毕业了！快去 BOSS弯聘 看看新机会吧！")
 		return
+	if _main.current_phase != _main.Phase.WEEKEND:
+		_main.show_message("夜校课程要等周末再安排。")
+		return
+	var service = _action_service()
+	if service and service.has_method("can_use_weekend_action"):
+		if not service.can_use_weekend_action("夜校课程"):
+			return
+	elif GameManager.weekend_actions <= 0:
+		_main.show_message("本周行动次数已用完，没法再上夜校。")
+		return
 	if GameManager.energy < 50:
 		_main.show_message("精力不足（需50），没法上课了！")
 		return
 	_main.alipay.request_payment(1000, "夜校报名冲刺班", "提升", func() -> void:
-		GameManager.modify_stat("energy", -50)
-		GameManager.modify_stat("sanity", -10)
-		GameManager.night_school_progress += 1
-		if GameManager.night_school_progress >= 12:
-			GameManager.degree = 1
-			_show_graduation_popup()
+		var action_changes := {"weekend_actions": -1}
+		var payment_changes: Dictionary = {}
+		if _main.alipay and _main.alipay.has_method("get_last_payment_changes"):
+			payment_changes = _main.alipay.get_last_payment_changes()
+		if service and service.has_method("spend_weekend_action"):
+			if not service.spend_weekend_action("夜校课程"):
+				return
 		else:
-			_main.show_message("王老师：恭喜完成本周课程！当前学分进度：%d/12。" % GameManager.night_school_progress)
-			_main.float_stat("+1 学分 | 进度 %d/12" % GameManager.night_school_progress, 1, _main.get_global_mouse_position())
-		_refresh_wechat_ui()
+			GameManager.weekend_actions = maxi(GameManager.weekend_actions - 1, 0)
+		var stat_changes: Dictionary = {}
+		if service and service.has_method("apply_stat_changes"):
+			stat_changes = service.apply_stat_changes({"energy": -50, "sanity": -10, "night_school_progress": 1})
+		else:
+			GameManager.modify_stat("energy", -50)
+			GameManager.modify_stat("sanity", -10)
+			GameManager.night_school_progress = mini(GameManager.night_school_progress + 1, 12)
+			stat_changes = {"energy": -50, "sanity": -10, "night_school_progress": 1}
+		var graduated := false
+		if GameManager.night_school_progress >= 12 and GameManager.degree < 1:
+			if service and service.has_method("apply_stat_changes"):
+				stat_changes = service.merge_changes(stat_changes, service.apply_stat_changes({"degree": 1}))
+			else:
+				GameManager.degree = 1
+				stat_changes["degree"] = 1
+			graduated = true
+		var result_changes: Dictionary = payment_changes
+		if service and service.has_method("merge_changes"):
+			result_changes = service.merge_changes(result_changes, action_changes)
+			result_changes = service.merge_changes(result_changes, stat_changes)
+		else:
+			for key in action_changes:
+				result_changes[key] = int(result_changes.get(key, 0)) + int(action_changes[key])
+			for key in stat_changes:
+				result_changes[key] = int(result_changes.get(key, 0)) + int(stat_changes[key])
+		var story := "王老师：恭喜完成本周课程！当前学分进度：%d/12。" % GameManager.night_school_progress
+		if graduated:
+			story = "王老师：最后一节课也结了。证书下来了，恭喜你毕业。"
+		var after_result := func() -> void:
+			_refresh_wechat_ui()
+			if graduated:
+				_show_graduation_popup()
+		if service and service.has_method("show_action_result"):
+			service.show_action_result(story, result_changes, after_result)
+		else:
+			_main.show_galgame_dialog([story], func() -> void:
+				_show_stat_result(result_changes, after_result)
+			)
 	)
 
 

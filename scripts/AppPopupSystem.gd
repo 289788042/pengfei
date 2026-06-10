@@ -134,10 +134,109 @@ func main_node() -> Node:
 	return _main
 
 
+func _set_layer_visible(layer: Control, is_visible: bool) -> void:
+	if not is_instance_valid(layer):
+		return
+	if is_instance_valid(_main) and _main.has_method("set_ui_layer_visible"):
+		_main.set_ui_layer_visible(layer, is_visible)
+	else:
+		layer.visible = is_visible
+
+
+func _refresh_main_ui() -> void:
+	GameManager.stats_updated.emit()
+	if is_instance_valid(_main) and _main.has_method("_refresh_ui"):
+		_main._refresh_ui()
+
+
+func _remove_colored_result_segments(line: String) -> String:
+	var cleaned := line
+	var start := cleaned.find("[color=")
+	while start >= 0:
+		var end := cleaned.find("[/color]", start)
+		if end < 0:
+			break
+		cleaned = (cleaned.substr(0, start) + cleaned.substr(end + 8)).strip_edges()
+		start = cleaned.find("[color=")
+	return cleaned
+
+
+func _strip_embedded_result_lines(text: String) -> String:
+	var kept: Array = []
+	for line in text.split("\n"):
+		if line.find("[color=90EE90]") >= 0 or line.find("[color=E88080]") >= 0 or line.find("[color=red]") >= 0:
+			var cleaned_line := _remove_colored_result_segments(line)
+			if cleaned_line != "":
+				kept.append(cleaned_line)
+			continue
+		kept.append(line)
+	return "\n".join(kept).strip_edges()
+
+
+func _format_result(changes: Dictionary, title: String = "【结算】") -> String:
+	if is_instance_valid(_main) and _main.has_method("format_stat_result"):
+		return _main.format_stat_result(changes, title)
+	var parts: Array = []
+	for stat_name in changes:
+		var val: int = int(changes[stat_name])
+		if val == 0:
+			continue
+		var cn: String = GameManager.stat_names.get(stat_name, stat_name)
+		if val > 0:
+			parts.append("%s +%d" % [cn, val])
+		else:
+			parts.append("%s %d" % [cn, val])
+	return "" if parts.is_empty() else title + "\n" + "  ".join(parts)
+
+
+func _show_result(result_text: String, after: Callable = Callable()) -> void:
+	var clean_text := result_text.strip_edges()
+	if clean_text != "" and not clean_text.begins_with("【"):
+		clean_text = "【结算】\n" + clean_text
+	if is_instance_valid(_main) and _main.has_method("show_result_text"):
+		_main.show_result_text(clean_text, after)
+		return
+	if clean_text != "":
+		main_node().galgame.show_galgame_dialog([clean_text], after)
+	elif after.is_valid():
+		after.call()
+
+
+func _show_story_then_result(story_text: String, result_text: String, after: Callable = Callable()) -> void:
+	var clean_story := _strip_embedded_result_lines(story_text)
+	if clean_story != "":
+		main_node().galgame.show_galgame_dialog([clean_story], func() -> void:
+			_show_result(result_text, after)
+		)
+	else:
+		_show_result(result_text, after)
+
+
+func _show_location_result(location: String, fallback_text: String, changes: Dictionary, after: Callable = Callable()) -> void:
+	var story := GameManager.get_location_narrative(location, fallback_text)
+	_show_story_then_result(story, _format_result(changes), after)
+
+
+func _action_service():
+	if is_instance_valid(_main):
+		return main_node().get("action_service")
+	return null
+
+
+func _show_action_result(story_text: String, changes: Dictionary, after: Callable = Callable()) -> void:
+	var service = _action_service()
+	if service and service.has_method("show_action_result"):
+		service.show_action_result(story_text, changes, after)
+	elif is_instance_valid(_main) and _main.has_method("show_stat_result"):
+		_main.show_stat_result(changes, after)
+	elif after.is_valid():
+		after.call()
+
+
 # ==================== 地图/地点 ====================
 
 func _on_close_loc() -> void:
-	location_menu.visible = false
+	_set_layer_visible(location_menu, false)
 
 
 func _on_app_map() -> void:
@@ -218,7 +317,7 @@ func _on_app_map() -> void:
 	scroll.add_child(loc_list)
 	## 地点数据
 	var map_locs: Array = [
-		{"name": "图书馆", "icon_color": Color(0.2, 0.5, 0.9), "cost": "-20精力 | +2学识 +5情绪", "action": _on_loc_library},
+		{"name": "图书馆", "icon_color": Color(0.2, 0.5, 0.9), "cost": "-20精力 | +3学识 +5情绪", "action": _on_loc_library},
 		{"name": "健身房", "icon_color": Color(0.2, 0.75, 0.3), "cost": "-45精力 -200金 | +2颜值 +5情绪 体力上限+1", "action": _on_loc_gym},
 		{"name": "高档酒吧", "icon_color": Color(0.6, 0.3, 0.8), "cost": "-20精力 -500金 | +2情商 +25情绪 | 需情商>=10", "action": _on_loc_bar},
 		{"name": "宅家刷手机", "icon_color": Color(0.55, 0.55, 0.55), "cost": "-10精力 | +20情绪", "action": _on_loc_home},
@@ -300,19 +399,19 @@ func _on_app_map() -> void:
 			_on_close_loc()
 			captured_action.call()
 		)
-	location_menu.visible = true
+	_set_layer_visible(location_menu, true)
 
 
 func _close_all_menus() -> void:
 	for m in [location_menu, baotao_menu, tuanmei_menu, zodiac_popup, house_menu, dating_popup, job_menu, diary_popup, late_night_popup]:
 		if is_instance_valid(m):
-			m.visible = false
+			_set_layer_visible(m, false)
 
 
 func _on_app_diary() -> void:
 	_close_all_menus()
 	_refresh_diary_ui()
-	diary_popup.visible = true
+	_set_layer_visible(diary_popup, true)
 
 
 func _on_app_baotao() -> void:
@@ -325,7 +424,7 @@ func _on_app_baotao() -> void:
 		{"name": "快时尚穿搭", "icon_color": Color(0.3, 0.7, 0.9), "cost": "1500 元 | +8颜值 +10情绪", "action": _on_bt_fashion},
 	]
 	_build_app_overlay(baotao_menu, "宝淘", Color(0.95, 0.35, 0.35, 1), debt_info, items)
-	baotao_menu.visible = true
+	_set_layer_visible(baotao_menu, true)
 
 
 func _on_app_tuanmei() -> void:
@@ -338,13 +437,13 @@ func _on_app_tuanmei() -> void:
 		{"name": "全脸微调手术", "icon_color": Color(0.6, 0.2, 0.8), "cost": "20000 元 | +30颜值 | 需颜值<20", "action": _on_tm_surgery},
 	]
 	_build_app_overlay(tuanmei_menu, "团美医美", Color(0.6, 0.3, 0.8, 1), debt_info, items)
-	tuanmei_menu.visible = true
+	_set_layer_visible(tuanmei_menu, true)
 
 
 func _on_app_zodiac() -> void:
 	_close_all_menus()
 	label_zodiac_content.text = "亲爱的%s宝宝，本周运势：\n请注意控制消费，警惕烂桃花哦！" % GameManager.player_zodiac
-	zodiac_popup.visible = true
+	_set_layer_visible(zodiac_popup, true)
 
 
 func _on_app_house() -> void:
@@ -374,7 +473,7 @@ func _on_app_house() -> void:
 			item["action"] = [_on_house_village, _on_house_apartment, _on_house_luxury][i]
 		items.append(item)
 	_build_app_overlay(house_menu, "贝壳找房", Color(0.15, 0.6, 0.7, 1), status, items)
-	house_menu.visible = true
+	_set_layer_visible(house_menu, true)
 
 
 func _on_app_dating() -> void:
@@ -383,7 +482,7 @@ func _on_app_dating() -> void:
 		main_node().show_message("颜值太低（需>=10），没有匹配对象！先提升自己吧~")
 		return
 	_refresh_dating_card()
-	dating_popup.visible = true
+	_set_layer_visible(dating_popup, true)
 
 
 # ==================== 通用App覆盖层构建器 ====================
@@ -432,7 +531,7 @@ func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subt
 	close_btn.custom_minimum_size = Vector2(50, 30)
 	close_btn.gui_input.connect(func(event: InputEvent) -> void:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			parent.visible = false
+			_set_layer_visible(parent, false)
 	)
 	top_hbox.add_child(close_btn)
 	## 副标题栏（花呗欠款/状态）
@@ -448,6 +547,8 @@ func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subt
 		sub_lbl.text = subtitle
 		sub_lbl.add_theme_font_size_override("font_size", 12)
 		sub_lbl.add_theme_color_override("font_color", Color(0.3, 0.3, 0.3, 1))
+		sub_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		sub_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		sub_bar.add_child(sub_lbl)
 	## 滚动区域
 	var scroll := ScrollContainer.new()
@@ -500,7 +601,17 @@ func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subt
 		cost_lbl.text = item.get("cost", "")
 		cost_lbl.add_theme_font_size_override("font_size", 11)
 		cost_lbl.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4, 1))
+		cost_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		cost_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text_vbox.add_child(cost_lbl)
+		if is_locked and item.has("lock_reason") and str(item["lock_reason"]).strip_edges() != "":
+			var reason_lbl := Label.new()
+			reason_lbl.text = item["lock_reason"]
+			reason_lbl.add_theme_font_size_override("font_size", 10)
+			reason_lbl.add_theme_color_override("font_color", Color(0.72, 0.22, 0.22, 1))
+			reason_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			reason_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			text_vbox.add_child(reason_lbl)
 		## 右侧标记
 		if is_current:
 			var cur_lbl := Label.new()
@@ -516,12 +627,6 @@ func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subt
 			lock_lbl.add_theme_color_override("font_color", Color(0.8, 0.3, 0.3, 1))
 			lock_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			row_hbox.add_child(lock_lbl)
-			if item.has("lock_reason"):
-				var reason_lbl := Label.new()
-				reason_lbl.text = item["lock_reason"]
-				reason_lbl.add_theme_font_size_override("font_size", 10)
-				reason_lbl.add_theme_color_override("font_color", Color(0.7, 0.3, 0.3, 1))
-				row_hbox.add_child(reason_lbl)
 		else:
 			var arrow_lbl := Label.new()
 			arrow_lbl.text = ">"
@@ -540,7 +645,7 @@ func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subt
 				child.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			row.gui_input.connect(func(event: InputEvent) -> void:
 				if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-					parent.visible = false
+					_set_layer_visible(parent, false)
 					captured_action.call()
 			)
 
@@ -560,14 +665,15 @@ func _trigger_city_fragment(location: String, bonus_text: String = "") -> void:
 		filtered = pool
 	var frag: Dictionary = filtered[randi() % filtered.size()]
 	var text: String = frag.get("text", "")
+	text = _strip_embedded_result_lines(text)
 	# 检查是否带选项
 	var choices: Array = frag.get("choices", [])
 	if choices.size() > 0:
 		var pages: Array = [text]
-		if bonus_text != "":
-			pages.append(bonus_text)
 		main_node().galgame.show_galgame_dialog(pages, func() -> void:
-			_show_fragment_choices(choices)
+			_show_result(bonus_text, func() -> void:
+				_show_fragment_choices(choices)
+			)
 		)
 		return
 	# 原有逻辑：无选项，直接应用效果
@@ -583,15 +689,12 @@ func _trigger_city_fragment(location: String, bonus_text: String = "") -> void:
 			effect_parts.append("[color=90EE90]%s+%d[/color]" % [cn, val])
 		else:
 			effect_parts.append("[color=E88080]%s%d[/color]" % [cn, val])
-	var pages: Array = [text]
 	var all_effects: String = bonus_text
 	if effect_parts.size() > 0:
 		if all_effects != "":
 			all_effects += "  "
 		all_effects += "  ".join(effect_parts)
-	if all_effects != "":
-		pages.append(all_effects)
-	main_node().galgame.show_galgame_dialog(pages)
+	_show_story_then_result(text, all_effects)
 
 
 ## 显示碎片选项按钮
@@ -688,14 +791,16 @@ func _on_fragment_choice(choice: Dictionary) -> void:
 	gal.left_dialog_text.visible = true
 	# 显示结果
 	var result: String = choice.get("result", "")
-	var pages: Array = []
-	if result != "":
-		pages.append(result)
 	var all_parts: Array = cost_parts + effect_parts
+	var result_text := ""
 	if all_parts.size() > 0:
-		pages.append("  ".join(all_parts))
-	if pages.size() > 0:
-		gal.show_galgame_dialog(pages)
+		result_text = "  ".join(all_parts)
+	if result != "":
+		gal.show_galgame_dialog([_strip_embedded_result_lines(result)], func() -> void:
+			_show_result(result_text)
+		)
+	else:
+		_show_result(result_text)
 
 ## 检查是否有已解锁的NPC可以在该地点重逢
 func _check_reunion(location: String) -> Dictionary:
@@ -727,27 +832,143 @@ func _handle_reunion(npc: Dictionary, location: String) -> void:
 	GameManager.modify_stat("sanity", 3)
 	GameManager.modify_stat("eq", 1)
 	GameManager.add_activity("社交", "在%s遇到了%s，聊了几句" % [loc_cn, npc_name])
-	main_node().show_message(text + "
-[color=90EE90]好感+3 情绪+3 情商+1[/color]", true)
+	_show_story_then_result(text, _format_result({"affection": 3, "sanity": 3, "eq": 1}))
 
 
 # ==================== 周末行动次数 ====================
 
-func _use_weekend_action() -> void:
-	GameManager.weekend_actions -= 1
+func _use_weekend_action(label: String = "weekend") -> bool:
+	if main_node().get("action_service") and main_node().action_service.has_method("spend_weekend_action"):
+		return main_node().action_service.spend_weekend_action(label)
+	if GameManager.weekend_actions <= 0:
+		main_node().show_message("本周行动次数已用完：" + label)
+		return false
+	GameManager.weekend_actions = maxi(GameManager.weekend_actions - 1, 0)
 	main_node()._update_weekend_ui()
 	GameManager.stats_updated.emit()
+	return true
 
 
 # ==================== 地点逻辑 ====================
 
+## 每个地点的访问次数（用于首次判断）
+var _loc_visit_count: Dictionary = {}
+
+func _location_config(location: String) -> Dictionary:
+	match location:
+		"library":
+			return {
+				"name": "图书馆",
+				"category": "提升",
+				"energy_req": 20,
+				"changes": {"energy": -20, "intellect": 3, "sanity": 5},
+				"fallback": "在图书馆读了一下午。",
+				"activity": "在图书馆读书，学识+3，情绪+5",
+			}
+		"gym":
+			return {
+				"name": "健身房",
+				"category": "提升",
+				"energy_req": 45,
+				"payment_cost": 200,
+				"payment_desc": "健身房消费",
+				"changes": {"energy": -45, "charm": 2, "sanity": 5, "max_energy": 1},
+				"fallback": "在健身房练到浑身发热。",
+				"activity": "去健身房挥汗如雨，颜值+2，情绪+5，精力上限+1",
+			}
+		"bar":
+			return {
+				"name": "高档酒吧",
+				"category": "社交",
+				"energy_req": 20,
+				"payment_cost": 500,
+				"payment_desc": "酒吧消费",
+				"req_stats": {"eq": 10},
+				"changes": {"energy": -20, "eq": 2, "sanity": 25},
+				"fallback": "在酒吧喝了一杯。",
+				"activity": "在酒吧喝了一杯，情商+2，情绪+25",
+			}
+		"home":
+			return {
+				"name": "宅家刷手机",
+				"category": "日常",
+				"energy_req": 10,
+				"changes": {"energy": -10, "sanity": 20},
+				"fallback": "宅家刷了一整天手机。",
+				"activity": "宅家刷了一整天手机，情绪+20",
+			}
+		"park":
+			return {
+				"name": "公园·深圳湾",
+				"category": "日常",
+				"once_per_week": true,
+				"changes": {"energy": 10, "sanity": 3},
+				"fallback": "在深圳湾吹了会儿海风。",
+				"activity": "在公园·深圳湾散步，精力+10，情绪+3",
+			}
+		"cafe":
+			return {
+				"name": "咖啡厅",
+				"category": "提升",
+				"energy_req": 5,
+				"payment_cost": 60,
+				"payment_desc": "咖啡厅消费",
+				"changes": {"energy": -5, "intellect": 2, "eq": 3},
+				"fallback": "在咖啡厅坐了一下午。",
+				"activity": "在咖啡厅学习，学识+2，情商+3",
+			}
+		"market":
+			return {
+				"name": "夜市·大排档",
+				"category": "美食",
+				"payment_cost": 100,
+				"payment_desc": "夜市消费",
+				"changes": {"sanity": 15},
+				"fallback": "在夜市吃了点热乎东西。",
+				"activity": "在夜市吃了夜宵，情绪+15",
+			}
+		"overtime":
+			var overtime_pay: int = randi() % 300 + 500
+			return {
+				"name": "公司加班",
+				"category": "工作",
+				"energy_req": 40,
+				"changes": {"energy": -40, "sanity": -35, "money": overtime_pay},
+				"fallback": "办公室只剩你一个人。你熬到深夜，终于把这版方案交了出去。加班费到账：%d。",
+				"format_value": overtime_pay,
+				"activity": "公司加班，赚了%d元加班费" % overtime_pay,
+			}
+	return {}
+
+
 ## 获取地点邂逅背景图路径
 func _get_encounter_bg(location: String) -> String:
+	if location == "gym":
+		_loc_visit_count["gym"] = _loc_visit_count.get("gym", 0) + 1
+		if _loc_visit_count["gym"] == 1:
+			return "res://Assets/Backgrounds/gym/Gym_bg_rain_morning.jpg"
+		var gym_bgs: Array = [
+			"res://Assets/Backgrounds/gym/Gym_bg_rain_morning.jpg",
+			"res://Assets/Backgrounds/gym/Gym_bg_rain_night.jpg",
+			"res://Assets/Backgrounds/gym/Gym_bg_sunny_morning.jpg",
+			"res://Assets/Backgrounds/gym/Gym_bg_sunny_noon.jpg",
+			"res://Assets/Backgrounds/gym/Gym_bg_sunny_evening.jpg",
+			"res://Assets/Backgrounds/gym/Gym_bg_hazy_afternoon.jpg",
+		]
+		return gym_bgs[randi() % gym_bgs.size()]
 	var bg_map: Dictionary = {
-		"gym": "res://Assets/Backgrounds/gym/Gym_bg_sunny1.jpg",
 		"library": "res://Assets/Backgrounds/library/Bookshop_bg_day1.png",
 	}
 	return bg_map.get(location, "")
+
+
+func _show_location_background(location: String) -> void:
+	var bg_path := _get_encounter_bg(location)
+	if bg_path != "":
+		main_node().galgame.show_location_bg(bg_path)
+	elif main_node().has_method("return_to_home_environment"):
+		main_node().return_to_home_environment("location_without_bg")
+
 
 ## 检查指定地点是否有NPC邂逅
 func _check_encounter(location: String) -> Dictionary:
@@ -767,47 +988,189 @@ func _check_encounter(location: String) -> Dictionary:
 		return npc
 	return {}
 
-## 处理邂逅场景（通用版）
-func _handle_encounter(npc: Dictionary, location: String, energy_cost: int, money_cost: int) -> void:
-	var enc: Dictionary = npc.get("encounter", {})
-	var npc_id: String = npc.get("id", "")
-	var npc_name: String = npc.get("name", "")
-	var req: Dictionary = enc.get("req_stats", {})
 
-	var all_ok: bool = true
+func _meets_encounter_requirements(enc: Dictionary) -> bool:
+	var req: Dictionary = enc.get("req_stats", {})
 	for stat_name in req:
 		var needed: int = int(req[stat_name])
 		var current: int = GameManager.get(stat_name) if stat_name != "money" else GameManager.money
 		if current < needed:
-			all_ok = false
-			break
+			return false
+	return true
 
-	if energy_cost > 0 and GameManager.energy < energy_cost:
-		main_node().show_message("精力不足（需%d）！" % energy_cost)
+
+func _merge_change_dicts(base: Dictionary, extra: Dictionary) -> Dictionary:
+	var merged := base.duplicate()
+	for key in extra:
+		var amount := int(extra[key])
+		if amount == 0:
+			continue
+		merged[key] = int(merged.get(key, 0)) + amount
+	for key in merged.keys():
+		if int(merged[key]) == 0:
+			merged.erase(key)
+	return merged
+
+
+func _apply_location_changes(changes: Dictionary) -> Dictionary:
+	var service = _action_service()
+	if service and service.has_method("apply_stat_changes"):
+		return service.apply_stat_changes(changes)
+	var applied: Dictionary = {}
+	for stat_name in changes:
+		var amount := int(changes[stat_name])
+		if amount == 0:
+			continue
+		match str(stat_name):
+			"max_energy":
+				GameManager.max_energy = maxi(GameManager.max_energy + amount, 1)
+				GameManager.energy = clampi(GameManager.energy, 0, GameManager.max_energy)
+			"weekend_actions":
+				GameManager.weekend_actions = clampi(GameManager.weekend_actions + amount, 0, GameManager.max_weekend_actions)
+			"credit_debt":
+				GameManager.huabei_debt = maxi(GameManager.huabei_debt + amount, 0)
+				GameManager.credit_debt = GameManager.huabei_debt
+			_:
+				GameManager.modify_stat(str(stat_name), amount)
+		applied[stat_name] = int(applied.get(stat_name, 0)) + amount
+	_refresh_main_ui()
+	return applied
+
+
+func _apply_npc_bonus_changes(npc_id: String, changes: Dictionary) -> Dictionary:
+	var applied: Dictionary = {}
+	for stat_name in changes:
+		var amount := int(changes[stat_name])
+		if amount == 0:
+			continue
+		if stat_name == "affection" and npc_id != "":
+			GameManager.get_npc_runtime(npc_id)["affection"] += amount
+		else:
+			_apply_location_changes({stat_name: amount})
+		applied[stat_name] = int(applied.get(stat_name, 0)) + amount
+	_refresh_main_ui()
+	return applied
+
+
+func _location_story(location: String, config: Dictionary) -> String:
+	var story := GameManager.get_location_narrative(location, config.get("fallback", ""))
+	if config.has("format_value"):
+		story = story % int(config["format_value"])
+	return story
+
+
+func _show_location_result_from_config(location: String, config: Dictionary, display_changes: Dictionary, after: Callable = Callable()) -> void:
+	_show_story_then_result(_location_story(location, config), _format_result(display_changes), after)
+
+
+func _can_start_location(location: String, config: Dictionary) -> bool:
+	if not is_instance_valid(_main):
+		return false
+	if main_node().current_phase != main_node().Phase.WEEKEND:
+		main_node().show_message("现在不是周末，不能安排地点行动。")
+		return false
+	if GameManager.weekend_actions <= 0:
+		main_node().show_message("本周行动次数已用完！")
+		return false
+	if bool(config.get("once_per_week", false)) and _park_visited_week == GameManager.turn_count:
+		main_node().show_message("这周已经去过深圳湾了，来回太远，下周再去吧。")
+		return false
+	var energy_req := int(config.get("energy_req", 0))
+	if energy_req > 0 and GameManager.energy < energy_req:
+		main_node().show_message("精力不足（需%d），无法前往%s。" % [energy_req, config.get("name", location)])
+		return false
+	var req_stats: Dictionary = config.get("req_stats", {})
+	for stat_name in req_stats:
+		var needed := int(req_stats[stat_name])
+		var current := int(GameManager.get(stat_name))
+		if current < needed:
+			var cn: String = GameManager.stat_names.get(stat_name, stat_name)
+			main_node().show_message("%s不足（需%d，当前%d），无法前往%s。" % [cn, needed, current, config.get("name", location)])
+			return false
+	return true
+
+
+func _start_location(location: String) -> void:
+	var config := _location_config(location)
+	if config.is_empty():
+		main_node().show_message("地点尚未配置：" + location)
 		return
-	if money_cost > 0 and GameManager.money < money_cost:
-		main_node().show_message("金钱不足（需%d）！" % money_cost)
+	if not _can_start_location(location, config):
+		return
+	_set_layer_visible(location_menu, false)
+	var payment_cost := int(config.get("payment_cost", 0))
+	if payment_cost > 0:
+		main_node().alipay.request_payment(
+			payment_cost,
+			config.get("payment_desc", config.get("name", "地点消费")),
+			config.get("category", "消费"),
+			func() -> void:
+				var payment_changes: Dictionary = main_node().alipay.get_last_payment_changes()
+				_run_location_after_payment(location, config, payment_changes)
+		)
+	else:
+		_run_location_after_payment(location, config, {})
+
+
+func _run_location_after_payment(location: String, config: Dictionary, payment_changes: Dictionary) -> void:
+	if not _use_weekend_action(config.get("name", location)):
+		return
+	if bool(config.get("once_per_week", false)):
+		_park_visited_week = GameManager.turn_count
+	_show_location_background(location)
+	var applied := _apply_location_changes(config.get("changes", {}))
+	var display_changes := _merge_change_dicts({"weekend_actions": -1}, payment_changes)
+	display_changes = _merge_change_dicts(display_changes, applied)
+
+	var encounter_npc := _check_encounter(location)
+	if encounter_npc.size() > 0:
+		_handle_encounter(encounter_npc, location, config, display_changes)
 		return
 
-	GameManager.modify_stat("energy", -energy_cost)
-	# 金钱仅在遭遇成功时扣除（失败时由 fallback 函数自行处理）
-	if all_ok and money_cost > 0:
-		GameManager.modify_stat("money", -money_cost)
+	var roll := randf()
+	if roll < 0.20:
+		var reunion := _check_reunion(location)
+		if reunion.size() > 0:
+			_show_reunion_result(reunion, location, display_changes)
+			GameManager.add_activity(config.get("category", "日常"), config.get("activity", config.get("name", location)))
+			return
+
+	if location == "overtime" and roll < 0.50:
+		var event := GameManager.roll_random_event("overtime")
+		if event.size() > 0:
+			main_node()._show_event(event, func() -> void:
+				_show_location_result_from_config(location, config, display_changes)
+			)
+			GameManager.add_activity(config.get("category", "日常"), config.get("activity", config.get("name", location)))
+			return
+
+	if roll < 0.50 and _city_fragments.get(location, []).size() > 0:
+		_trigger_city_fragment(location, _format_result(display_changes))
+	else:
+		_show_location_result_from_config(location, config, display_changes)
+	GameManager.add_activity(config.get("category", "日常"), config.get("activity", config.get("name", location)))
+
+
+func _show_reunion_result(npc: Dictionary, location: String, base_changes: Dictionary) -> void:
+	var npc_id: String = npc.get("id", "")
+	var npc_name: String = npc.get("name", "")
+	var loc_cn: String = {"gym": "健身房", "library": "图书馆", "bar": "酒吧", "home": "家里", "park": "公园", "cafe": "咖啡厅", "market": "夜市"}.get(location, location)
+	var template: String = _reunion_lines[randi() % _reunion_lines.size()]
+	var text: String = template.replace("{name}", npc_name).replace("{loc}", loc_cn)
+	var bonus := _apply_npc_bonus_changes(npc_id, {"affection": 3, "sanity": 3, "eq": 1})
+	_show_story_then_result(text, _format_result(_merge_change_dicts(base_changes, bonus)))
+	GameManager.add_activity("社交", "在%s遇到了%s，聊了几句" % [loc_cn, npc_name])
+
+
+## 处理邂逅场景（通用版）
+func _handle_encounter(npc: Dictionary, location: String, config: Dictionary, base_changes: Dictionary) -> void:
+	var enc: Dictionary = npc.get("encounter", {})
+	var npc_id: String = npc.get("id", "")
+	var npc_name: String = npc.get("name", "")
 	_encounter_cooldowns[npc_id] = GameManager.turn_count + 99
-	location_menu.visible = false
-
-	# 邂逅成功时立即将NPC加入微信联系人（不再等后续流程）
-	if all_ok and npc_id != "" and not GameManager.npcs.has(npc_id):
-		GameManager.unlock_npc(npc_id)
-
-	if all_ok:
-		var pass_changes: Dictionary = enc.get("pass_stat_changes", {})
-		for stat_name in pass_changes:
-			if stat_name == "affection":
-				GameManager.get_npc_runtime(npc_id)["affection"] += int(pass_changes[stat_name])
-			else:
-				GameManager.modify_stat(stat_name, int(pass_changes[stat_name]))
-
+	if _meets_encounter_requirements(enc):
+		var pass_changes := _apply_npc_bonus_changes(npc_id, enc.get("pass_stat_changes", {}))
+		var display_changes := _merge_change_dicts(base_changes, pass_changes)
 		var pages: Array = []
 		for line in enc.get("scene_lines", []):
 			pages.append(line)
@@ -818,11 +1181,13 @@ func _handle_encounter(npc: Dictionary, location: String, energy_cost: int, mone
 		if wechat_req.size() > 0:
 			main_node().galgame._gal_encounter_data = enc
 			main_node().galgame._gal_npc_id = npc_id
-			main_node().galgame.show_galgame_dialog(pages, main_node().galgame.start_wechat_request_phase, _get_encounter_bg(location))
+			main_node().galgame.show_galgame_dialog(pages, func() -> void:
+				_show_result(_format_result(display_changes), main_node().galgame.start_wechat_request_phase)
+			)
 		else:
 			main_node().galgame.show_galgame_dialog(pages, func() -> void:
-				main_node().show_message("邂逅了%s，但没有进一步发展。" % npc_name, true)
-			, _get_encounter_bg(location))
+				_show_result(_format_result(display_changes))
+			)
 		GameManager.add_activity("社交", "在%s邂逅了%s" % [location, npc_name])
 	else:
 		var fail_pages: Array = []
@@ -833,377 +1198,95 @@ func _handle_encounter(npc: Dictionary, location: String, energy_cost: int, mone
 		fail_pages.append("（你的属性不满足邂逅条件，擦肩而过...）")
 		_encounter_cooldowns[npc_id] = GameManager.turn_count + 4
 		main_node().galgame.show_galgame_dialog(fail_pages, func() -> void:
-			if location == "gym":
-				_normal_gym()
-			elif location == "bar":
-				_normal_bar()
-			else:
-				main_node().show_message("度过了平静的一天。", true)
-		, _get_encounter_bg(location))
+			_show_location_result_from_config(location, config, base_changes)
+		)
+
 
 func _on_loc_library() -> void:
-	if GameManager.energy < 20:
-		main_node().show_message("精力不足，无法去图书馆！")
-		return
-	location_menu.visible = false
-	_use_weekend_action()
-	# 首次邂逅确定性触发
-	var encounter_npc: Dictionary = _check_encounter("library")
-	if encounter_npc.size() > 0:
-		_handle_encounter(encounter_npc, "library", 20, 0)
-		return
-	# 随机内容
-	var roll := randf()
-	if roll < 0.20:
-		# 尝试重逢
-		var reunion = _check_reunion("library")
-		if reunion.size() > 0:
-			GameManager.modify_stat("energy", -20)
-			_handle_reunion(reunion, "library")
-			GameManager.modify_stat("intellect", 3)
-			GameManager.modify_stat("sanity", 5)
-			GameManager.add_activity("提升", "在图书馆读书并遇到了熟人")
-			return
-		# 没遇到NPC，正常读书
-		GameManager.modify_stat("energy", -20)
-		GameManager.modify_stat("intellect", 3)
-		GameManager.modify_stat("sanity", 5)
-		main_node().show_message(GameManager.get_location_narrative("library", "[color=90EE90]学识+3 情绪+5[/color]"), true)
-		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
-		return
-	# 正常活动
-	GameManager.modify_stat("energy", -20)
-	GameManager.modify_stat("intellect", 3)
-	GameManager.modify_stat("sanity", 5)
-	if roll < 0.50:
-		# 30%: 城市碎片
-		_trigger_city_fragment("library", "[color=90EE90]学识+3 情绪+5[/color]")
-		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
-	else:
-		# 50%: 纯正常
-		main_node().show_message(GameManager.get_location_narrative("library", "[color=90EE90]学识+3 情绪+5[/color]"), true)
-		GameManager.add_activity("提升", "在图书馆读书，学识+3，情绪+5")
+	_start_location("library")
 
 func _on_loc_gym() -> void:
-	if GameManager.energy < 45:
-		main_node().show_message("精力不足（需45），无法去健身房！")
-		return
-	location_menu.visible = false
-	_use_weekend_action()
-	# 首次邂逅确定性触发
-	var encounter_npc = _check_encounter("gym")
-	if encounter_npc.size() > 0:
-		main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
-			_handle_encounter(encounter_npc, "gym", 45, 0)
-		)
-		return
-	# 随机内容
-	var roll := randf()
-	if roll < 0.20:
-		var reunion = _check_reunion("gym")
-		if reunion.size() > 0:
-			main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
-				GameManager.modify_stat("energy", -45)
-				_handle_reunion(reunion, "gym")
-				GameManager.modify_stat("charm", 2)
-				GameManager.modify_stat("sanity", 5)
-				GameManager.max_energy += 1
-				GameManager.add_activity("提升", "去健身房挥汗如雨！颜值+2，精力上限+1（当前%d）" % GameManager.max_energy)
-			)
-			return
-		# 没遇到NPC，正常健身
-		_normal_gym()
-		return
-	# 正常活动（30%碎片 / 50%纯正常）
-	if roll < 0.50:
-		main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
-			GameManager.modify_stat("energy", -45)
-			GameManager.modify_stat("charm", 2)
-			GameManager.modify_stat("sanity", 5)
-			GameManager.max_energy += 1
-			_trigger_city_fragment("gym", "[color=90EE90]颜值+2 情绪+5 精力上限+1[/color]")
-			GameManager.add_activity("提升", "去健身房挥汗如雨！颜值+2，情绪+5，精力上限永久+1（当前%d）" % GameManager.max_energy)
-		)
-	else:
-		_normal_gym()
+	_start_location("gym")
 
 func _normal_gym() -> void:
-	main_node().alipay.request_payment(200, "健身房消费", "提升", func() -> void:
-		GameManager.modify_stat("energy", -45)
-		GameManager.modify_stat("charm", 2)
-		GameManager.modify_stat("sanity", 5)
-		GameManager.max_energy += 1
-		var _n := GameManager.get_location_narrative("gym", "[color=90EE90]颜值+2 情绪+5 精力上限+1[/color]")
-		main_node().show_message(_n, true)
-		GameManager.add_activity("提升", "去健身房挥汗如雨！颜值+2，精力上限+1")
-	)
+	_start_location("gym")
 
 func _on_loc_bar() -> void:
-	if GameManager.energy < 20:
-		main_node().show_message("精力不足，无法去酒吧！")
-		return
-	if GameManager.eq < 10:
-		main_node().show_message("情商太低（需>=10），在酒吧也只会尴尬地坐着！")
-		return
-	location_menu.visible = false
-	_use_weekend_action()
-	# 首次邂逅确定性触发
-	var encounter_npc = _check_encounter("bar")
-	if encounter_npc.size() > 0:
-		_handle_encounter(encounter_npc, "bar", 20, 500)
-		return
-	# 随机内容
-	var roll := randf()
-	if roll < 0.20:
-		var reunion = _check_reunion("bar")
-		if reunion.size() > 0:
-			main_node().alipay.request_payment(500, "酒吧消费", "社交", func() -> void:
-				GameManager.modify_stat("energy", -20)
-				_handle_reunion(reunion, "bar")
-				GameManager.modify_stat("eq", 2)
-				GameManager.modify_stat("sanity", 25)
-				GameManager.add_activity("社交", "在酒吧喝酒并遇到了熟人")
-			)
-			return
-		# 没遇到NPC，正常喝酒
-		_normal_bar()
-		return
-	# 正常活动（30%碎片 / 50%纯正常）
-	if roll < 0.50:
-		main_node().alipay.request_payment(500, "酒吧消费", "社交", func() -> void:
-			GameManager.modify_stat("energy", -20)
-			GameManager.modify_stat("eq", 2)
-			GameManager.modify_stat("sanity", 25)
-			_trigger_city_fragment("bar", "[color=90EE90]情商+2 情绪+25[/color]")
-			GameManager.add_activity("社交", "在酒吧喝了一杯，感觉心情大好！")
-		)
-	else:
-		_normal_bar()
+	_start_location("bar")
 
 func _normal_bar() -> void:
-	main_node().alipay.request_payment(500, "酒吧消费", "社交", func() -> void:
-		GameManager.modify_stat("energy", -20)
-		GameManager.modify_stat("eq", 2)
-		GameManager.modify_stat("sanity", 25)
-		var _n := GameManager.get_location_narrative("bar", "[color=90EE90]情商+2 情绪+25[/color]")
-		main_node().show_message(_n, true)
-		GameManager.add_activity("社交", "在酒吧喝了一杯，心情大好！")
-	)
+	_start_location("bar")
 
 func _on_loc_home() -> void:
-	_use_weekend_action()
-	GameManager.modify_stat("energy", -10)
-	location_menu.visible = false
-	var roll := randf()
-	if roll < 0.30:
-		# 30%: 城市碎片
-		GameManager.modify_stat("sanity", 20)
-		_trigger_city_fragment("home", "[color=90EE90]情绪+20[/color]")
-		GameManager.add_activity("日常", "宅家刷了一整天手机")
-	else:
-		# 70%: 正常
-		GameManager.modify_stat("sanity", 20)
-		main_node().float_stat("+20 情绪", 20, main_node().get_global_mouse_position())
-		main_node().show_message(GameManager.get_location_narrative("home", "[color=90EE90]情绪+20[/color]"), true)
-		GameManager.add_activity("日常", "宅家刷了一整天手机")
-
-
+	_start_location("home")
 
 func _on_loc_park() -> void:
-	if _park_visited_week == GameManager.turn_count:
-		main_node().show_message("这周已经去过深圳湾了，来回太远，下周再去吧。")
-		return
-	location_menu.visible = false
-	_use_weekend_action()
-	# 首次邂逅确定性触发
-	var encounter_npc = _check_encounter("park")
-	if encounter_npc.size() > 0:
-		_park_visited_week = GameManager.turn_count
-		_handle_encounter(encounter_npc, "park", 0, 0)
-		return
-	# 随机内容
-	_park_visited_week = GameManager.turn_count
-	var roll := randf()
-	if roll < 0.20:
-		var reunion = _check_reunion("park")
-		if reunion.size() > 0:
-			_park_visited_week = GameManager.turn_count
-			GameManager.modify_stat("energy", 10)
-			GameManager.modify_stat("sanity", 3)
-			_handle_reunion(reunion, "park")
-			GameManager.add_activity("日常", "在公园散步并遇到了熟人")
-			return
-		# 没遇到NPC，正常散步
-		_park_visited_week = GameManager.turn_count
-		GameManager.modify_stat("energy", 10)
-		GameManager.modify_stat("sanity", 3)
-		main_node().show_message(GameManager.get_location_narrative("park", "[color=90EE90]精力+10 情绪+3[/color]"), true)
-		GameManager.add_activity("日常", "在公园·深圳湾散步，精力+10，情绪+3")
-		return
-	_park_visited_week = GameManager.turn_count
-	GameManager.modify_stat("energy", 10)
-	GameManager.modify_stat("sanity", 3)
-	if roll < 0.50:
-		_trigger_city_fragment("park", "[color=90EE90]精力+10 情绪+3[/color]")
-		GameManager.add_activity("日常", "在公园·深圳湾散步，精力+10，情绪+3")
-	else:
-		main_node().show_message(GameManager.get_location_narrative("park", "[color=90EE90]精力+10 情绪+3[/color]"), true)
-		GameManager.add_activity("日常", "在公园·深圳湾散步，精力+10，情绪+3")
+	_start_location("park")
 
 func _on_loc_cafe() -> void:
-	if GameManager.energy < 5:
-		main_node().show_message("精力不足（需5），连去咖啡厅的力气都没有了！")
-		return
-	location_menu.visible = false
-	_use_weekend_action()
-	# 首次邂逅确定性触发
-	var encounter_npc = _check_encounter("cafe")
-	if encounter_npc.size() > 0:
-		_handle_encounter(encounter_npc, "cafe", 5, 60)
-		return
-	# 随机内容
-	var roll := randf()
-	if roll < 0.20:
-		var reunion = _check_reunion("cafe")
-		if reunion.size() > 0:
-			main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
-				GameManager.modify_stat("energy", -5)
-				_handle_reunion(reunion, "cafe")
-				GameManager.modify_stat("intellect", 2)
-				GameManager.modify_stat("eq", 3)
-				GameManager.add_activity("提升", "在咖啡厅学习并遇到了熟人")
-			)
-			return
-		# 没遇到NPC，正常学习
-		main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
-			GameManager.modify_stat("energy", -5)
-			GameManager.modify_stat("intellect", 2)
-			GameManager.modify_stat("eq", 3)
-			main_node().show_message(GameManager.get_location_narrative("cafe", "[color=90EE90]学识+2 情商+3[/color]"), true)
-			GameManager.add_activity("提升", "在咖啡厅学习，学识+2，情商+3")
-		)
-		return
-	if roll < 0.50:
-		main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
-			GameManager.modify_stat("energy", -5)
-			GameManager.modify_stat("intellect", 2)
-			GameManager.modify_stat("eq", 3)
-			_trigger_city_fragment("cafe", "[color=90EE90]学识+2 情商+3[/color]")
-			GameManager.add_activity("提升", "在咖啡厅学习，学识+2，情商+3")
-		)
-	else:
-		main_node().alipay.request_payment(60, "咖啡厅消费", "提升", func() -> void:
-			GameManager.modify_stat("energy", -5)
-			GameManager.modify_stat("intellect", 2)
-			GameManager.modify_stat("eq", 3)
-			main_node().show_message(GameManager.get_location_narrative("cafe", "[color=90EE90]学识+2 情商+3[/color]"), true)
-			GameManager.add_activity("提升", "在咖啡厅学习，学识+2，情商+3")
-		)
+	_start_location("cafe")
 
 func _on_loc_market() -> void:
-	location_menu.visible = false
-	_use_weekend_action()
-	# 首次邂逅确定性触发
-	var encounter_npc = _check_encounter("market")
-	if encounter_npc.size() > 0:
-		_handle_encounter(encounter_npc, "market", 0, 100)
-		return
-	# 随机内容
-	var roll := randf()
-	if roll < 0.20:
-		var reunion = _check_reunion("market")
-		if reunion.size() > 0:
-			main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
-				_handle_reunion(reunion, "market")
-				GameManager.modify_stat("sanity", 15)
-				GameManager.add_activity("美食", "在夜市吃夜宵并遇到了熟人")
-			)
-			return
-		# 没遇到NPC，正常逛夜市
-		main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
-			GameManager.modify_stat("sanity", 15)
-			main_node().show_message(GameManager.get_location_narrative("market", "[color=90EE90]情绪+15[/color]"), true)
-			GameManager.add_activity("美食", "在夜市吃了夜宵，情绪+15")
-		)
-		return
-	if roll < 0.50:
-		main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
-			GameManager.modify_stat("sanity", 15)
-			_trigger_city_fragment("market", "[color=90EE90]情绪+15[/color]")
-			GameManager.add_activity("美食", "在夜市吃了夜宵，情绪+15")
-		)
-	else:
-		main_node().alipay.request_payment(100, "夜市消费", "美食", func() -> void:
-			GameManager.modify_stat("sanity", 15)
-			main_node().show_message(GameManager.get_location_narrative("market", "[color=90EE90]情绪+15[/color]"), true)
-			GameManager.add_activity("美食", "在夜市吃了夜宵，情绪+15")
-		)
+	_start_location("market")
 
 func _on_loc_overtime() -> void:
-	if GameManager.energy < 40:
-		main_node().show_message("精力不足（需40），加不动班了！")
-		return
-	location_menu.visible = false
-	_use_weekend_action()
-	GameManager.modify_stat("energy", -40)
-	GameManager.modify_stat("sanity", -35)
-	var overtime_pay: int = randi() % 300 + 500
-	GameManager.modify_stat("money", overtime_pay)
-	var roll := randf()
-	if roll < 0.20:
-		var event := GameManager.roll_random_event("overtime")
-		if event.size() > 0:
-			main_node()._show_event(event, func() -> void:
-				main_node().show_message(GameManager.get_location_narrative("overtime", "") % overtime_pay, true)
-			)
-			GameManager.add_activity("工作", "公司加班，赚了%d元加班费" % overtime_pay)
-			return
-	main_node().show_message(GameManager.get_location_narrative("overtime", "") % overtime_pay, true)
-	GameManager.add_activity("工作", "公司加班，赚了%d元加班费" % overtime_pay)
-
-
-func _visit_location(context: String, success_msg: String) -> void:
-	location_menu.visible = false
-	var event := GameManager.roll_random_event(context)
-	if event.size() > 0:
-		main_node()._show_event(event, func() -> void: pass)
-	else:
-		main_node().show_message(success_msg, true)
+	_start_location("overtime")
 
 # ==================== 饮食系统 ====================
 
 func _on_food_low() -> void:
-	GameManager.monthly_food_cost += 300
-	GameManager.modify_stat("sanity", -5)
+	btn_food_low.disabled = true
+	btn_food_mid.disabled = true
+	btn_food_high.disabled = true
+	var changes: Dictionary = {}
+	if main_node().get("action_service") and main_node().action_service.has_method("add_monthly_food"):
+		changes = main_node().action_service.add_monthly_food(300, "low_food", -5, 0)
+	else:
+		GameManager.monthly_food_cost += 300
+		GameManager.modify_stat("sanity", -5)
+		changes = {"monthly_food_cost": 300, "sanity": -5}
 	GameManager.add_activity("日常", "吃了挂逼生存套餐（沙县/拉面），花费300元")
 	GameManager.consecutive_poor_food += 1
 	GameManager.consecutive_overtime = 0
-	main_node().float_stat("+300 餐饮", -300, main_node().get_global_mouse_position())
 	# 连续吃土死法检查
 	var death: Dictionary = GameManager.check_behavior_death()
 	if death.size() > 0:
 		GameManager.game_over.emit(death["title"], death["desc"])
 		return
-	_unlock_work_buttons()
+	_show_action_result("这周先靠沙县和拉面撑过去，把钱省下来。", changes, Callable(self, "_unlock_work_buttons"))
 
 func _on_food_mid() -> void:
-	GameManager.monthly_food_cost += 800
-	GameManager.modify_stat("energy", 10)
+	btn_food_low.disabled = true
+	btn_food_mid.disabled = true
+	btn_food_high.disabled = true
+	var changes: Dictionary = {}
+	if main_node().get("action_service") and main_node().action_service.has_method("add_monthly_food"):
+		changes = main_node().action_service.add_monthly_food(800, "mid_food", 0, 10)
+	else:
+		GameManager.monthly_food_cost += 800
+		GameManager.modify_stat("energy", 10)
+		changes = {"monthly_food_cost": 800, "energy": 10}
 	GameManager.add_activity("日常", "吃了打工人标配（肯德基/火锅），花费800元")
 	GameManager.consecutive_poor_food = 0
 	GameManager.consecutive_overtime = 0
-	main_node().float_stat("+800 餐饮 +10 精力", -800, main_node().get_global_mouse_position())
-	_unlock_work_buttons()
+	_show_action_result("你按打工人标配解决了本周吃饭问题。", changes, Callable(self, "_unlock_work_buttons"))
 
 func _on_food_high() -> void:
-	GameManager.monthly_food_cost += 2000
-	GameManager.modify_stat("sanity", 20)
+	btn_food_low.disabled = true
+	btn_food_mid.disabled = true
+	btn_food_high.disabled = true
+	var changes: Dictionary = {}
+	if main_node().get("action_service") and main_node().action_service.has_method("add_monthly_food"):
+		changes = main_node().action_service.add_monthly_food(2000, "high_food", 20, 15)
+	else:
+		GameManager.monthly_food_cost += 2000
+		GameManager.modify_stat("sanity", 20)
+		GameManager.modify_stat("energy", 15)
+		changes = {"monthly_food_cost": 2000, "sanity": 20, "energy": 15}
 	GameManager.add_activity("日常", "吃了小资高档（日料/西餐），花费2000元")
-	GameManager.modify_stat("energy", 15)
 	GameManager.consecutive_poor_food = 0
 	GameManager.consecutive_overtime = 0
-	main_node().float_stat("+2000 餐饮 +20 情绪 +15 精力", -2000, main_node().get_global_mouse_position())
-	_unlock_work_buttons()
+	_show_action_result("你决定这周吃好一点，至少别把自己逼得太紧。", changes, Callable(self, "_unlock_work_buttons"))
 
 func _unlock_work_buttons() -> void:
 	btn_food_low.disabled = true
@@ -1269,6 +1352,9 @@ func _on_close_zodiac() -> void:
 # ==================== 贝壳找房App ====================
 
 func _on_house_village() -> void:
+	if GameManager.money < 3000:
+		main_node().show_message("余额不足，城中村押金需要 3000 元。")
+		return
 	GameManager.modify_stat("money", -3000)
 	GameManager.base_rent = 1500
 	GameManager.housing_level = 0
@@ -1277,6 +1363,9 @@ func _on_house_village() -> void:
 	main_node().show_message("搬家成功！押金 3000 已扣，下月开始交房租 1500。")
 
 func _on_house_apartment() -> void:
+	if GameManager.money < 8000:
+		main_node().show_message("余额不足，精装公寓押金需要 8000 元。")
+		return
 	GameManager.modify_stat("money", -8000)
 	GameManager.base_rent = 4000
 	GameManager.housing_level = 1
@@ -1286,6 +1375,9 @@ func _on_house_apartment() -> void:
 	main_node().show_message("搬家成功！押金 8000 已扣，精装公寓每周恢复10情绪，颜值+5！")
 
 func _on_house_luxury() -> void:
+	if GameManager.money < 24000:
+		main_node().show_message("余额不足，CBD大平层押金需要 24000 元。")
+		return
 	GameManager.modify_stat("money", -24000)
 	GameManager.base_rent = 12000
 	GameManager.housing_level = 2
@@ -1342,39 +1434,191 @@ func _on_close_dating() -> void:
 
 # ==================== BOSS弯聘App ====================
 
+func _get_job_name(level: int = GameManager.job_level) -> String:
+	var names := ["初级行政", "新媒体运营", "大客户经理"]
+	return names[clampi(level, 0, names.size() - 1)]
+
+
+func _get_degree_name(level: int = GameManager.degree) -> String:
+	var names := ["大专", "成人本科"]
+	return names[clampi(level, 0, names.size() - 1)]
+
+
+func _is_weekend_phase() -> bool:
+	if not is_instance_valid(_main):
+		return false
+	return main_node().current_phase == main_node().Phase.WEEKEND
+
+
+func _career_action_lock_reason(energy_cost: int) -> String:
+	if not _is_weekend_phase():
+		return "工作日只能查看，周末再安排"
+	if GameManager.weekend_actions <= 0:
+		return "本周行动次数已用完"
+	if GameManager.energy < energy_cost:
+		return "精力不足：需要%d，当前%d" % [energy_cost, GameManager.energy]
+	return ""
+
+
+func _spend_career_action(label: String, energy_cost: int, sanity_cost: int) -> bool:
+	var reason := _career_action_lock_reason(energy_cost)
+	if reason != "":
+		main_node().show_message(reason)
+		return false
+	var spent := false
+	if main_node().get("action_service") and main_node().action_service.has_method("spend_weekend_action"):
+		spent = main_node().action_service.spend_weekend_action(label)
+	else:
+		if GameManager.weekend_actions <= 0:
+			main_node().show_message("周末行动次数不足：" + label)
+			return false
+		GameManager.weekend_actions = maxi(GameManager.weekend_actions - 1, 0)
+		spent = true
+		if main_node().has_method("_update_weekend_ui"):
+			main_node()._update_weekend_ui()
+	if not spent:
+		return false
+	GameManager.modify_stat("energy", -energy_cost)
+	if sanity_cost > 0:
+		GameManager.modify_stat("sanity", -sanity_cost)
+	return true
+
+
+func _media_lock_reason() -> String:
+	if not _is_weekend_phase():
+		return "工作日只能查看，周末才能面试"
+	if GameManager.weekend_actions <= 0:
+		return "本周行动次数已用完"
+	if GameManager.energy < 15:
+		return "精力需15（当前%d）" % GameManager.energy
+	if GameManager.degree < 1:
+		return "需成人本科：微信找尚德夜校王老师上课（%d/12）" % GameManager.night_school_progress
+	return ""
+
+
+func _client_lock_reason() -> String:
+	var missing: Array = []
+	if not _is_weekend_phase():
+		missing.append("周末面试")
+	if GameManager.weekend_actions <= 0:
+		missing.append("行动次数")
+	if GameManager.energy < 20:
+		missing.append("精力20(当前%d)" % GameManager.energy)
+	if GameManager.job_level < 1:
+		missing.append("新媒体运营履历")
+	if GameManager.degree < 1:
+		missing.append("成人本科")
+	if GameManager.age >= 30:
+		missing.append("年龄30岁以下")
+	if missing.is_empty():
+		return ""
+	return "缺：" + "、".join(missing)
+
+
 func _on_app_job() -> void:
 	_close_all_menus()
 	for child in job_menu.get_children():
 		child.queue_free()
-	var degree_names := ["大专", "成人本科"]
-	var job_names := ["初级行政", "新媒体运营", "大客户经理"]
-	var status := "职位：%s | 学历：%s | 年龄：%d" % [job_names[GameManager.job_level], degree_names[min(GameManager.degree, 1)], GameManager.age]
-	var items := [
-		{"name": "初级行政", "icon_color": Color(0.3, 0.65, 0.35), "cost": "底薪 800~2500/周", "action": _on_job_admin, "current": GameManager.job_level == 0},
-		{"name": "新媒体运营", "icon_color": Color(0.2, 0.55, 0.9), "cost": "底薪 2000~6000/周", "action": _on_job_media,
-			"locked": GameManager.intellect < 30, "current": GameManager.job_level == 1,
-			"lock_reason": "学识需达到 30 (当前 %d)" % GameManager.intellect},
-		{"name": "大客户经理", "icon_color": Color(0.9, 0.7, 0.15), "cost": "底薪 4000~12000/周", "action": _on_job_client,
-			"locked": GameManager.degree < 1 or GameManager.age >= 30, "current": GameManager.job_level == 2,
-			"lock_reason": "需本科学历+30岁以下" if GameManager.degree < 1 else "HR：本岗位倾向培养30岁以下年轻人"},
+	var phase_text := "周末行动：%d/%d" % [GameManager.weekend_actions, GameManager.max_weekend_actions] if _is_weekend_phase() else "工作日仅查看"
+	var status := "职位：%s | 学历：%s | 夜校：%d/12 | 年龄：%d | %s" % [
+		_get_job_name(),
+		_get_degree_name(),
+		GameManager.night_school_progress,
+		GameManager.age,
+		phase_text,
 	]
+	var items: Array = []
+
+	var admin_item := {
+		"name": "初级行政",
+		"icon_color": Color(0.3, 0.65, 0.35),
+		"cost": "底薪 800/1500/2500。低门槛、低天花板、低风险。",
+		"current": GameManager.job_level == 0,
+	}
+	if GameManager.job_level != 0:
+		if _is_weekend_phase():
+			admin_item["action"] = _on_job_admin
+		else:
+			admin_item["locked"] = true
+			admin_item["lock_reason"] = "周末再处理离职/降岗"
+	items.append(admin_item)
+
+	var media_reason := _media_lock_reason()
+	var media_item := {
+		"name": "投递：新媒体运营",
+		"icon_color": Color(0.2, 0.55, 0.9),
+		"cost": "面试行动-1 | 精力-15 情绪-10 | 底薪 2000/4000/6000。要求：成人本科。",
+		"current": GameManager.job_level == 1,
+		"locked": media_reason != "" and GameManager.job_level != 1,
+		"lock_reason": media_reason,
+	}
+	if GameManager.job_level != 1 and media_reason == "":
+		media_item["action"] = _on_job_media
+	items.append(media_item)
+
+	var client_reason := _client_lock_reason()
+	var client_item := {
+		"name": "投递：大客户经理",
+		"icon_color": Color(0.9, 0.7, 0.15),
+		"cost": "面试行动-1 | 精力-20 情绪-15 | 底薪 4000/8000/12000。要求：新媒体履历、成人本科、30岁以下。",
+		"current": GameManager.job_level == 2,
+		"locked": client_reason != "" and GameManager.job_level != 2,
+		"lock_reason": client_reason,
+	}
+	if GameManager.job_level != 2 and client_reason == "":
+		client_item["action"] = _on_job_client
+	items.append(client_item)
+
 	_build_app_overlay(job_menu, "BOSS弯聘", Color(0.2, 0.55, 0.9, 1), status, items)
-	job_menu.visible = true
+	_set_layer_visible(job_menu, true)
 
 func _on_job_admin() -> void:
+	if GameManager.job_level == 0:
+		main_node().show_message("你已经在初级行政岗位上。")
+		_on_app_job()
+		return
 	GameManager.job_level = 0
-	main_node().float_stat("入职初级行政", 800, main_node().get_global_mouse_position())
-	main_node().show_message("已入职初级行政，底薪 800~2500/周。")
+	GameManager.add_activity("工作", "调整回初级行政岗位，收入下降但压力也更低。")
+	_show_action_result("已转回初级行政，底薪 800/1500/2500。", {}, func() -> void:
+		_refresh_main_ui()
+		_on_app_job()
+	)
 
 func _on_job_media() -> void:
+	if GameManager.job_level == 1:
+		main_node().show_message("你已经是新媒体运营。")
+		_on_app_job()
+		return
+	var reason := _media_lock_reason()
+	if reason != "":
+		main_node().show_message(reason)
+		return
+	if not _spend_career_action("新媒体运营面试", 15, 10):
+		return
 	GameManager.job_level = 1
-	main_node().float_stat("跳槽成功！底薪涨至 4000", 4000, main_node().get_global_mouse_position())
-	main_node().show_message("跳槽成功！新媒体运营底薪 2000~6000/周。")
+	GameManager.add_activity("工作", "通过新媒体运营面试，职位提升。")
+	_show_action_result("跳槽成功。下周开始，新媒体运营底薪 2000/4000/6000。", {"weekend_actions": -1, "energy": -15, "sanity": -10}, func() -> void:
+		_refresh_main_ui()
+		_on_app_job()
+	)
 
 func _on_job_client() -> void:
+	if GameManager.job_level == 2:
+		main_node().show_message("你已经是大客户经理。")
+		_on_app_job()
+		return
+	var reason := _client_lock_reason()
+	if reason != "":
+		main_node().show_message(reason)
+		return
+	if not _spend_career_action("大客户经理面试", 20, 15):
+		return
 	GameManager.job_level = 2
-	main_node().float_stat("成功跨越阶层！底薪涨至 8000", 8000, main_node().get_global_mouse_position())
-	main_node().show_message("成功跨越阶层！大客户经理底薪 4000~12000/周。")
+	GameManager.add_activity("工作", "拿下大客户经理岗位，正式进入高薪高压轨道。")
+	_show_action_result("面试通过。大客户经理底薪 4000/8000/12000，但从下周开始，职场风险也会更重。", {"weekend_actions": -1, "energy": -20, "sanity": -15}, func() -> void:
+		_refresh_main_ui()
+		_on_app_job()
+	)
 
 
 # ==================== 日记本 UI ====================
