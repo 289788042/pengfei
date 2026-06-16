@@ -30,6 +30,8 @@ var _gal_choice_container: VBoxContainer = null
 var _gal_fading_out: bool = false
 var _gal_pending_end_callback: Callable = Callable()
 var _gal_pending_has_encounter: bool = false
+var _location_bg_hold_count: int = 0
+var _phone_dim_tween: Tween = null
 
 ## 箭头指示器
 var _arrow_label: Label = null
@@ -73,6 +75,8 @@ func dispose() -> void:
 		_ambient_tween.kill()
 	if _bg_fade_tween and _bg_fade_tween.is_valid():
 		_bg_fade_tween.kill()
+	if _phone_dim_tween and _phone_dim_tween.is_valid():
+		_phone_dim_tween.kill()
 	if is_instance_valid(_beep_player):
 		_beep_player.stop()
 		_beep_player.stream = null
@@ -125,6 +129,7 @@ func show_message(text: String, galgame: bool = false) -> void:
 	if _gal_tween and _gal_tween.is_valid():
 		_gal_tween.kill()
 		_gal_typing = false
+	_clear_external_choice_containers()
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	left_dialog_text.visible = true
@@ -144,14 +149,14 @@ func _msg_type_char() -> void:
 		dialog_tween = main_node().create_tween()
 		dialog_tween.tween_interval(3.0)
 		dialog_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.5)
-		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; clear_location_bg())
+		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; _maybe_clear_location_bg())
 		return
 	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	_gal_char_idx += 1
 	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	left_dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
 	if _beep_player and _beep_player.stream and _gal_char_idx % 2 == 0:
-		var ch: String = _gal_full_text[_gal_char_idx - 1]
+		var ch: String = _gal_full_text.substr(_gal_char_idx - 1, 1)
 		if ch != " " and ch != "
 " and ch != "," and ch != "." and ch != "!" and ch != "?":
 			_beep_player.pitch_scale = _beep_pitch_base
@@ -178,7 +183,7 @@ func _skip_typing() -> void:
 		dialog_tween = main_node().create_tween()
 		dialog_tween.tween_interval(3.0)
 		dialog_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.5)
-		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; clear_location_bg())
+		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; _maybe_clear_location_bg())
 	else:
 		_start_arrow_anim()
 
@@ -205,12 +210,53 @@ func dismiss_dialog() -> void:
 		cb.call()
 
 
+func force_clear_dialog() -> void:
+	if dialog_tween and dialog_tween.is_running():
+		dialog_tween.kill()
+	if _gal_tween and _gal_tween.is_valid():
+		_gal_tween.kill()
+	if _arrow_tween and _arrow_tween.is_valid():
+		_arrow_tween.kill()
+	_arrow_tween = null
+	_gal_typing = false
+	_gal_pages.clear()
+	_gal_page_idx = 0
+	_gal_char_idx = 0
+	_gal_full_text = ""
+	_gal_on_complete = Callable()
+	_gal_encounter_data.clear()
+	_gal_npc_id = ""
+	_gal_pending_end_callback = Callable()
+	_gal_pending_has_encounter = false
+	_gal_fading_out = false
+	_is_auto_dismiss = false
+	if is_instance_valid(_gal_choice_container):
+		_gal_choice_container.queue_free()
+	_gal_choice_container = null
+	if is_instance_valid(_arrow_label):
+		_arrow_label.visible = false
+	if is_instance_valid(left_dialog_text):
+		left_dialog_text.text = ""
+		left_dialog_text.visible = true
+	if is_instance_valid(left_dialog_box):
+		left_dialog_box.modulate.a = 0.0
+		left_dialog_box.visible = false
+	if main_node():
+		var dim: ColorRect = main_node().get("_phone_dim") as ColorRect
+		if dim:
+			dim.visible = false
+			dim.modulate.a = 1.0
+			dim.color.a = 0.0
+	_sync_main_ui_state()
+
+
 # ==================== Galgame 分页对话系统 ====================
 
 ## 启动 Galgame 分页对话（pages: 每页一个字符串）
 func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> void:
 	if _gal_tween and _gal_tween.is_valid():
 		_gal_tween.kill()
+	_clear_external_choice_containers()
 	_gal_pages = pages
 	_gal_page_idx = 0
 	_gal_on_complete = on_complete
@@ -221,12 +267,7 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	# 暗化手机区域
-	var dim: ColorRect = main_node().get("_phone_dim") as ColorRect
-	if dim:
-		dim.visible = true
-		dim.color.a = 0.0
-		var t := main_node().create_tween()
-		t.tween_property(dim, "color:a", 0.65, 0.3)
+	_show_phone_dim()
 	if is_instance_valid(_gal_choice_container):
 		_gal_choice_container.visible = false
 	left_dialog_text.visible = true
@@ -234,6 +275,15 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 	if _skip_btn:
 		_skip_btn.set_deferred("disabled", true)
 	_gal_start_page()
+
+
+func _clear_external_choice_containers() -> void:
+	if not is_instance_valid(left_dialog_box):
+		return
+	for node_name in ["FragChoiceContainer"]:
+		var node := left_dialog_box.get_node_or_null(node_name)
+		if node:
+			node.queue_free()
 
 
 ## 开始打字当前页
@@ -274,7 +324,7 @@ func _gal_type_char() -> void:
 	left_dialog_text.text = _gal_full_text.substr(0, _gal_char_idx)
 	# 嘟嘟音效（每两个字响一次，跳过空格/标点/换行）
 	if _beep_player and _beep_player.stream and _gal_char_idx % 2 == 0:
-		var ch: String = _gal_full_text[_gal_char_idx - 1]
+		var ch: String = _gal_full_text.substr(_gal_char_idx - 1, 1)
 		if ch != ' ' and ch != '
 ' and ch != '，' and ch != '。' and ch != '！' and ch != '？' and ch != '、' and ch != '…' and ch != '—':
 			_beep_player.pitch_scale = _beep_pitch_base
@@ -352,7 +402,7 @@ func _gal_end(immediate: bool = false) -> void:
 			_gal_fading_out = false
 			left_dialog_box.modulate.a = 0.0
 			left_dialog_box.visible = false
-			clear_location_bg()
+			_maybe_clear_location_bg()
 			var pending_cb: Callable = _gal_pending_end_callback
 			var pending_has_encounter: bool = _gal_pending_has_encounter
 			_gal_pending_end_callback = Callable()
@@ -364,9 +414,6 @@ func _gal_end(immediate: bool = false) -> void:
 	_gal_pages.clear()
 	_gal_typing = false
 	_stop_arrow_anim()
-	var _skip_btn2: Button = main_node().get_node_or_null("HBoxContainer/RightMargin/RightSystemArea/Btn_NextWeek")
-	if _skip_btn2:
-		_skip_btn2.set_deferred("disabled", false)
 	_hide_phone_dim()
 	var cb: Callable = _gal_on_complete
 	_gal_on_complete = Callable()
@@ -377,7 +424,7 @@ func _gal_end(immediate: bool = false) -> void:
 		_gal_fading_out = false
 		left_dialog_box.modulate.a = 0.0
 		left_dialog_box.visible = false
-		clear_location_bg()
+		_maybe_clear_location_bg()
 		_gal_pending_end_callback = Callable()
 		_gal_pending_has_encounter = false
 		_finish_gal_end(cb, has_encounter)
@@ -388,7 +435,7 @@ func _gal_end(immediate: bool = false) -> void:
 	_gal_tween.tween_callback(func() -> void:
 		_gal_fading_out = false
 		left_dialog_box.visible = false
-		clear_location_bg()
+		_maybe_clear_location_bg()
 		var pending_cb: Callable = _gal_pending_end_callback
 		var pending_has_encounter: bool = _gal_pending_has_encounter
 		_gal_pending_end_callback = Callable()
@@ -432,6 +479,7 @@ func _show_wechat_choices_phase() -> void:
 		return
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
+	_show_phone_dim()
 	left_dialog_text.visible = false
 	if is_instance_valid(_gal_choice_container):
 		_gal_choice_container.queue_free()
@@ -472,6 +520,8 @@ func _show_wechat_choices_phase() -> void:
 		var req_val: int = int(option.get("req_val", 0))
 		if req_stat != "" and GameManager.get(req_stat) < req_val:
 			btn.disabled = true
+			var req_cn: String = GameManager.stat_names.get(req_stat, req_stat)
+			btn.text = "%s（需要%s%d，当前%d）" % [btn.text, req_cn, req_val, int(GameManager.get(req_stat))]
 			btn.add_theme_color_override("font_color", Color(0.45, 0.45, 0.45, 0.7))
 			var dis_style := StyleBoxFlat.new()
 			dis_style.bg_color = Color(0.1, 0.1, 0.12, 0.5)
@@ -483,42 +533,27 @@ func _show_wechat_choices_phase() -> void:
 		var captured_option: Dictionary = option
 		btn.pressed.connect(func() -> void: _on_encounter_choice(captured_option))
 		_gal_choice_container.add_child(btn)
+	_sync_main_ui_state()
 
 
 ## 邂逅选择回调
 func _on_encounter_choice(option: Dictionary) -> void:
+	var encounter_npc_id: String = _gal_npc_id
 	var cost: Dictionary = option.get("cost", {})
 	var cost_energy: int = int(cost.get("energy", 0))
 	var cost_money: int = int(cost.get("money", 0))
+	var result_changes: Dictionary = {}
 	if cost_energy > 0:
-		GameManager.modify_stat("energy", -cost_energy)
+		result_changes["energy"] = int(result_changes.get("energy", 0)) - cost_energy
 	if cost_money > 0:
-		GameManager.modify_stat("money", -cost_money)
+		result_changes["money"] = int(result_changes.get("money", 0)) - cost_money
 	## 先判断是否解锁NPC，再处理属性和flag（避免get_npc_runtime误创建条目）
-	var should_unlock: bool = option.get("unlock_npc", true) and _gal_npc_id != ""
-	if should_unlock:
-		if not GameManager.is_npc_unlocked(_gal_npc_id):
-			GameManager.unlock_npc(_gal_npc_id)
-		## 邂逅加微信后，把初始消息写入NPC聊天记录
-		var init_msgs: Array = option.get("wechat_init_messages", [])
-		if init_msgs.size() == 0 and _gal_npc_id != "":
-			init_msgs = [{"sender": "npc", "text": "刚才太匆忙了，抱歉。你小心点，外面下雨了。"}]
-		if GameManager.npcs.has(_gal_npc_id):
-			for msg in init_msgs:
-				GameManager.npcs[_gal_npc_id]["messages"].append(msg)
-			GameManager.add_unread(_gal_npc_id)
+	var should_unlock: bool = option.get("unlock_npc", true) and encounter_npc_id != ""
 	var stat_changes: Dictionary = option.get("stat_changes", {})
 	for stat_name in stat_changes:
 		var val: int = int(stat_changes[stat_name])
-		if stat_name == "affection" and _gal_npc_id != "" and should_unlock:
-			GameManager.get_npc_runtime(_gal_npc_id)["affection"] += val
-		else:
-			GameManager.modify_stat(stat_name, val)
+		result_changes[stat_name] = int(result_changes.get(stat_name, 0)) + val
 	var flag: String = option.get("flag", "")
-	if flag != "" and _gal_npc_id != "" and should_unlock:
-		var runtime: Dictionary = GameManager.get_npc_runtime(_gal_npc_id)
-		if not runtime["flags"].has(flag):
-			runtime["flags"].append(flag)
 	if is_instance_valid(_gal_choice_container):
 		_gal_choice_container.queue_free()
 		_gal_choice_container = null
@@ -527,13 +562,55 @@ func _on_encounter_choice(option: Dictionary) -> void:
 	pages.append("我：" + option.get("text", ""))
 	for line in option.get("reply_lines", []):
 		if line.begins_with("'"):
-			var _npc_name2: String = GameManager.get_npc_name(_gal_npc_id) if _gal_npc_id != "" else "陌生男子"
+			var _npc_name2: String = GameManager.get_npc_name(encounter_npc_id) if encounter_npc_id != "" else "陌生男子"
 			pages.append(_npc_name2 + "：" + line)
 		else:
 			pages.append(line)
 	if option.get("note", "") != "":
 		pages.append(option["note"])
-	show_galgame_dialog(pages)
+	var apply_choice := func() -> void:
+		if cost_energy > 0:
+			GameManager.modify_stat("energy", -cost_energy)
+		if cost_money > 0:
+			GameManager.modify_stat("money", -cost_money)
+		if should_unlock:
+			GameManager.unlock_npc(encounter_npc_id)
+			## 邂逅加微信后，把初始消息写入NPC聊天记录
+			var init_msgs: Array = option.get("wechat_init_messages", [])
+			if init_msgs.size() == 0 and encounter_npc_id != "":
+				init_msgs = [{"sender": "npc", "text": "刚才太匆忙了，抱歉。你小心点，外面下雨了。"}]
+			if GameManager.npcs.has(encounter_npc_id):
+				for msg in init_msgs:
+					GameManager.npcs[encounter_npc_id]["messages"].append(msg.duplicate(true))
+					GameManager.add_unread(encounter_npc_id)
+				if main_node().get("wechat") and main_node().wechat.has_method("_build_chat_items"):
+					main_node().wechat._build_chat_items()
+					main_node().wechat.call_deferred("_build_chat_items")
+		for stat_name in stat_changes:
+			var val: int = int(stat_changes[stat_name])
+			if stat_name == "affection" and encounter_npc_id != "" and should_unlock:
+				GameManager.add_npc_affection(encounter_npc_id, val)
+			else:
+				GameManager.modify_stat(stat_name, val)
+		if flag != "" and encounter_npc_id != "":
+			var runtime: Dictionary = GameManager.get_npc_runtime(encounter_npc_id)
+			if not runtime["flags"].has(flag):
+				runtime["flags"].append(flag)
+		var app_system = main_node().get("app")
+		if app_system and not should_unlock and encounter_npc_id != "":
+			var retry_cooldown: int = int(option.get("retry_cooldown", 4))
+			var cooldowns: Dictionary = app_system.get("_encounter_cooldowns")
+			cooldowns[encounter_npc_id] = GameManager.turn_count + retry_cooldown
+		if app_system and app_system.has_method("_end_location_event") and int(app_system.get("_location_event_hold_count")) > 0:
+			app_system._end_location_event()
+		else:
+			release_location_bg()
+	show_galgame_dialog(pages, func() -> void:
+		if not result_changes.is_empty() and main_node().has_method("show_stat_result"):
+			main_node().show_stat_result(result_changes, apply_choice)
+		else:
+			apply_choice.call()
+	)
 
 
 # ==================== 场景背景图 + 环境音管理 ====================
@@ -557,6 +634,24 @@ func show_location_bg(texture_path: String) -> void:
 	_bg_fade_tween = main_node().create_tween()
 	_bg_fade_tween.tween_property(bg_texture, "modulate:a", 1.0, 0.5)
 	_play_ambient_for_bg(texture_path)
+
+func hold_location_bg() -> void:
+	_location_bg_hold_count += 1
+
+
+func release_location_bg() -> void:
+	if _location_bg_hold_count > 0:
+		_location_bg_hold_count -= 1
+	if _location_bg_hold_count <= 0:
+		_location_bg_hold_count = 0
+		clear_location_bg()
+
+
+func _maybe_clear_location_bg() -> void:
+	if _location_bg_hold_count > 0:
+		return
+	clear_location_bg()
+
 
 func clear_location_bg() -> void:
 	if _gal_pages.size() > 0 or is_instance_valid(_gal_choice_container):
@@ -628,15 +723,35 @@ func main_node() -> Node:
 	return _main
 
 
+func _sync_main_ui_state() -> void:
+	if main_node().has_method("sync_ui_state"):
+		main_node().sync_ui_state()
+
+
+func _show_phone_dim() -> void:
+	var dim: ColorRect = main_node().get("_phone_dim") as ColorRect
+	if dim:
+		if _phone_dim_tween and _phone_dim_tween.is_valid():
+			_phone_dim_tween.kill()
+		dim.visible = true
+		dim.modulate.a = 1.0
+		dim.color.a = 0.0
+		_phone_dim_tween = main_node().create_tween()
+		_phone_dim_tween.tween_property(dim, "color:a", 0.65, 0.3)
+	_sync_main_ui_state()
+
+
 ## 生成打字机嘟嘟音效（合成短促正弦波）
 ## 隐藏手机暗化遮罩
 func _hide_phone_dim() -> void:
 	var dim: ColorRect = main_node().get("_phone_dim") as ColorRect
 	if dim:
+		if _phone_dim_tween and _phone_dim_tween.is_valid():
+			_phone_dim_tween.kill()
 		dim.modulate.a = 1.0
-		var t := main_node().create_tween()
-		t.tween_property(dim, "modulate:a", 0.0, 0.3)
-		t.tween_callback(func(): dim.visible = false; dim.modulate.a = 1.0)
+		_phone_dim_tween = main_node().create_tween()
+		_phone_dim_tween.tween_property(dim, "modulate:a", 0.0, 0.3)
+		_phone_dim_tween.tween_callback(func(): dim.visible = false; dim.modulate.a = 1.0)
 
 func _generate_beep() -> AudioStreamWAV:
 	var wav := AudioStreamWAV.new()

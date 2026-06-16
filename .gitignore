@@ -7,6 +7,12 @@
 debug_*.png
 screenshot_*.png
 phase29_*.png
+_mcp_*.png
+_qa_runtime_screenshots/
+
+# MCP/AI 本地工作缓存
+_mcp_addon_backups/
+.claude/
 
 # 临时修复脚本
 fix_*.py

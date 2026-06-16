@@ -205,15 +205,16 @@ func _on_round_choice(option: Dictionary) -> void:
 	var sanity_change: int = int(option.get("sanity", 0))
 	_total_sanity_cost += sanity_change
 
+	var round_changes: Dictionary = {}
 	# 额外属性变化
 	var extra_stats: Dictionary = option.get("stat_changes", {})
 	for stat_name in extra_stats:
-		GameManager.modify_stat(stat_name, int(extra_stats[stat_name]))
+		round_changes[stat_name] = int(round_changes.get(stat_name, 0)) + int(extra_stats[stat_name])
 
 	# 金钱变化（如红包）
 	var money_change: int = int(option.get("money", 0))
 	if money_change != 0:
-		GameManager.modify_stat("money", money_change)
+		round_changes["money"] = int(round_changes.get("money", 0)) + money_change
 
 	# 显示结果
 	var result_pages: Array = []
@@ -223,12 +224,35 @@ func _on_round_choice(option: Dictionary) -> void:
 
 	if result_pages.size() > 0:
 		_galgame.show_galgame_dialog(result_pages, func() -> void:
-			_round_idx += 1
-			_start_next_round()
+			_show_round_stat_result(round_changes)
 		)
 	else:
+		_show_round_stat_result(round_changes)
+
+
+func _show_round_stat_result(changes: Dictionary) -> void:
+	var finish_round := func() -> void:
 		_round_idx += 1
 		_start_next_round()
+	if changes.is_empty():
+		finish_round.call()
+		return
+	if is_instance_valid(_main) and _main.has_method("show_stat_result"):
+		_main.show_stat_result(changes, func() -> void:
+			_apply_round_changes(changes)
+			finish_round.call()
+		)
+	else:
+		_apply_round_changes(changes)
+		finish_round.call()
+
+
+func _apply_round_changes(changes: Dictionary) -> void:
+	for stat_name in changes:
+		var amount := int(changes[stat_name])
+		if amount == 0:
+			continue
+		GameManager.modify_stat(str(stat_name), amount)
 
 
 ## 显示春节总结

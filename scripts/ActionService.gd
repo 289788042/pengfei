@@ -10,23 +10,12 @@ func init(main: Node) -> void:
 	_main = main
 
 
-func can_use_weekend_action(label: String = "") -> bool:
-	if GameManager.weekend_actions > 0:
-		return true
-	if is_instance_valid(_main) and _main.has_method("show_message"):
-		var suffix := "" if label == "" else ": " + label
-		_main.show_message("周末行动次数不足" + suffix)
-	return false
+func can_use_weekend_action(_label: String = "") -> bool:
+	return true
 
 
 func spend_weekend_action(label: String = "") -> bool:
-	if not can_use_weekend_action(label):
-		return false
-	GameManager.weekend_actions = maxi(GameManager.weekend_actions - 1, 0)
-	_record("weekend_action", {"label": label, "left": GameManager.weekend_actions})
-	if is_instance_valid(_main) and _main.has_method("_update_weekend_ui"):
-		_main._update_weekend_ui()
-	GameManager.stats_updated.emit()
+	_record("weekend_action_ignored", {"label": label})
 	return true
 
 
@@ -51,7 +40,7 @@ func apply_stat_changes(changes: Dictionary) -> Dictionary:
 				GameManager.max_energy = maxi(GameManager.max_energy + amount, 1)
 				GameManager.energy = clampi(GameManager.energy, 0, GameManager.max_energy)
 			"weekend_actions":
-				GameManager.weekend_actions = clampi(GameManager.weekend_actions + amount, 0, GameManager.max_weekend_actions)
+				continue
 			"credit_debt":
 				GameManager.huabei_debt = maxi(GameManager.huabei_debt + amount, 0)
 				GameManager.credit_debt = GameManager.huabei_debt
@@ -94,6 +83,20 @@ func show_action_result(story_text: String, changes: Dictionary, after: Callable
 		)
 	else:
 		show_result(changes, after, title)
+
+
+func show_deferred_action_result(story_text: String, changes: Dictionary, after: Callable = Callable(), title: String = "【结算】") -> void:
+	var clean_story := story_text.strip_edges()
+	var show_and_apply := func() -> void:
+		var apply_after_result := func() -> void:
+			apply_stat_changes(changes)
+			if after.is_valid():
+				after.call()
+		show_result(changes, apply_after_result, title)
+	if clean_story != "" and is_instance_valid(_main) and _main.has_method("show_galgame_dialog"):
+		_main.show_galgame_dialog([clean_story], show_and_apply)
+	else:
+		show_and_apply.call()
 
 
 func show_result(changes: Dictionary, after: Callable = Callable(), title: String = "【结算】") -> void:

@@ -37,13 +37,28 @@ const DEFAULT_CONFIG: Dictionary = {
 	"moments_likes": 0,
 }
 
+const AVATAR_FALLBACK_PALETTE: Array[Color] = [
+	Color(0.31, 0.48, 0.78, 1),
+	Color(0.78, 0.42, 0.50, 1),
+	Color(0.32, 0.62, 0.48, 1),
+	Color(0.72, 0.52, 0.30, 1),
+	Color(0.48, 0.40, 0.72, 1),
+	Color(0.30, 0.60, 0.68, 1),
+	Color(0.70, 0.38, 0.62, 1),
+]
+
 
 # ==================== 数据查询接口 ====================
 
 ## 获取 NPC 头像颜色
 func get_avatar_color(npc_id: String) -> Color:
 	var cfg: Dictionary = NPC_CONFIG.get(npc_id, {})
-	return cfg.get("avatar_color", DEFAULT_CONFIG["avatar_color"])
+	if cfg.has("avatar_color"):
+		return cfg["avatar_color"]
+	var idx: int = 0
+	for i in range(npc_id.length()):
+		idx += npc_id.unicode_at(i)
+	return AVATAR_FALLBACK_PALETTE[idx % AVATAR_FALLBACK_PALETTE.size()]
 
 
 ## 获取 NPC 随机自动回复

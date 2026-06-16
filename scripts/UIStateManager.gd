@@ -20,20 +20,31 @@ func sync_all() -> void:
 	if not is_instance_valid(_main):
 		return
 	_collect_dynamic_layers()
-	var blocking := false
-	for layer in _layers:
+	_prune_invalid_layers()
+	var dialog_blocking: bool = _main.has_method("has_blocking_dialog") and _main.has_blocking_dialog()
+	var top_blocking_index := -1
+	for i in _layers.size():
+		var layer := _layers[i]
 		if not is_instance_valid(layer):
 			continue
 		var active := layer.visible and layer.is_visible_in_tree()
-		_set_tree_buttons_enabled(layer, active)
+		_apply_layer_input_mode(layer, active)
 		if active and _blocking_layers.has(layer):
-			blocking = true
-	_set_background_buttons_enabled(not blocking)
+			top_blocking_index = i
+	for i in _layers.size():
+		var layer := _layers[i]
+		if not is_instance_valid(layer):
+			continue
+		var active := layer.visible and layer.is_visible_in_tree()
+		var can_interact: bool = active and not dialog_blocking and (top_blocking_index < 0 or i >= top_blocking_index)
+		_set_tree_buttons_enabled(layer, can_interact)
+	_set_background_buttons_enabled(top_blocking_index < 0 and not dialog_blocking)
 
 
 func show_layer(layer: Control, exclusive: bool = true) -> void:
 	if not is_instance_valid(layer):
 		return
+	register_layer(layer)
 	if exclusive:
 		for other in _layers:
 			if is_instance_valid(other) and other != layer:
@@ -73,7 +84,6 @@ func _collect_layers() -> void:
 		"WeChatMenu",
 		"WCChatView",
 		"AlipayPopup",
-		"PaymentPopup",
 		"DiaryPopup",
 		"BaoTaoMenu",
 		"TuanMeiMenu",
@@ -83,7 +93,7 @@ func _collect_layers() -> void:
 		"JobMenu",
 		"JobPopup",
 		"LateNightPopup",
-		"WeekdayPanel",
+		"PaymentPopup",
 		"EventPopup",
 		"MonthEndPopup",
 		"TransitionScreen",
@@ -102,6 +112,7 @@ func _collect_dynamic_layers() -> void:
 		"FamilyEventOverlay",
 		"FamilyChatOverlay",
 		"GraduationOverlay",
+		"EndingChoiceOverlay",
 		"GameOverOverlay",
 		"DebugBG",
 	]
@@ -119,6 +130,22 @@ func _collect_background_buttons() -> void:
 	var next_week := _main.find_child("Btn_NextWeek", true, false)
 	if next_week is BaseButton:
 		_background_buttons.append(next_week)
+
+
+func _prune_invalid_layers() -> void:
+	for i in range(_layers.size() - 1, -1, -1):
+		if not is_instance_valid(_layers[i]):
+			_layers.remove_at(i)
+	for i in range(_blocking_layers.size() - 1, -1, -1):
+		if not is_instance_valid(_blocking_layers[i]):
+			_blocking_layers.remove_at(i)
+
+
+func _apply_layer_input_mode(layer: Control, active: bool) -> void:
+	if active and _blocking_layers.has(layer):
+		layer.mouse_filter = Control.MOUSE_FILTER_STOP
+	elif not active:
+		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _collect_buttons(root: Node, out: Array[BaseButton]) -> void:

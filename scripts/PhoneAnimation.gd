@@ -71,7 +71,7 @@ func _create_tap_hint() -> void:
 	if parent_node == null:
 		return
 	tap_hint = Label.new()
-	tap_hint.text = "点击手机开始"
+	tap_hint.text = "点击手机弹出"
 	tap_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tap_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	tap_hint.add_theme_font_size_override("font_size", 28)

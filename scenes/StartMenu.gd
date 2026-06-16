@@ -49,6 +49,7 @@ func _input(event: InputEvent) -> void:
 		GameManager.reset_game()
 		GameManager.player_name = "测试"
 		GameManager.player_zodiac = "测试"
+		GameManager.skip_opening_intro_once = true
 		get_tree().change_scene_to_file("res://scenes/MainGame.tscn")
 
 

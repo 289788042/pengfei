@@ -176,11 +176,24 @@ var label_intellect_val: Label
 var label_eq_val: Label
 var label_pressure_summary: Label
 var label_pressure_hint: Label
+var label_early_goal: Label
 var _skip_week_confirm: bool = false
 var _phone_dim: ColorRect = null
 var _runtime_disposed: bool = false
+var _transition_token: int = 0
 var current_phase: Phase = Phase.WEEKDAY
 # ==================== 生命周期 ====================
+
+
+func _new_refcounted_script(path: String) -> RefCounted:
+	var script := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	return script.new() as RefCounted
+
+
+func _new_control_script(path: String) -> Control:
+	var script := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	return script.new() as Control
+
 
 func _ready() -> void:
 	GameManager.stats_updated.connect(_on_stats_updated)
@@ -200,20 +213,23 @@ func _ready() -> void:
 	btn_work_overtime.pressed.connect(_on_work_overtime)
 	btn_next_week.pressed.connect(_on_btn_next_week)
 	# 微信系统初始化
-	galgame = load("res://scripts/GalgameSystem.gd").new()
+	galgame = _new_refcounted_script("res://scripts/GalgameSystem.gd")
 	galgame.init(self)
-	alipay = load("res://scripts/AlipaySystem.gd").new()
+	left_dialog_box.gui_input.connect(_on_left_dialog_box_gui_input)
+	left_dialog_box.mouse_filter = Control.MOUSE_FILTER_STOP
+	left_dialog_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	alipay = _new_refcounted_script("res://scripts/AlipaySystem.gd")
 	alipay.init(self)
-	app = load("res://scripts/AppPopupSystem.gd").new()
+	app = _new_refcounted_script("res://scripts/AppPopupSystem.gd")
 	app.init(self)
-	wechat = load("res://scripts/WeChatSystem.gd").new()
+	wechat = _new_refcounted_script("res://scripts/WeChatSystem.gd")
 	wechat.init(self)
-	spring_festival = load("res://scripts/SpringFestivalSystem.gd").new()
+	spring_festival = _new_refcounted_script("res://scripts/SpringFestivalSystem.gd")
 	spring_festival.init(self)
 	# 调试面板
 	_debug_panel = get_node_or_null("DebugPanel")
 	if _debug_panel == null:
-		_debug_panel = load("res://scripts/DebugPanel.gd").new()
+		_debug_panel = _new_control_script("res://scripts/DebugPanel.gd")
 		add_child(_debug_panel)
 	btn_close_wechat.pressed.connect(wechat._on_close_wechat)
 	wechat._build_chat_items()
@@ -276,7 +292,7 @@ func _ready() -> void:
 	# 日记关闭按钮
 	var _btn_close_diary: Button = find_child("BtnCloseDiary", true, false)
 	if _btn_close_diary:
-		_btn_close_diary.pressed.connect(func() -> void: diary_popup.visible = false)
+		_btn_close_diary.pressed.connect(func() -> void: set_ui_layer_visible(diary_popup, false))
 
 	label_player_info.text = "姓名：%s | 星座：%s" % [GameManager.player_name, GameManager.player_zodiac]
 	# 创建手机暗化遮罩
@@ -288,16 +304,20 @@ func _ready() -> void:
 		_phone_dim.color = Color(0, 0, 0, 0.45)
 		_phone_dim.z_index = 50
 		_phone_dim.mouse_filter = Control.MOUSE_FILTER_STOP
-		_phone_dim.visible = false
-		phone_case.add_child(_phone_dim)
+	_phone_dim.visible = false
+	phone_case.add_child(_phone_dim)
 	_setup_stat_bars()
 	_setup_finance_widgets()
+	_refresh_action_tooltips()
 	left_bg = find_child("BgImage", true, false) as ColorRect
 	_setup_foundation_services()
 	pass
 	_refresh_ui()
 	pass
-	if GameManager.turn_count == 1 and GameManager.week_in_month == 1 and GameManager.month == 1 and GameManager.age == 23:
+	if GameManager.skip_opening_intro_once:
+		GameManager.skip_opening_intro_once = false
+		call_deferred("_enter_weekend")
+	elif GameManager.turn_count == 1 and GameManager.week_in_month == 1 and GameManager.month == 1 and GameManager.age == 23:
 		call_deferred("_show_opening_intro")
 	else:
 		_enter_weekday()
@@ -324,17 +344,21 @@ func _dispose_runtime_systems() -> void:
 
 
 func _on_app_wechat() -> void:
+	if not can_open_phone_app():
+		return
 	_hide_all_popups()
 	wechat._build_chat_items()
 	wechat._on_wc_tab(0)
-	wechat_menu.mouse_filter = Control.MOUSE_FILTER_PASS
-	wc_panel_container.mouse_filter = Control.MOUSE_FILTER_PASS
+	wechat_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+	wc_panel_container.mouse_filter = Control.MOUSE_FILTER_STOP
 	if not wechat_menu.gui_input.is_connected(wechat._on_wechat_gui_input):
 		wechat_menu.gui_input.connect(wechat._on_wechat_gui_input)
 	set_ui_layer_visible(wechat_menu, true)
 
 
 func _on_app_alipay() -> void:
+	if not can_open_phone_app():
+		return
 	_hide_all_popups()
 	alipay._refresh_alipay_ui()
 	set_ui_layer_visible(alipay_popup, true)
@@ -343,6 +367,7 @@ func _on_app_alipay() -> void:
 func _process(_delta: float) -> void:
 	if ui_state and ui_state.has_method("sync_all"):
 		ui_state.sync_all()
+	_repair_next_week_button_state()
 
 
 func _input(event: InputEvent) -> void:
@@ -351,22 +376,12 @@ func _input(event: InputEvent) -> void:
 			_close_top_popup()
 			get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_LEFT:
-			# 左侧galgame对话框点击
-			if galgame.is_visible():
-				if left_dialog_box.get_global_rect().has_point(event.global_position):
-					if galgame._gal_pages.size() > 0:
-						galgame.gal_on_click()
-						get_viewport().set_input_as_handled()
-					elif is_instance_valid(galgame._gal_choice_container):
-						pass  # 选择按钮自行处理点击，不消耗事件
-					else:
-						galgame.dismiss_dialog()
-						get_viewport().set_input_as_handled()
-				# 右侧系统消息框点击（关闭）
-			elif left_dialog_box.visible and left_dialog_box.modulate.a > 0.5:
-				if left_dialog_box.get_global_rect().has_point(event.global_position):
-					galgame.dismiss_dialog()
-					get_viewport().set_input_as_handled()
+			if wechat and wechat.has_method("handle_chat_mouse_shortcut") and wechat.handle_chat_mouse_shortcut(event.global_position):
+				get_viewport().set_input_as_handled()
+				return
+			# 左侧对话框点击：统一交给 GalgameSystem 推进，避免结算/事件回调丢失
+			if left_dialog_box.get_global_rect().has_point(event.global_position) and _advance_left_dialog_input(false):
+				get_viewport().set_input_as_handled()
 	# Space键：翻页对话 / Ctrl键：跳过所有
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_F1:
@@ -381,27 +396,36 @@ func _input(event: InputEvent) -> void:
 				_enter_weekend()
 				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_SPACE:
-			if galgame.is_visible():
-				if galgame._gal_pages.size() > 0:
-					galgame.gal_on_click()
-					get_viewport().set_input_as_handled()
-				else:
-					galgame.dismiss_dialog()
-					get_viewport().set_input_as_handled()
-			elif left_dialog_box.visible and left_dialog_box.modulate.a > 0.5:
-				galgame.dismiss_dialog()
+			if _advance_left_dialog_input(false):
 				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_CTRL:
-			if galgame.is_visible():
-				if galgame._gal_pages.size() > 0:
-					galgame.skip_all()
-					get_viewport().set_input_as_handled()
-				else:
-					galgame.dismiss_dialog()
-					get_viewport().set_input_as_handled()
-			elif left_dialog_box.visible and left_dialog_box.modulate.a > 0.5:
-				galgame.dismiss_dialog()
+			if _advance_left_dialog_input(true):
 				get_viewport().set_input_as_handled()
+
+func _on_left_dialog_box_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if _advance_left_dialog_input(false):
+			get_viewport().set_input_as_handled()
+
+
+func _advance_left_dialog_input(skip_all: bool) -> bool:
+	if not is_instance_valid(left_dialog_box) or not left_dialog_box.visible or left_dialog_box.modulate.a <= 0.5:
+		return false
+	if not galgame:
+		return false
+	if galgame.has_method("is_visible") and galgame.is_visible():
+		if galgame._gal_pages.size() > 0:
+			if skip_all:
+				galgame.skip_all()
+			else:
+				galgame.gal_on_click()
+			return true
+		if is_instance_valid(galgame._gal_choice_container) and galgame._gal_choice_container.visible:
+			return false
+		galgame.dismiss_dialog()
+		return true
+	galgame.dismiss_dialog()
+	return true
 
 ## 右键返回：按优先级关闭当前最上层弹窗
 func _close_top_popup() -> void:
@@ -413,6 +437,7 @@ func _close_top_popup() -> void:
 		return
 	if diary_popup.visible:
 		set_ui_layer_visible(diary_popup, false)
+		return
 	if baotao_menu.visible:
 		set_ui_layer_visible(baotao_menu, false)
 		return
@@ -441,16 +466,16 @@ func _close_top_popup() -> void:
 		set_ui_layer_visible(location_menu, false)
 		return
 	if late_night_popup.visible:
-		set_ui_layer_visible(late_night_popup, false)
+		show_message("先做出选择。", true)
 		return
 
 
 func _setup_foundation_services() -> void:
-	environment = load("res://scripts/EnvironmentController.gd").new()
+	environment = _new_refcounted_script("res://scripts/EnvironmentController.gd")
 	environment.init(self)
-	action_service = load("res://scripts/ActionService.gd").new()
+	action_service = _new_refcounted_script("res://scripts/ActionService.gd")
 	action_service.init(self)
-	ui_state = load("res://scripts/UIStateManager.gd").new()
+	ui_state = _new_refcounted_script("res://scripts/UIStateManager.gd")
 	ui_state.init(self)
 
 
@@ -469,6 +494,80 @@ func set_ui_layer_visible(layer: Control, value: bool, exclusive: bool = true) -
 func sync_ui_state() -> void:
 	if ui_state and ui_state.has_method("sync_all"):
 		ui_state.sync_all()
+
+
+func _force_clear_dialog_overlay() -> void:
+	if galgame and galgame.has_method("force_clear_dialog"):
+		galgame.force_clear_dialog()
+	if is_instance_valid(left_dialog_text):
+		left_dialog_text.text = ""
+		left_dialog_text.visible = true
+	if is_instance_valid(left_dialog_box):
+		left_dialog_box.modulate.a = 0.0
+		left_dialog_box.visible = false
+	if is_instance_valid(_phone_dim):
+		_phone_dim.visible = false
+		_phone_dim.modulate.a = 1.0
+		_phone_dim.color.a = 0.0
+	sync_ui_state()
+
+
+func has_blocking_dialog() -> bool:
+	if galgame and galgame.has_method("is_visible") and galgame.is_visible():
+		return true
+	if is_instance_valid(left_dialog_box) and left_dialog_box.visible and left_dialog_box.modulate.a > 0.05:
+		return true
+	return false
+
+
+func can_open_phone_app() -> bool:
+	return not has_blocking_dialog()
+
+
+func _repair_next_week_button_state() -> void:
+	if current_phase != Phase.WEEKEND:
+		return
+	if not is_instance_valid(btn_next_week) or not btn_next_week.visible:
+		return
+	if has_blocking_dialog() or _has_active_blocking_layer():
+		return
+	_sync_phone_home_apps(true)
+	btn_next_week.disabled = false
+
+
+func _has_active_blocking_layer() -> bool:
+	var layer_names := [
+		"LocationMenu",
+		"WeChatMenu",
+		"WCChatView",
+		"AlipayPopup",
+		"DiaryPopup",
+		"BaoTaoMenu",
+		"TuanMeiMenu",
+		"ZodiacPopup",
+		"HouseMenu",
+		"DatingPopup",
+		"JobMenu",
+		"JobPopup",
+		"LateNightPopup",
+		"PaymentPopup",
+		"WeekdayPanel",
+		"EventPopup",
+		"MonthEndPopup",
+		"TransitionScreen",
+		"EndingPanel",
+		"WeekConfirmOverlay",
+		"FamilyEventOverlay",
+		"FamilyChatOverlay",
+		"GraduationOverlay",
+		"EndingChoiceOverlay",
+		"GameOverOverlay",
+	]
+	for layer_name in layer_names:
+		var layer := find_child(layer_name, true, false)
+		if layer is Control and layer.visible and layer.is_visible_in_tree():
+			return true
+	return false
 
 
 func show_location_bg(texture_path: String, context: String = "location") -> void:
@@ -506,7 +605,6 @@ func format_stat_result(changes: Dictionary, title: String = "【结算】") -> 
 		"affection": "好感",
 		"family_affection": "亲情",
 		"max_energy": "精力上限",
-		"weekend_actions": "行动",
 		"pending_salary": "待发工资",
 		"monthly_food_cost": "餐饮账单",
 		"night_school_progress": "夜校学分",
@@ -537,7 +635,11 @@ func show_result_text(text: String, on_complete: Callable = Callable()) -> void:
 		if on_complete.is_valid():
 			on_complete.call()
 		return
-	galgame.show_galgame_dialog([clean_text], on_complete)
+	if not galgame:
+		if on_complete.is_valid():
+			on_complete.call()
+		return
+	galgame.call_deferred("show_galgame_dialog", [clean_text], on_complete)
 
 
 func show_stat_result(changes: Dictionary, on_complete: Callable = Callable(), title: String = "【结算】") -> void:
@@ -567,15 +669,16 @@ func _enter_weekday() -> void:
 	btn_work_normal.disabled = true
 	btn_work_slack.disabled = true
 	btn_work_overtime.disabled = true
+	_refresh_ui()
+	sync_ui_state()
 
 
 func _enter_weekend() -> void:
 	current_phase = Phase.WEEKEND
+	weekday_panel.visible = false
 	return_to_home_environment("weekend")
 	btn_next_week.visible = true
 	_enable_app_grid()
-	# 重置周末行动次数
-	GameManager.weekend_actions = GameManager.max_weekend_actions
 	_update_weekend_ui()
 	_refresh_ui()
 	sync_ui_state()
@@ -583,42 +686,52 @@ func _enter_weekend() -> void:
 
 
 func _update_weekend_ui() -> void:
-	var remaining := GameManager.weekend_actions
 	var preview := _get_month_end_preview()
-	btn_next_week.text = "⏭ 结束本周｜行动%d｜月底:%d" % [
-		remaining,
+	btn_next_week.text = "⏭ 结束本周｜月底:%d" % [
 		int(preview.get("cash_after_all", 0)),
 	]
 	btn_next_week.tooltip_text = _build_week_confirm_text()
-	if remaining <= 0:
-		btn_app_map.disabled = true
-		btn_app_dating.disabled = true
-		btn_app_baotao.disabled = true
-		btn_app_tuanmei.disabled = true
-	else:
-		btn_app_map.disabled = not GameManager.is_app_unlocked("map")
-		btn_app_dating.disabled = not GameManager.is_app_unlocked("dating")
-		btn_app_baotao.disabled = not GameManager.is_app_unlocked("baotao")
-		btn_app_tuanmei.disabled = not GameManager.is_app_unlocked("tuanmei")
+	_sync_phone_home_apps(true)
 
 
 func _enable_app_grid() -> void:
-	btn_app_map.disabled = not GameManager.is_app_unlocked("map")
-	btn_app_wechat.disabled = not GameManager.is_app_unlocked("wechat")
-	btn_app_baotao.disabled = not GameManager.is_app_unlocked("baotao")
-	btn_app_tuanmei.disabled = not GameManager.is_app_unlocked("tuanmei")
-	btn_app_zodiac.disabled = not GameManager.is_app_unlocked("zodiac")
-	btn_app_house.disabled = not GameManager.is_app_unlocked("house")
-	btn_app_dating.disabled = not GameManager.is_app_unlocked("dating")
-	btn_app_job.disabled = not GameManager.is_app_unlocked("job")
+	_sync_phone_home_apps(true)
+	_refresh_action_tooltips()
 	# 检查新解锁的APP并通知
 	var new_unlocks := GameManager.get_new_unlocks()
 	if new_unlocks.size() > 0:
-		galgame.show_message("手机上新装了一个APP..." + "
-" + new_unlocks[0], true)
+		galgame.show_message("手机上新装了一个APP...\n" + new_unlocks[0], true)
+
+
+func _sync_phone_home_apps(interactable: bool) -> void:
+	_set_phone_app_state(btn_app_map, "map", interactable)
+	_set_phone_app_state(btn_app_wechat, "wechat", interactable)
+	_set_phone_app_state(btn_app_alipay, "", interactable)
+	_set_phone_app_state(btn_app_diary, "", interactable)
+	_set_phone_app_state(btn_app_job, "job", interactable)
+	_set_phone_app_state(btn_app_baotao, "baotao", interactable)
+	_set_phone_app_state(btn_app_dating, "dating", interactable)
+	_set_phone_app_state(btn_app_tuanmei, "tuanmei", interactable)
+	_set_phone_app_state(btn_app_zodiac, "zodiac", interactable)
+	_set_phone_app_state(btn_app_house, "house", interactable)
+
+
+func _set_phone_app_state(button: Button, app_id: String, interactable: bool) -> void:
+	if not is_instance_valid(button):
+		return
+	var unlocked := app_id == "" or GameManager.is_app_unlocked(app_id)
+	button.visible = unlocked
+	button.disabled = not interactable or not unlocked
+	button.mouse_filter = Control.MOUSE_FILTER_STOP if unlocked else Control.MOUSE_FILTER_IGNORE
 
 
 func _show_opening_intro() -> void:
+	if GameManager.skip_opening_intro_once:
+		GameManager.skip_opening_intro_once = false
+		_enter_weekend()
+		return
+	if current_phase == Phase.WEEKEND:
+		return
 	current_phase = Phase.TRANSITION
 	_hide_all_popups()
 	_disable_app_grid()
@@ -643,14 +756,8 @@ func _show_opening_intro() -> void:
 
 
 func _disable_app_grid() -> void:
-	btn_app_map.disabled = true
-	btn_app_wechat.disabled = true
-	btn_app_baotao.disabled = true
-	btn_app_tuanmei.disabled = true
-	btn_app_zodiac.disabled = true
-	btn_app_house.disabled = true
-	btn_app_dating.disabled = true
-	btn_app_job.disabled = true
+	_sync_phone_home_apps(false)
+	_refresh_action_tooltips()
 
 
 func _hide_all_popups() -> void:
@@ -678,11 +785,14 @@ func _show_event(event: Dictionary, after_callback: Callable) -> void:
 		stat_changes[key] = int(event[key])
 	var pages: Array = [desc]
 	galgame.show_galgame_dialog(pages, func() -> void:
-		for key in event:
-			if key == "desc":
-				continue
-			GameManager.modify_stat(key, event[key])
-		show_stat_result(stat_changes, after_callback)
+		show_stat_result(stat_changes, func() -> void:
+			for key in event:
+				if key == "desc":
+					continue
+				GameManager.modify_stat(key, event[key])
+			if after_callback.is_valid():
+				after_callback.call()
+		)
 	)
 
 
@@ -693,13 +803,12 @@ func _refresh_ui() -> void:
 	label_week.text = "%d岁 | 第%d月 | 第%d周" % [GameManager.age, GameManager.month, GameManager.week_in_month]
 	label_money.text = str(GameManager.money)
 	label_psalary.text = str(GameManager.pending_salary)
-	label_player_info.text = "姓名:%s | 星座:%s | 行动:%d/%d" % [
+	label_player_info.text = "姓名:%s | 星座:%s" % [
 		GameManager.player_name,
 		GameManager.player_zodiac,
-		GameManager.weekend_actions,
-		GameManager.max_weekend_actions,
 	]
 	_update_finance_widgets()
+	_refresh_action_tooltips()
 	# 更新进度条 + 数值标签
 	if progress_energy:
 		progress_energy.max_value = GameManager.max_energy
@@ -736,13 +845,16 @@ func _setup_finance_widgets() -> void:
 	label_player_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	label_player_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label_player_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label_player_info.add_theme_font_size_override("font_size", 12)
+	if label_week:
+		label_week.add_theme_font_size_override("font_size", 13)
 
 	label_pressure_summary = parent.get_node_or_null("LabelPressureSummary") as Label
 	if label_pressure_summary == null:
 		label_pressure_summary = Label.new()
 		label_pressure_summary.name = "LabelPressureSummary"
 		parent.add_child(label_pressure_summary)
-	label_pressure_summary.add_theme_font_size_override("font_size", 13)
+	label_pressure_summary.add_theme_font_size_override("font_size", 12)
 	label_pressure_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label_pressure_summary.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
@@ -751,9 +863,18 @@ func _setup_finance_widgets() -> void:
 		label_pressure_hint = Label.new()
 		label_pressure_hint.name = "LabelPressureHint"
 		parent.add_child(label_pressure_hint)
-	label_pressure_hint.add_theme_font_size_override("font_size", 12)
+	label_pressure_hint.add_theme_font_size_override("font_size", 11)
 	label_pressure_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label_pressure_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	label_early_goal = parent.get_node_or_null("LabelEarlyGoal") as Label
+	if label_early_goal == null:
+		label_early_goal = Label.new()
+		label_early_goal.name = "LabelEarlyGoal"
+		parent.add_child(label_early_goal)
+	label_early_goal.add_theme_font_size_override("font_size", 11)
+	label_early_goal.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label_early_goal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 func _update_finance_widgets() -> void:
@@ -764,7 +885,7 @@ func _update_finance_widgets() -> void:
 	var debt_total: int = GameManager.huabei_debt + GameManager.huabei_installment_debt
 	var cash_after: int = int(preview.get("cash_after_all", 0))
 	var mandatory_cost: int = int(preview.get("mandatory_cost", 0))
-	label_pressure_summary.text = "本月压力:%s | 月底现金:%d | 账单:%d | 总债:%d" % [
+	label_pressure_summary.text = "压力:%s | 月底:%d | 账单:%d | 债:%d" % [
 		str(pressure.get("name", "未知")),
 		cash_after,
 		mandatory_cost,
@@ -775,7 +896,7 @@ func _update_finance_widgets() -> void:
 	var degree_names := ["大专", "成人本科"]
 	var job_name: String = job_names[clampi(GameManager.job_level, 0, job_names.size() - 1)]
 	var degree_name: String = degree_names[clampi(GameManager.degree, 0, degree_names.size() - 1)]
-	var growth_text := "成长:%s | %s | 夜校:%d/12" % [
+	var growth_text := "成长:%s/%s | 夜校:%d/12" % [
 		job_name,
 		degree_name,
 		GameManager.night_school_progress,
@@ -783,6 +904,105 @@ func _update_finance_widgets() -> void:
 	var pressure_hint := str(pressure.get("hint", ""))
 	label_pressure_hint.text = "%s\n%s" % [pressure_hint, growth_text] if pressure_hint != "" else growth_text
 	label_pressure_hint.add_theme_color_override("font_color", pressure.get("hint_color", Color(0.62, 0.66, 0.72)))
+	if label_early_goal:
+		var goal := _get_current_goal_hint(preview, pressure)
+		label_early_goal.text = str(goal.get("text", ""))
+		label_early_goal.visible = label_early_goal.text != ""
+		var goal_color: Color = goal.get("color", Color(0.62, 0.72, 0.92))
+		label_early_goal.add_theme_color_override("font_color", goal_color)
+
+
+func _get_current_goal_hint(preview: Dictionary, _pressure: Dictionary) -> Dictionary:
+	var cash_after := int(preview.get("cash_after_all", 0))
+	if bool(preview.get("game_over_predicted", false)) or bool(preview.get("min_payment_failed", false)) or cash_after < 0:
+		return {
+			"text": "目标：先保现金流。停止新增花呗，优先工作、还款或降支出。",
+			"color": Color(1.0, 0.42, 0.34),
+		}
+	match current_phase:
+		Phase.WEEKDAY:
+			if is_instance_valid(btn_work_normal) and not btn_work_normal.disabled:
+				return {
+					"text": "目标：选择工作态度。加班救现金，摸鱼保状态。",
+					"color": Color(0.72, 0.82, 1.0),
+				}
+			return {
+				"text": "目标：先定餐饮预算，再安排工作。餐饮会进月底账单。",
+				"color": Color(0.72, 0.82, 1.0),
+			}
+		Phase.WEEKEND:
+			return {
+				"text": _get_weekend_goal_text(preview),
+				"color": Color(0.70, 0.92, 0.78),
+			}
+		Phase.MONTH_END:
+			return {
+				"text": "目标：确认月底账单，重点看房租、餐饮、花呗和结算后现金。",
+				"color": Color(0.94, 0.82, 0.48),
+			}
+		Phase.EVENT:
+			return {
+				"text": "目标：看完事件和结算，再决定下一步。",
+				"color": Color(0.72, 0.82, 1.0),
+			}
+		Phase.TRANSITION:
+			return {
+				"text": "目标：等待场景切换完成。",
+				"color": Color(0.62, 0.66, 0.72),
+			}
+		_:
+			return {
+				"text": "",
+				"color": Color(0.62, 0.66, 0.72),
+			}
+
+
+func _get_weekend_goal_text(preview: Dictionary) -> String:
+	if GameManager.month <= 1:
+		match GameManager.week_in_month:
+			1:
+				return "目标：先看支付宝月底预测，再去地图低成本探索。"
+			2:
+				return "目标：观察花呗和餐饮账单，少做冲动消费。"
+			3:
+				if GameManager.is_app_unlocked("job"):
+					return "目标：看 BOSS 弯聘，确认职位门槛和收入线。"
+				return "目标：探索成长线，别把精力全花在消费上。"
+			_:
+				return "目标：月底前查支付宝，确认账单压得住。"
+	if GameManager.huabei_debt + GameManager.huabei_installment_debt > 0:
+		return "目标：先看支付宝，决定还款、分期或停止新增消费。"
+	if int(preview.get("cash_after_all", 0)) < 1000:
+		return "目标：现金缓冲偏低，优先低成本行动和收入。"
+	return "目标：精力耗尽前，安排成长行动或低成本社交。"
+
+
+func _refresh_action_tooltips() -> void:
+	btn_food_low.tooltip_text = "餐饮预算：本月餐饮+300，情绪-5。最省钱，但连续吃太差会有风险。"
+	btn_food_mid.tooltip_text = "餐饮预算：本月餐饮+800，精力+10。比较稳的默认选择。"
+	btn_food_high.tooltip_text = "餐饮预算：本月餐饮+2000，情绪+20，精力+15。舒服但会明显抬高月底账单。"
+	btn_work_normal.tooltip_text = "工作态度：精力-30，情绪-15，待发工资+%d。稳定收入。" % _get_salary("normal")
+	btn_work_slack.tooltip_text = "工作态度：精力-10，情绪+5，待发工资+%d。保状态，但收入低。" % _get_salary("slack")
+	btn_work_overtime.tooltip_text = "工作态度：精力-60，情绪-30，待发工资+%d。短期救现金，连续加班有风险。" % _get_salary("overtime")
+	_set_app_tooltip(btn_app_map, "map", "高德地图：周末地点行动。消耗精力，可能触发事件或邂逅。")
+	_set_app_tooltip(btn_app_wechat, "wechat", "微信：查看消息、联系人和上课入口。部分关系会随事件解锁。")
+	_set_app_tooltip(btn_app_alipay, "", "支付宝：查看现金、花呗、分期和月底预计。消费前先看这里。")
+	_set_app_tooltip(btn_app_diary, "", "日记：查看活动流水和数值变化，适合复盘刚才发生了什么。")
+	_set_app_tooltip(btn_app_baotao, "baotao", "宝淘：消费提升状态，但会增加花呗或现金压力。先看支付宝。")
+	_set_app_tooltip(btn_app_tuanmei, "tuanmei", "团美：医美消费，高花费高收益，容易压垮月底现金。")
+	_set_app_tooltip(btn_app_zodiac, "zodiac", "星座：查看星座影响和轻量运势。")
+	_set_app_tooltip(btn_app_house, "house", "贝壳：更换居住环境，房租会进入月底账单。")
+	_set_app_tooltip(btn_app_dating, "dating", "探探：社交探索，会消耗精力/情绪并影响关系。")
+	_set_app_tooltip(btn_app_job, "job", "BOSS弯聘：查看职位门槛和面试机会。职位提升是长期收入线。")
+
+
+func _set_app_tooltip(button: Button, app_id: String, unlocked_text: String) -> void:
+	if not is_instance_valid(button):
+		return
+	if app_id == "" or GameManager.is_app_unlocked(app_id):
+		button.tooltip_text = unlocked_text
+	else:
+		button.tooltip_text = "未解锁：继续推进主循环后开放。"
 
 
 func _get_huabei_min_payment() -> int:
@@ -835,12 +1055,31 @@ func _get_month_end_preview(salary_override: int = -1, rent_override: int = -1, 
 
 	var huabei_interest := 0
 	var huabei_after_interest := huabei_after_payment
-	if huabei_after_interest > 0:
+	var min_payment_penalty := 0
+	var negative_cash_penalty := 0
+	var sanity_after_settlement := GameManager.sanity
+	var game_over_predicted := false
+	var game_over_reason := ""
+	if min_payment_failed:
+		min_payment_penalty = 50
+		sanity_after_settlement -= min_payment_penalty
+		if sanity_after_settlement <= 0:
+			game_over_predicted = true
+			game_over_reason = "花呗最低还款失败，情绪归零"
+	if not game_over_predicted and huabei_after_interest > 0:
 		var before_interest := huabei_after_interest
 		huabei_after_interest = int(float(huabei_after_interest) * 1.05)
 		huabei_interest = huabei_after_interest - before_interest
+	if not game_over_predicted and cash_after_all < 0:
+		negative_cash_penalty = 50
+		sanity_after_settlement -= negative_cash_penalty
+		if sanity_after_settlement <= 0:
+			game_over_predicted = true
+			game_over_reason = "现金为负触发破产压力，情绪归零"
+	sanity_after_settlement = maxi(sanity_after_settlement, 0)
 
 	var mandatory_cost := rent + food + installment_due + huabei_min
+	var actual_cash_cost := rent + food + installment_due + huabei_paid
 	return {
 		"current_cash": GameManager.money,
 		"salary": salary,
@@ -856,7 +1095,14 @@ func _get_month_end_preview(salary_override: int = -1, rent_override: int = -1, 
 		"cash_after_fixed": cash_after_fixed,
 		"cash_after_all": cash_after_all,
 		"mandatory_cost": mandatory_cost,
+		"actual_cash_cost": actual_cash_cost,
 		"min_payment_failed": min_payment_failed,
+		"min_payment_penalty": min_payment_penalty,
+		"negative_cash_penalty": negative_cash_penalty,
+		"sanity_before_settlement": GameManager.sanity,
+		"sanity_after_settlement": sanity_after_settlement,
+		"game_over_predicted": game_over_predicted,
+		"game_over_reason": game_over_reason,
 		"total_debt_after": huabei_after_interest + installment_debt_after,
 	}
 
@@ -903,7 +1149,6 @@ func _build_week_confirm_text() -> String:
 	var next_step := "月底账单结算" if GameManager.week_in_month >= 4 else "第%d周工作日" % (GameManager.week_in_month + 1)
 	var lines: Array = []
 	lines.append("下一步：%s" % next_step)
-	lines.append("剩余周末行动：%d/%d" % [GameManager.weekend_actions, GameManager.max_weekend_actions])
 	lines.append("当前现金：%d | 待发工资：+%d" % [GameManager.money, int(preview.get("salary", 0))])
 	lines.append("本月账单：房租-%d / 餐饮-%d / 花呗最低-%d / 分期-%d" % [
 		int(preview.get("rent", 0)),
@@ -927,32 +1172,84 @@ func _build_month_end_bill_text(preview: Dictionary) -> String:
 	lines.append("")
 	lines.append("【固定扣款】")
 	lines.append("房租：-%d" % int(preview.get("rent", 0)))
-	lines.append("餐饮账单：-%d" % int(preview.get("food", 0)))
+	var food_cost: int = int(preview.get("food", 0))
+	lines.append("餐饮账单：-%d" % food_cost if food_cost > 0 else "餐饮账单：0")
 	if int(preview.get("installment_due", 0)) > 0:
 		lines.append("花呗分期：-%d（当前剩余 %d 期）" % [
 			int(preview.get("installment_due", 0)),
 			int(preview.get("installment_months_left", 0)),
 		])
 	if int(preview.get("huabei_min", 0)) > 0:
-		lines.append("花呗最低还款：-%d" % int(preview.get("huabei_min", 0)))
+		if int(preview.get("huabei_paid", 0)) < int(preview.get("huabei_min", 0)):
+			var huabei_paid: int = int(preview.get("huabei_paid", 0))
+			var huabei_paid_text: String = "-%d" % huabei_paid if huabei_paid > 0 else "0"
+			lines.append("花呗最低应还：-%d（预计实还：%s）" % [
+				int(preview.get("huabei_min", 0)),
+				huabei_paid_text,
+			])
+		else:
+			lines.append("花呗最低还款：-%d" % int(preview.get("huabei_min", 0)))
 	lines.append("")
 	lines.append("【结算预估】")
-	lines.append("刚性支出合计：-%d" % int(preview.get("mandatory_cost", 0)))
+	lines.append("应付账单合计：-%d" % int(preview.get("mandatory_cost", 0)))
+	lines.append("预计实际扣款：-%d" % int(preview.get("actual_cash_cost", 0)))
 	lines.append("结算后现金：%d" % int(preview.get("cash_after_all", 0)))
 	if int(preview.get("huabei_interest", 0)) > 0:
 		lines.append("未还花呗滚入利息：+%d" % int(preview.get("huabei_interest", 0)))
 	lines.append("结算后总债务：%d" % int(preview.get("total_debt_after", 0)))
 	if GameManager.invest_safe + GameManager.invest_risk > 0:
 		lines.append("理财资产不自动变现：%d" % (GameManager.invest_safe + GameManager.invest_risk))
+	var sanity_penalty: int = int(preview.get("min_payment_penalty", 0)) + int(preview.get("negative_cash_penalty", 0))
+	if sanity_penalty > 0:
+		lines.append("")
+		lines.append("【情绪压力】")
+		if int(preview.get("min_payment_penalty", 0)) > 0:
+			lines.append("最低还款失败：情绪-%d" % int(preview.get("min_payment_penalty", 0)))
+		if int(preview.get("negative_cash_penalty", 0)) > 0:
+			lines.append("现金为负：情绪-%d" % int(preview.get("negative_cash_penalty", 0)))
+		lines.append("预计情绪：%d -> %d" % [
+			int(preview.get("sanity_before_settlement", GameManager.sanity)),
+			int(preview.get("sanity_after_settlement", GameManager.sanity)),
+		])
+		if bool(preview.get("game_over_predicted", false)):
+			lines.append("警告：确认结算后会直接进入 Game Over。")
+			lines.append("原因：%s" % str(preview.get("game_over_reason", "情绪归零")))
 
 	var pressure := _get_pressure_state(preview)
 	lines.append("")
 	lines.append("【风险提示】%s：%s" % [str(pressure.get("name", "未知")), str(pressure.get("hint", ""))])
 	if bool(preview.get("min_payment_failed", false)):
-		lines.append("注意：当前现金不足以覆盖花呗最低还款，会产生严重情绪惩罚。")
+		lines.append("注意：当前现金不足以覆盖花呗最低还款。")
 	elif int(preview.get("cash_after_all", 0)) < 0:
 		lines.append("注意：结算后现金为负，会进入破产压力判定。")
 	return "\n".join(lines)
+
+
+func _layout_month_end_bill(text: String) -> void:
+	var line_count: int = text.split("\n").size()
+	var content_height: float = clamp(float(line_count * 17 + 8), 220.0, 430.0)
+	var panel_height: float = clamp(content_height + 210.0, 470.0, 660.0)
+	var panel_width: float = 700.0
+	var content_width: float = 620.0
+	var panel_bg := month_end_popup.find_child("MonthEndPanelBG", true, false) as ColorRect
+	if panel_bg:
+		panel_bg.offset_left = -panel_width * 0.5
+		panel_bg.offset_right = panel_width * 0.5
+		panel_bg.offset_top = -panel_height * 0.5
+		panel_bg.offset_bottom = panel_height * 0.5
+	var vbox := month_end_popup.find_child("MEVBox", true, false) as VBoxContainer
+	if vbox:
+		var vbox_height: float = panel_height - 70.0
+		vbox.offset_left = -content_width * 0.5
+		vbox.offset_right = content_width * 0.5
+		vbox.offset_top = -vbox_height * 0.5
+		vbox.offset_bottom = vbox_height * 0.5
+	if is_instance_valid(label_me_content):
+		label_me_content.custom_minimum_size = Vector2(content_width, content_height)
+		label_me_content.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	if is_instance_valid(btn_pay_rent):
+		btn_pay_rent.custom_minimum_size = Vector2(360, 44)
+		btn_pay_rent.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 
 func _setup_stat_bars() -> void:
@@ -1055,15 +1352,19 @@ func _push_npc_unread_messages() -> void:
 	if _family_unread <= 0 and GameManager.npcs.get("family_group", {}).get("unlocked", false):
 		var should_push_event := false
 		var event_idx: int = 0
-		if GameManager.turn_count == 1:
+		var available_family_events: Array = []
+		for idx in range(wechat._family_events.size()):
+			if idx not in GameManager._family_event_used_indices:
+				available_family_events.append(idx)
+		if GameManager.turn_count == 1 and not GameManager._family_event_used_indices.has(0):
 			should_push_event = true
 			event_idx = 0  ## 相亲局
-		elif GameManager.turn_count == 5:
+		elif GameManager.turn_count == 5 and not GameManager._family_event_used_indices.has(1):
 			should_push_event = true
 			event_idx = 1  ## 冰箱
-		elif randi() % 100 < 70:
+		elif available_family_events.size() > 0 and randi() % 100 < 70:
 			should_push_event = true
-			event_idx = randi() % wechat._family_events.size()
+			event_idx = available_family_events[randi() % available_family_events.size()]
 		if should_push_event:
 			var event_desc: String = wechat._family_events[event_idx]["desc"]
 			var preview_line: String = event_desc.split("
@@ -1071,6 +1372,7 @@ func _push_npc_unread_messages() -> void:
 			if preview_line.length() > 20:
 				preview_line = preview_line.substr(0, 20) + "..."
 			GameManager.npcs["family_group"]["messages"].append({"sender": "npc", "text": preview_line, "event_idx": event_idx})
+			GameManager._family_event_used_indices.append(event_idx)
 			GameManager.add_unread("family_group")
 	## 王老师：第1周100%推送，之后每4周推送
 	if GameManager.npcs.get("wang_teacher", {}).get("unlocked", false):
@@ -1131,12 +1433,13 @@ func _push_npc_unread_messages() -> void:
 			GameManager.add_unread("family_group")
 
 func _on_npc_unlocked(_id: String, npc_name: String) -> void:
-	var unlock_text := "[%s] 添加了你的微信。" % npc_name
-	match _id:
-		"zhou_jie":
-			unlock_text = "入职第三周，茶水间聊过几次后，[%s] 添加了你的微信。" % npc_name
-		_:
-			unlock_text = "[%s] 添加了你的微信。" % npc_name
+	var summary: Dictionary = GameManager.get_npc_contact_summary(_id)
+	var relation: String = str(summary.get("relation", "新联系人"))
+	var source_label: String = str(summary.get("source_label", "未知来源"))
+	var source_detail: String = str(summary.get("source_detail", ""))
+	var unlock_text := "【新联系人：%s】\n关系：%s\n来源：%s" % [npc_name, relation, source_label]
+	if source_detail != "":
+		unlock_text += "\n%s" % source_detail
 	show_message(unlock_text, true)
 	wechat._build_chat_items()
 
@@ -1181,6 +1484,7 @@ func _on_game_over(cause_title: String, cause_desc: String) -> void:
 	current_phase = Phase.GAME_OVER
 	GameManager.game_finished = true
 	_disable_all()
+	_force_clear_dialog_overlay()
 	label_game_over.visible = false
 	label_week.text = "游戏结束"
 
@@ -1268,6 +1572,7 @@ func _on_game_over(cause_title: String, cause_desc: String) -> void:
 func _on_game_ended(ending_type: String) -> void:
 	current_phase = Phase.ENDING
 	_disable_all()
+	_force_clear_dialog_overlay()
 	label_game_over.visible = false
 	ending_panel.visible = false
 	var ending: Dictionary = GameManager.last_ending
@@ -1437,20 +1742,13 @@ func _on_work_normal() -> void:
 func _on_work_overtime() -> void:
 	GameManager.consecutive_overtime += 1
 	var amount: int = _get_salary("overtime")
-	var changes := _apply_action_changes({"energy": -60, "sanity": -30, "pending_salary": amount})
 	GameManager.add_activity("日常", "疯狂加班，待发工资 +%d" % amount)
-	# 连续加班死法检查
-	var death: Dictionary = GameManager.check_behavior_death()
-	if death.size() > 0:
-		GameManager.game_over.emit(death["title"], death["desc"])
-		return
-	_show_action_result("你选择继续加班，把这周的时间全压进了工位里。", changes, Callable(self, "_finish_workday"))
+	_show_action_result("你选择继续加班，把这周的时间全压进了工位里。", {"energy": -60, "sanity": -30, "pending_salary": amount}, Callable(self, "_finish_workday"))
 
 
 func _complete_work_action(label: String, changes: Dictionary, activity_desc: String) -> void:
-	var applied := _apply_action_changes(changes)
 	GameManager.add_activity("日常", activity_desc)
-	_show_action_result("这周你选择了%s。" % label, applied, Callable(self, "_finish_workday"))
+	_show_action_result("这周你选择了%s。" % label, changes, Callable(self, "_finish_workday"))
 
 
 func _apply_action_changes(changes: Dictionary) -> Dictionary:
@@ -1472,10 +1770,21 @@ func _apply_action_changes(changes: Dictionary) -> Dictionary:
 
 func _show_action_result(story_text: String, changes: Dictionary, after: Callable = Callable()) -> void:
 	weekday_panel.visible = false
-	if action_service and action_service.has_method("show_action_result"):
-		action_service.show_action_result(story_text, changes, after)
+	if action_service and action_service.has_method("show_deferred_action_result"):
+		action_service.show_deferred_action_result(story_text, changes, func() -> void:
+			var death: Dictionary = GameManager.check_behavior_death()
+			if death.size() > 0:
+				GameManager.game_over.emit(death["title"], death["desc"])
+				return
+			if after.is_valid():
+				after.call()
+		)
+	elif action_service and action_service.has_method("show_action_result"):
+		var applied := _apply_action_changes(changes)
+		action_service.show_action_result(story_text, applied, after)
 	else:
-		show_stat_result(changes, after)
+		var applied := _apply_action_changes(changes)
+		show_stat_result(applied, after)
 
 
 ## 根据职位等级获取薪资
@@ -1520,19 +1829,29 @@ func _play_transition_after_aging() -> void:
 
 
 func _play_transition(trans_text: String) -> void:
+	_transition_token += 1
+	var token := _transition_token
 	current_phase = Phase.TRANSITION
 	label_trans_text.text = trans_text
 	transition_screen.visible = true
 	transition_screen.modulate.a = 0.0
+	var finish_transition := Callable(self, "_finish_transition").bind(token)
 
 	var tween := create_tween()
 	tween.tween_property(transition_screen, "modulate:a", 1.0, 0.4)
 	tween.tween_interval(1.0)
 	tween.tween_property(transition_screen, "modulate:a", 0.0, 0.4)
-	tween.tween_callback(func() -> void:
-		transition_screen.visible = false
-		_proceed_after_work_event()
-	)
+	tween.tween_callback(finish_transition)
+	get_tree().create_timer(2.2).timeout.connect(finish_transition)
+	call_deferred("_finish_transition", token)
+
+
+func _finish_transition(token: int) -> void:
+	if token != _transition_token:
+		return
+	_transition_token += 1
+	transition_screen.visible = false
+	_proceed_after_work_event()
 
 
 func _proceed_after_work_event() -> void:
@@ -1553,12 +1872,15 @@ func _on_month_ended(salary: int, rent: int, debt: int, food: int) -> void:
 	weekday_panel.visible = false
 	btn_next_week.visible = false
 	_hide_all_popups()
+	_force_clear_dialog_overlay()
 	_disable_app_grid()
 
 	var preview := _get_month_end_preview(salary, rent, food)
+	var bill_text := _build_month_end_bill_text(preview)
 	label_me_content.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	label_me_content.add_theme_color_override("font_color", Color(0.92, 0.92, 0.92))
-	label_me_content.text = _build_month_end_bill_text(preview)
+	label_me_content.text = bill_text
+	_layout_month_end_bill(bill_text)
 	btn_pay_rent.text = "确认结算，进入下个月"
 	month_end_popup.mouse_filter = Control.MOUSE_FILTER_STOP
 	set_ui_layer_visible(month_end_popup, true)

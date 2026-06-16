@@ -204,8 +204,6 @@ func _build_stats_tab() -> void:
 	_add_number_editor("月份", "month", 1, 12, 1)
 	_add_number_editor("月内周", "week_in_month", 1, 4, 1)
 	_add_number_editor("总周数", "turn_count", 1, 999, 1)
-	_add_number_editor("周末行动", "weekend_actions", 0, 10, 1)
-	_add_number_editor("最大周末行动", "max_weekend_actions", 1, 10, 1)
 	_add_number_editor("职位等级", "job_level", 0, 2, 1)
 	_add_number_editor("学历", "degree", 0, 1, 1)
 	_add_number_editor("夜校学分", "night_school_progress", 0, 12, 1)
@@ -314,14 +312,12 @@ func _add_snapshot() -> void:
 	var phase_text := _phase_name(mg)
 	var total_debt: int = GameManager.huabei_debt + GameManager.huabei_installment_debt
 	_add_label(
-		"阶段:%s | %d岁 %d月 第%d周 | 总周:%d | 行动:%d/%d" % [
+		"阶段:%s | %d岁 %d月 第%d周 | 总周:%d" % [
 			phase_text,
 			GameManager.age,
 			GameManager.month,
 			GameManager.week_in_month,
 			GameManager.turn_count,
-			GameManager.weekend_actions,
-			GameManager.max_weekend_actions,
 		],
 		12,
 		Color(0.78, 0.84, 0.92)
@@ -439,11 +435,6 @@ func _set_game_value(stat_name: String, value: int) -> void:
 			GameManager.month = clampi(value, 1, 12)
 		"week_in_month":
 			GameManager.week_in_month = clampi(value, 1, 4)
-		"weekend_actions":
-			GameManager.weekend_actions = clampi(value, 0, GameManager.max_weekend_actions)
-		"max_weekend_actions":
-			GameManager.max_weekend_actions = maxi(value, 1)
-			GameManager.weekend_actions = clampi(GameManager.weekend_actions, 0, GameManager.max_weekend_actions)
 		"huabei_debt", "huabei_installment_debt", "huabei_installment_months_left", "huabei_installment_monthly_pay", "pending_salary", "invest_safe", "invest_risk", "night_school_progress", "monthly_food_cost":
 			GameManager.set(stat_name, maxi(value, 0))
 		"job_level":
@@ -492,8 +483,8 @@ func _capture_snapshot() -> Dictionary:
 		"charm", "intellect", "eq", "huabei_debt", "credit_debt",
 		"huabei_installment_debt", "huabei_installment_months_left",
 		"huabei_installment_monthly_pay", "invest_safe", "invest_risk",
-		"age", "month", "week_in_month", "turn_count", "weekend_actions",
-		"max_weekend_actions", "job_level", "degree", "night_school_progress",
+		"age", "month", "week_in_month", "turn_count",
+		"job_level", "degree", "night_school_progress",
 		"housing_level", "monthly_food_cost", "consecutive_poor_food",
 		"consecutive_overtime",
 	]
@@ -750,7 +741,6 @@ func _debug_normalize_state() -> void:
 	GameManager.max_sanity = maxi(GameManager.max_sanity, 1)
 	GameManager.energy = clampi(GameManager.energy, 0, GameManager.max_energy)
 	GameManager.sanity = clampi(GameManager.sanity, 0, GameManager.max_sanity)
-	GameManager.weekend_actions = clampi(GameManager.weekend_actions, 0, GameManager.max_weekend_actions)
 	GameManager.huabei_debt = maxi(GameManager.huabei_debt, 0)
 	GameManager.huabei_installment_debt = maxi(GameManager.huabei_installment_debt, 0)
 	GameManager.huabei_installment_months_left = maxi(GameManager.huabei_installment_months_left, 0)
@@ -778,15 +768,10 @@ func _collect_runtime_issues() -> Array:
 		issues.append("energy 高于 max_energy：%d/%d。" % [GameManager.energy, GameManager.max_energy])
 	if GameManager.sanity > GameManager.max_sanity:
 		issues.append("sanity 高于 max_sanity：%d/%d。" % [GameManager.sanity, GameManager.max_sanity])
-	if GameManager.weekend_actions < 0:
-		issues.append("weekend_actions 小于0。")
 	if GameManager.huabei_debt < 0 or GameManager.huabei_installment_debt < 0:
 		issues.append("花呗债务出现负数。")
 	if GameManager.game_finished and GameManager.awaiting_month_settle:
 		issues.append("game_finished 与 awaiting_month_settle 同时为 true。")
-	var mg := _get_main_game()
-	if mg and mg.payment_popup and mg.payment_popup.visible and GameManager.weekend_actions <= 0:
-		issues.append("支付弹窗打开时周末行动已为0，检查是否存在先扣行动再支付的分支。")
 	return issues
 
 

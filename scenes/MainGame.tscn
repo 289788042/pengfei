@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://4efrj08wbmj8" path="res://scenes/MainGame.gd" id="1_8etcy"]
 [ext_resource type="Theme" uid="uid://cikxg02q2to20" path="res://UI/GlobalPixelTheme.tres" id="1_xej52"]
 [ext_resource type="Script" uid="uid://wupulnqs5tac" path="res://scripts/DebugPanel.gd" id="3_p73vr"]
-[ext_resource type="Texture2D" path="res://Assets/UI/phone_wallpaper.png" id="wallpaper_ad800b"]
+[ext_resource type="Texture2D" uid="uid://dwxcy50xp6xfp" path="res://Assets/UI/phone_wallpaper.png" id="wallpaper_ad800b"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
 bg_color = Color(0, 0, 0, 0.75)
@@ -811,7 +811,7 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_phone_screen")
 
-[node name="Wallpaper" type="TextureRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen"]
+[node name="Wallpaper" type="TextureRect" parent="HBoxContainer/RightMargin/RightSystemArea/PhoneCase/BezelMargin/PhoneScreen" unique_id=1370722653]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -2188,16 +2188,36 @@ visible = false
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.95)
+color = Color(0, 0, 0, 0.78)
+
+[node name="MonthEndPanelBG" type="ColorRect" parent="MonthEndPopup" unique_id=2097866241]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -320.0
+offset_right = 350.0
+offset_bottom = 320.0
+mouse_filter = 2
+color = Color(0.045, 0.05, 0.065, 0.98)
 
 [node name="MEVBox" type="VBoxContainer" parent="MonthEndPopup" unique_id=1890241974]
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-theme_override_constants/separation = 15
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -310.0
+offset_top = -285.0
+offset_right = 310.0
+offset_bottom = 285.0
+theme_override_constants/separation = 14
 alignment = 1
 
 [node name="LabelMETitle" type="Label" parent="MonthEndPopup/MEVBox" unique_id=2018466899]
+custom_minimum_size = Vector2(620, 34)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.4, 0.26666668, 1)
 theme_override_font_sizes/font_size = 28
@@ -2206,15 +2226,19 @@ horizontal_alignment = 1
 
 [node name="LabelMEContent" type="Label" parent="MonthEndPopup/MEVBox" unique_id=238063462]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(620, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
-horizontal_alignment = 1
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
+theme_override_font_sizes/font_size = 15
 autowrap_mode = 2
 
 [node name="Btn_PayRent" type="Button" parent="MonthEndPopup/MEVBox" unique_id=707375647]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 44)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "交房租并进入下个月"
 

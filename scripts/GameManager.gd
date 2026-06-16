@@ -46,9 +46,9 @@ var rent_cost: int = 2000
 var base_rent: int = 1500
 ## 本月累计餐饮开销
 var monthly_food_cost: int = 0
-## 周末剩余行动次数
+## 废弃兼容字段：旧版本周末资源
 var weekend_actions: int = 0
-## 周末最大行动次数
+## 废弃兼容字段：旧版本周末资源上限
 var max_weekend_actions: int = 3
 
 # ==================== 核心数值变量 ====================
@@ -150,6 +150,7 @@ var night_school_progress: int = 0
 ## 王老师上次推送消息的周数（用于隔4周推送逻辑）
 var _wang_teacher_last_push_week: int = 0
 var _family_chat_used_indices: Array = []
+var _family_event_used_indices: Array = []
 ## 职场微事件数据
 var workplace_events: Array = []
 ## 近3周触发的微事件ID（防重复）
@@ -171,13 +172,34 @@ var encounter_failed_ids: Array = []
 
 var player_name: String = ""
 var player_zodiac: String = ""
+## Dev shortcut: StartMenu F2 should enter gameplay without showing the opening intro.
+var skip_opening_intro_once: bool = false
 
 # ==================== NPC 数据 ====================
 
 var npcs: Dictionary = {
-	"family_group": {"name": "相亲相爱一家人 (爸妈)", "affection": 50, "level": 1, "unlocked": true, "warning_msg": "你妈昨天又在朋友圈转发了《女孩过了25岁还不结婚有多可怕》", "blocked": false, "messages": [], "last_seen_week": 0},
-	"wang_teacher": {"name": "尚德夜校-王老师", "affection": 0, "level": 1, "unlocked": true, "warning_msg": "不逼自己一把，你永远只能拿底薪！", "blocked": false, "messages": [], "last_seen_week": 0},
-	"xiao_ya": {"name": "小雅", "affection": 30, "level": 1, "unlocked": true, "warning_msg": "", "blocked": false, "messages": [{"sender": "npc", "text": "姐妹你啥时候来深圳呀？来了找我玩！"}], "last_seen_week": 0, "unread": 1},
+	"family_group": {
+		"name": "相亲相爱一家人 (爸妈)", "affection": 50, "level": 1,
+		"unlocked": true, "warning_msg": "你妈昨天又在朋友圈转发了《女孩过了25岁还不结婚有多可怕》",
+		"blocked": false, "messages": [], "last_seen_week": 0,
+		"relation": "家人", "source_label": "手机原有群聊", "source_detail": "爸妈和亲戚都在的家庭群。",
+		"intro_week": 1,
+	},
+	"wang_teacher": {
+		"name": "尚德夜校-王老师", "affection": 0, "level": 1,
+		"unlocked": true, "warning_msg": "不逼自己一把，你永远只能拿底薪！",
+		"blocked": false, "messages": [], "last_seen_week": 0,
+		"relation": "夜校招生老师", "source_label": "微信广告", "source_detail": "你点过尚德夜校广告后，对方加了你的微信。",
+		"intro_week": 1,
+	},
+	"xiao_ya": {
+		"name": "小雅", "affection": 30, "level": 1,
+		"unlocked": true, "warning_msg": "", "blocked": false,
+		"messages": [{"sender": "npc", "text": "姐妹你啥时候来深圳呀？来了找我玩！"}],
+		"last_seen_week": 0, "unread": 1,
+		"relation": "闺蜜/高中同学", "source_label": "老家旧友", "source_detail": "高中时就认识的朋友，比你更早来深圳。",
+		"intro_week": 1,
+	},
 }
 var _initial_npcs_template: Dictionary = {}
 
@@ -198,6 +220,7 @@ func _ready() -> void:
 
 ## 开始新局时重置所有运行时状态，避免全局单例残留上一局数据
 func reset_game() -> void:
+	skip_opening_intro_once = false
 	pending_aging_msg = ""
 	age = 23
 	month = 1
@@ -249,6 +272,7 @@ func reset_game() -> void:
 	night_school_progress = 0
 	_wang_teacher_last_push_week = 0
 	_family_chat_used_indices = []
+	_family_event_used_indices = []
 	_recent_work_events = []
 
 	npc_database = []
@@ -305,12 +329,16 @@ func add_finance(amount: int, desc: String, is_huabei: bool) -> void:
 
 ## 增加NPC好感度（含自动升级逻辑：每50好感升一级）
 func add_npc_affection(npc_id: String, amount: int) -> void:
+	var runtime := get_npc_runtime(npc_id)
 	if not npcs.has(npc_id):
+		runtime["affection"] = int(runtime.get("affection", 0)) + amount
+		stats_updated.emit()
 		return
-	npcs[npc_id]["affection"] += amount
+	npcs[npc_id]["affection"] = int(npcs[npc_id].get("affection", runtime.get("affection", 0))) + amount
 	while npcs[npc_id]["affection"] >= 50:
 		npcs[npc_id]["affection"] -= 50
 		npcs[npc_id]["level"] += 1
+	runtime["affection"] = int(npcs[npc_id]["affection"])
 	stats_updated.emit()
 
 
@@ -547,14 +575,144 @@ func _sync_initial_npc_runtime() -> void:
 	for npc_id in npcs:
 		if not npcs[npc_id].get("unlocked", false):
 			continue
+		_ensure_contact_metadata(npc_id, get_npc_data(npc_id))
 		if unlocked_npcs.has(npc_id):
 			continue
 		unlocked_npcs[npc_id] = {
 			"affection": npcs[npc_id].get("affection", 0),
 			"flags": [],
 			"used_daily_chats": [],
+			"used_milestones": [],
+			"used_moments": [],
 			"chat_cooldown": 0,
 		}
+
+
+func _location_name_for_contact(location_id: String) -> String:
+	match location_id:
+		"gym":
+			return "健身房"
+		"library":
+			return "书店/图书馆"
+		"bar":
+			return "酒吧"
+		"park":
+			return "公园"
+		"cafe":
+			return "咖啡厅"
+		"beach":
+			return "海边"
+		"night_market":
+			return "夜市"
+		"auto":
+			return "剧情"
+		_:
+			return location_id if location_id != "" else "未知地点"
+
+
+func _build_contact_metadata(npc_id: String, static_data: Dictionary, source_context: Dictionary = {}) -> Dictionary:
+	var relation: String = str(source_context.get("relation", static_data.get("title", ""))).strip_edges()
+	if relation == "":
+		match npc_id:
+			"family_group":
+				relation = "家人"
+			"wang_teacher":
+				relation = "夜校招生老师"
+			"xiao_ya":
+				relation = "闺蜜/高中同学"
+			_:
+				relation = "新认识的人"
+	var source_label: String = str(source_context.get("source_label", "")).strip_edges()
+	var source_detail: String = str(source_context.get("source_detail", "")).strip_edges()
+	var intro_message: String = str(source_context.get("intro_message", "")).strip_edges()
+	if source_label == "":
+		match npc_id:
+			"family_group":
+				source_label = "手机原有群聊"
+				source_detail = "爸妈和亲戚都在的家庭群。"
+			"wang_teacher":
+				source_label = "微信广告"
+				source_detail = "你点过尚德夜校广告后，对方加了你的微信。"
+			"xiao_ya":
+				source_label = "老家旧友"
+				source_detail = "高中时就认识的朋友，比你更早来深圳。"
+			"zhou_jie":
+				source_label = "工作：第3周茶水间"
+				source_detail = "入职第三周，你在茶水间认识了公司前辈周姐。"
+			_:
+				var enc: Dictionary = static_data.get("encounter", {})
+				var location_id: String = str(enc.get("location", ""))
+				source_label = "地点邂逅：%s" % _location_name_for_contact(location_id)
+				source_detail = "你们在%s认识。" % _location_name_for_contact(location_id)
+	if intro_message == "":
+		match npc_id:
+			"zhou_jie":
+				intro_message = "【联系人来源】入职第三周，你在茶水间认识了公司前辈周姐。她说：有什么不懂的可以问我。"
+			"family_group":
+				intro_message = ""
+			"wang_teacher":
+				intro_message = "【联系人来源】你点过尚德夜校广告后，王老师添加了你的微信。"
+			"xiao_ya":
+				intro_message = "【联系人来源】小雅是你的高中同学，也是你在深圳少数能说上话的旧友。"
+			_:
+				intro_message = "【联系人来源】%s" % source_detail
+	return {
+		"relation": relation,
+		"source_label": source_label,
+		"source_detail": source_detail,
+		"intro_message": intro_message,
+	}
+
+
+func _ensure_contact_metadata(npc_id: String, static_data: Dictionary = {}, source_context: Dictionary = {}) -> void:
+	if not npcs.has(npc_id):
+		return
+	var meta := _build_contact_metadata(npc_id, static_data, source_context)
+	for key in ["relation", "source_label", "source_detail"]:
+		if not npcs[npc_id].has(key) or str(npcs[npc_id].get(key, "")).strip_edges() == "":
+			npcs[npc_id][key] = meta[key]
+	if not npcs[npc_id].has("intro_week"):
+		npcs[npc_id]["intro_week"] = turn_count
+
+
+func _has_contact_intro_message(npc_id: String) -> bool:
+	if not npcs.has(npc_id):
+		return false
+	for msg in npcs[npc_id].get("messages", []):
+		if msg is Dictionary and str(msg.get("type", "")) == "contact_intro":
+			return true
+	return false
+
+
+func ensure_npc_contact_intro(npc_id: String, mark_unread: bool = false, source_context: Dictionary = {}) -> void:
+	if not npcs.has(npc_id):
+		return
+	if _has_contact_intro_message(npc_id):
+		return
+	var static_data := get_npc_data(npc_id)
+	var meta := _build_contact_metadata(npc_id, static_data, source_context)
+	var intro_message: String = str(meta.get("intro_message", "")).strip_edges()
+	if intro_message == "":
+		return
+	npcs[npc_id]["messages"].push_front({
+		"sender": "system",
+		"text": intro_message,
+		"type": "contact_intro",
+	})
+	if mark_unread:
+		npcs[npc_id]["unread"] = int(npcs[npc_id].get("unread", 0)) + 1
+
+
+func get_npc_contact_summary(npc_id: String) -> Dictionary:
+	if not npcs.has(npc_id):
+		return {}
+	_ensure_contact_metadata(npc_id, get_npc_data(npc_id))
+	return {
+		"relation": str(npcs[npc_id].get("relation", "")),
+		"source_label": str(npcs[npc_id].get("source_label", "")),
+		"source_detail": str(npcs[npc_id].get("source_detail", "")),
+		"intro_week": int(npcs[npc_id].get("intro_week", 0)),
+	}
 
 
 ## 检查自动解锁NPC（每周开始时调用）
@@ -594,45 +752,159 @@ func get_npc_runtime(npc_id: String) -> Dictionary:
 			"affection": 0,
 			"flags": [],
 			"used_daily_chats": [],
+			"used_milestones": [],
+			"used_moments": [],
 			"chat_cooldown": 0
 		}
+	if not unlocked_npcs[npc_id].has("flags"):
+		unlocked_npcs[npc_id]["flags"] = []
+	if not unlocked_npcs[npc_id].has("used_daily_chats"):
+		unlocked_npcs[npc_id]["used_daily_chats"] = []
+	if not unlocked_npcs[npc_id].has("used_milestones"):
+		unlocked_npcs[npc_id]["used_milestones"] = []
+	if not unlocked_npcs[npc_id].has("used_moments"):
+		unlocked_npcs[npc_id]["used_moments"] = []
 	return unlocked_npcs[npc_id]
+
+
+func get_npc_total_affection(npc_id: String) -> int:
+	if npcs.has(npc_id):
+		var level: int = maxi(int(npcs[npc_id].get("level", 1)), 1)
+		var affection: int = int(npcs[npc_id].get("affection", 0))
+		return (level - 1) * 50 + affection
+	var runtime := get_npc_runtime(npc_id)
+	return int(runtime.get("affection", 0))
+
+
+func get_next_available_npc_milestone(npc_id: String) -> Dictionary:
+	var static_data := get_npc_data(npc_id)
+	if static_data.is_empty():
+		return {}
+	var runtime := get_npc_runtime(npc_id)
+	var used: Array = runtime.get("used_milestones", [])
+	var total_affection := get_npc_total_affection(npc_id)
+	var best: Dictionary = {}
+	var best_trigger := 999999
+	for milestone in static_data.get("milestones", []):
+		if not (milestone is Dictionary):
+			continue
+		var milestone_id := str(milestone.get("id", ""))
+		if milestone_id == "" or used.has(milestone_id):
+			continue
+		var trigger := int(milestone.get("trigger_affection", 0))
+		if total_affection >= trigger and trigger < best_trigger:
+			best = milestone
+			best_trigger = trigger
+	return best
+
+
+func mark_npc_milestone_used(npc_id: String, milestone_id: String, outcome: String = "") -> void:
+	if milestone_id == "":
+		return
+	var runtime := get_npc_runtime(npc_id)
+	if not runtime["used_milestones"].has(milestone_id):
+		runtime["used_milestones"].append(milestone_id)
+	if outcome != "":
+		var flag := "%s_%s" % [milestone_id, outcome]
+		if not runtime["flags"].has(flag):
+			runtime["flags"].append(flag)
+
+
+func get_next_available_npc_moment(npc_id: String) -> Dictionary:
+	var static_data := get_npc_data(npc_id)
+	if static_data.is_empty():
+		return {}
+	var runtime := get_npc_runtime(npc_id)
+	var used: Array = runtime.get("used_moments", [])
+	for moment in static_data.get("moments", []):
+		if not (moment is Dictionary):
+			continue
+		var moment_id := str(moment.get("id", ""))
+		if moment_id == "" or used.has(moment_id):
+			continue
+		return moment
+	return {}
+
+
+func mark_npc_moment_used(npc_id: String, moment_id: String, outcome: String = "") -> void:
+	if moment_id == "":
+		return
+	var runtime := get_npc_runtime(npc_id)
+	if not runtime["used_moments"].has(moment_id):
+		runtime["used_moments"].append(moment_id)
+	if outcome != "":
+		var flag := "%s_%s" % [moment_id, outcome]
+		if not runtime["flags"].has(flag):
+			runtime["flags"].append(flag)
+
+
+func add_npc_flag(npc_id: String, flag: String) -> void:
+	if flag == "":
+		return
+	var runtime := get_npc_runtime(npc_id)
+	if not runtime["flags"].has(flag):
+		runtime["flags"].append(flag)
 
 
 ## 检查 NPC 是否已解锁
 func is_npc_unlocked(npc_id: String) -> bool:
-	return unlocked_npcs.has(npc_id)
+	return npcs.has(npc_id) and bool(npcs[npc_id].get("unlocked", false))
 
 
 ## 解锁一个 NPC
 func unlock_npc(npc_id: String) -> void:
 	var static_data := get_npc_data(npc_id)
 	var display_name: String = static_data.get("name", npc_id)
+	var meta := _build_contact_metadata(npc_id, static_data)
 	if not unlocked_npcs.has(npc_id):
 		unlocked_npcs[npc_id] = {
 			"affection": 0,
 			"flags": [],
 			"used_daily_chats": [],
+			"used_milestones": [],
+			"used_moments": [],
 			"chat_cooldown": 0
 		}
+	var runtime: Dictionary = unlocked_npcs[npc_id]
+	var synced_affection: int = int(runtime.get("affection", 0))
+	var synced_level: int = 1
+	while synced_affection >= 50:
+		synced_affection -= 50
+		synced_level += 1
+	runtime["affection"] = synced_affection
 	# 同步加入微信联系人列表
 	if not npcs.has(npc_id):
 		npcs[npc_id] = {
 			"name": display_name,
-			"affection": 0,
-			"level": 1,
+			"affection": synced_affection,
+			"level": synced_level,
 			"unlocked": true,
 			"warning_msg": "",
 			"blocked": false,
 			"messages": [],
 			"last_seen_week": 0,
+			"relation": meta.get("relation", ""),
+			"source_label": meta.get("source_label", ""),
+			"source_detail": meta.get("source_detail", ""),
+			"intro_week": turn_count,
 		}
 	else:
 		npcs[npc_id]["unlocked"] = true
+		_ensure_contact_metadata(npc_id, static_data)
+		if synced_affection > int(npcs[npc_id].get("affection", 0)):
+			npcs[npc_id]["affection"] = synced_affection
+		if synced_level > int(npcs[npc_id].get("level", 1)):
+			npcs[npc_id]["level"] = synced_level
+	ensure_npc_contact_intro(npc_id, true)
+	stats_updated.emit()
 	npc_unlocked.emit(npc_id, display_name)
 
 
 func add_unread(npc_id: String, count: int = 1) -> void:
+	if not npcs.has(npc_id):
+		if get_npc_data(npc_id).is_empty():
+			return
+		unlock_npc(npc_id)
 	if not npcs.has(npc_id):
 		return
 	if not npcs[npc_id].has("unread"):

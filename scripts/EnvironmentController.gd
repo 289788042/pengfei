@@ -29,9 +29,14 @@ func show_home(reason: String = "") -> void:
 func show_location(texture_path: String, context: String = "location") -> void:
 	_current_context = context
 	if texture_path == "":
-		show_home("empty_location")
+		show_location_color(context)
 		return
 	_show_texture(texture_path, _home_color())
+
+
+func show_location_color(context: String = "location") -> void:
+	_current_context = context
+	_show_texture("", _location_color(context))
 
 
 func clear_to_home(reason: String = "") -> void:
@@ -69,3 +74,20 @@ func _home_color() -> Color:
 		2:
 			return Color(0.11, 0.105, 0.13, 1.0)
 	return Color(0.075, 0.073, 0.09, 1.0)
+
+
+func _location_color(context: String) -> Color:
+	match context:
+		"bar":
+			return Color(0.105, 0.045, 0.115, 1.0)
+		"cafe":
+			return Color(0.135, 0.095, 0.060, 1.0)
+		"park":
+			return Color(0.045, 0.110, 0.075, 1.0)
+		"market":
+			return Color(0.130, 0.075, 0.040, 1.0)
+		"home":
+			return _home_color()
+		"overtime":
+			return Color(0.070, 0.080, 0.100, 1.0)
+	return Color(0.080, 0.085, 0.105, 1.0)
