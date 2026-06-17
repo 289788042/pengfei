@@ -403,7 +403,7 @@ func _on_app_map() -> void:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panel.add_theme_stylebox_override("panel", _make_flat_style(Color(0.94, 0.965, 0.955, 1), Color(0.18, 0.45, 0.38, 0.45), 1, 10))
+	panel.add_theme_stylebox_override("panel", _make_flat_style(Color(0.965, 0.975, 0.970, 1), Color(0.58, 0.68, 0.64, 0.45), 1, 10))
 	outer.add_child(panel)
 
 	var margin := MarginContainer.new()
@@ -498,15 +498,48 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.add_theme_font_size_override("font_size", 12)
+	var card_color := _small_map_card_color(location_id)
 	if bool(state.get("can_go", false)):
-		_style_text_button(btn, Color(0.10, 0.48, 0.38, 1), Color(0.12, 0.58, 0.46, 1), Color.WHITE)
+		_style_map_location_button(btn, card_color, card_color.lightened(0.05), Color(0.07, 0.16, 0.18, 1))
 	else:
-		_style_text_button(btn, Color(0.54, 0.58, 0.56, 1), Color(0.62, 0.66, 0.64, 1), Color.WHITE)
+		_style_map_location_button(btn, Color(0.78, 0.80, 0.79, 1), Color(0.84, 0.86, 0.85, 1), Color(0.20, 0.24, 0.24, 1))
 	btn.tooltip_text = "点击后直接前往；条件不足时会显示原因。"
 	parent.add_child(btn)
 	btn.pressed.connect(func() -> void:
 		_start_location(location_id)
 	)
+
+
+func _small_map_card_color(location_id: String) -> Color:
+	match location_id:
+		"library":
+			return Color(0.86, 0.92, 1.00, 1)
+		"gym":
+			return Color(0.86, 0.96, 0.88, 1)
+		"bar":
+			return Color(0.93, 0.88, 0.98, 1)
+		"home":
+			return Color(0.91, 0.93, 0.94, 1)
+		"park":
+			return Color(0.84, 0.96, 0.92, 1)
+		"cafe":
+			return Color(0.96, 0.91, 0.84, 1)
+		"market":
+			return Color(1.00, 0.91, 0.82, 1)
+		"overtime":
+			return Color(0.88, 0.90, 0.99, 1)
+	return Color(0.94, 0.95, 0.94, 1)
+
+
+func _style_map_location_button(button: Button, normal: Color, hover: Color, font_color: Color) -> void:
+	if not is_instance_valid(button):
+		return
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_color_override("font_color", font_color)
+	button.add_theme_stylebox_override("normal", _make_flat_style(normal, normal.darkened(0.12), 1, 8))
+	button.add_theme_stylebox_override("hover", _make_flat_style(hover, hover.darkened(0.13), 1, 8))
+	button.add_theme_stylebox_override("pressed", _make_flat_style(normal.darkened(0.06), normal.darkened(0.18), 1, 8))
+	button.add_theme_stylebox_override("disabled", _make_flat_style(Color(0.78, 0.80, 0.79, 1), Color(0.62, 0.65, 0.64, 1), 1, 8))
 
 
 func _map_location_defs() -> Array:

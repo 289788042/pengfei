@@ -328,33 +328,54 @@ func _ready() -> void:
 func _setup_phone_home_layout() -> void:
 	var grid := btn_app_map.get_parent() as GridContainer
 	if is_instance_valid(grid):
-		grid.columns = 3
+		grid.columns = 4
+		grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		grid.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		grid.add_theme_constant_override("h_separation", 10)
-		grid.add_theme_constant_override("v_separation", 10)
+		grid.add_theme_constant_override("h_separation", 8)
+		grid.add_theme_constant_override("v_separation", 14)
 		var wrapper := grid.get_parent() as MarginContainer
 		if is_instance_valid(wrapper):
-			wrapper.add_theme_constant_override("margin_left", 12)
-			wrapper.add_theme_constant_override("margin_top", 10)
-			wrapper.add_theme_constant_override("margin_right", 12)
-			wrapper.add_theme_constant_override("margin_bottom", 6)
-	var app_buttons: Array[Button] = [
-		btn_app_map,
-		btn_app_wechat,
-		btn_app_alipay,
-		btn_app_diary,
-		btn_app_job,
-		btn_app_baotao,
-		btn_app_dating,
-		btn_app_tuanmei,
-		btn_app_zodiac,
-		btn_app_house,
-	]
-	for button: Button in app_buttons:
-		if not is_instance_valid(button):
-			continue
-		button.custom_minimum_size = Vector2(84, 70)
-		button.add_theme_font_size_override("font_size", 12)
+			wrapper.add_theme_constant_override("margin_left", 14)
+			wrapper.add_theme_constant_override("margin_top", 14)
+			wrapper.add_theme_constant_override("margin_right", 14)
+			wrapper.add_theme_constant_override("margin_bottom", 8)
+	_style_phone_icon(btn_app_map, Color(0.11, 0.56, 0.95, 1))
+	_style_phone_icon(btn_app_wechat, Color(0.07, 0.72, 0.17, 1))
+	_style_phone_icon(btn_app_alipay, Color(0.12, 0.48, 0.95, 1))
+	_style_phone_icon(btn_app_diary, Color(0.66, 0.40, 0.19, 1))
+	_style_phone_icon(btn_app_job, Color(0.12, 0.39, 0.78, 1))
+	_style_phone_icon(btn_app_baotao, Color(0.88, 0.25, 0.32, 1))
+	_style_phone_icon(btn_app_dating, Color(0.74, 0.24, 0.60, 1))
+	_style_phone_icon(btn_app_tuanmei, Color(0.77, 0.17, 0.42, 1))
+	_style_phone_icon(btn_app_zodiac, Color(0.42, 0.24, 0.78, 1))
+	_style_phone_icon(btn_app_house, Color(0.10, 0.56, 0.68, 1))
+
+
+func _make_phone_icon_style(bg: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg
+	style.border_color = Color(1, 1, 1, 0.12)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(18)
+	style.shadow_color = Color(0, 0, 0, 0.18)
+	style.shadow_size = 4
+	style.shadow_offset = Vector2(0, 2)
+	return style
+
+
+func _style_phone_icon(button: Button, base_color: Color) -> void:
+	if not is_instance_valid(button):
+		return
+	button.custom_minimum_size = Vector2(64, 64)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_font_size_override("font_size", 10)
+	button.add_theme_color_override("font_color", Color.WHITE)
+	button.add_theme_stylebox_override("normal", _make_phone_icon_style(base_color))
+	button.add_theme_stylebox_override("hover", _make_phone_icon_style(base_color.lightened(0.08)))
+	button.add_theme_stylebox_override("pressed", _make_phone_icon_style(base_color.darkened(0.10)))
+	button.add_theme_stylebox_override("disabled", _make_phone_icon_style(base_color.darkened(0.35)))
 
 
 func _notification(what: int) -> void:
