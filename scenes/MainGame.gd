@@ -331,8 +331,8 @@ func _setup_phone_home_layout() -> void:
 		grid.columns = 3
 		grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		grid.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		grid.add_theme_constant_override("h_separation", 14)
-		grid.add_theme_constant_override("v_separation", 18)
+		grid.add_theme_constant_override("h_separation", 24)
+		grid.add_theme_constant_override("v_separation", 24)
 		var wrapper := grid.get_parent() as MarginContainer
 		if is_instance_valid(wrapper):
 			wrapper.add_theme_constant_override("margin_left", 16)
@@ -356,7 +356,7 @@ func _make_phone_icon_style(bg: Color) -> StyleBoxFlat:
 	style.bg_color = bg
 	style.border_color = Color(1, 1, 1, 0.12)
 	style.set_border_width_all(1)
-	style.set_corner_radius_all(24)
+	style.set_corner_radius_all(28)
 	style.shadow_color = Color(0, 0, 0, 0.18)
 	style.shadow_size = 4
 	style.shadow_offset = Vector2(0, 2)
@@ -366,11 +366,11 @@ func _make_phone_icon_style(bg: Color) -> StyleBoxFlat:
 func _style_phone_icon(button: Button, base_color: Color) -> void:
 	if not is_instance_valid(button):
 		return
-	button.custom_minimum_size = Vector2(104, 104)
+	button.custom_minimum_size = Vector2(126, 126)
 	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	button.focus_mode = Control.FOCUS_NONE
-	button.add_theme_font_size_override("font_size", 13)
+	button.add_theme_font_size_override("font_size", 15)
 	button.add_theme_color_override("font_color", Color.WHITE)
 	button.add_theme_stylebox_override("normal", _make_phone_icon_style(base_color))
 	button.add_theme_stylebox_override("hover", _make_phone_icon_style(base_color.lightened(0.08)))
