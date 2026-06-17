@@ -235,7 +235,7 @@ var _initial_npcs_template: Dictionary = {}
 var stat_names: Dictionary = {
 	"money": "金钱", "energy": "精力", "sanity": "情绪",
 	"charm": "颜值", "intellect": "学识", "eq": "情商",
-	"credit_debt": "花呗欠款",
+	"credit_debt": "花呗欠款", "huabei_debt": "花呗欠款", "huabei_installment_debt": "花呗分期",
 }
 
 # ==================== 核心函数 ====================
@@ -347,8 +347,23 @@ func modify_stat(stat_name: String, amount: int) -> void:
 
 
 ## 记录活动日志（category: "日常"/"提升"/"社交"/"消费"）
-func add_activity(category: String, desc: String) -> void:
-	activity_log.append({"week": turn_count, "month": month, "week_in_month": week_in_month, "age": age, "category": category, "desc": desc})
+func add_activity(category: String, desc: String, changes: Dictionary = {}) -> void:
+	var clean_changes: Dictionary = {}
+	for stat_name in changes:
+		var amount := int(changes[stat_name])
+		if amount != 0:
+			clean_changes[str(stat_name)] = amount
+	var entry := {
+		"week": turn_count,
+		"month": month,
+		"week_in_month": week_in_month,
+		"age": age,
+		"category": category,
+		"desc": desc,
+	}
+	if not clean_changes.is_empty():
+		entry["changes"] = clean_changes
+	activity_log.append(entry)
 
 ## 记录财务流水（is_huabei: 是否花呗/债务相关；category 用于账单汇总）
 func add_finance(amount: int, desc: String, is_huabei: bool, category: String = "流水") -> void:

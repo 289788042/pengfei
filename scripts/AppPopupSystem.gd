@@ -525,12 +525,18 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 	var state := _map_location_state(location_id, config)
 	var can_go := bool(state.get("can_go", false))
 	var req_text := _map_requirement_summary(config)
+	var repeat_text := _map_repeat_hint(location_id)
 	var meta := _map_location_meta(location_id)
 	var accent_color: Color = meta.get("color", Color(0.12, 0.48, 0.40, 1))
 
 	var card := PanelContainer.new()
 	card.name = "MapCard_" + location_id
-	card.custom_minimum_size = Vector2(0, 104 if req_text == "无" else 122)
+	var card_height := 104
+	if req_text != "无":
+		card_height += 18
+	if repeat_text != "":
+		card_height += 16
+	card.custom_minimum_size = Vector2(0, card_height)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	card.tooltip_text = "点击前往%s" % str(config.get("name", location_id)) if can_go else "点击查看不能前往的原因"
@@ -592,9 +598,11 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 	body.add_child(note_lbl)
 
 	_add_small_map_line(body, "消耗", _map_cost_summary(location_id, config), Color(0.55, 0.25, 0.18, 1))
-	_add_small_map_line(body, "收益", _map_change_summary(config.get("changes", {}), true, location_id), Color(0.08, 0.42, 0.30, 1))
+	_add_small_map_line(body, "收益", _map_change_summary(_map_preview_changes(location_id, config), true, location_id), Color(0.08, 0.42, 0.30, 1))
 	if req_text != "无":
 		_add_small_map_line(body, "条件", req_text, Color(0.56, 0.42, 0.14, 1))
+	if repeat_text != "":
+		_add_small_map_line(body, "本周", repeat_text, Color(0.56, 0.42, 0.14, 1))
 
 	var action_btn := Button.new()
 	action_btn.name = "LocBtn_" + location_id
@@ -828,6 +836,18 @@ func _map_cost_summary(location: String, config: Dictionary) -> String:
 	if parts.is_empty():
 		return "无直接消耗"
 	return " / ".join(parts)
+
+
+func _map_preview_changes(location: String, config: Dictionary) -> Dictionary:
+	return _apply_location_repeat_decay(config.get("changes", {}), _get_weekly_location_visits(location))
+
+
+func _map_repeat_hint(location: String) -> String:
+	var visits := _get_weekly_location_visits(location)
+	if visits <= 0:
+		return ""
+	var percent := int(round(_location_repeat_scale(visits) * 100.0))
+	return "第%d次，正向收益约%d%%" % [visits + 1, percent]
 
 
 func _map_requirement_summary(config: Dictionary) -> String:
@@ -1409,7 +1429,7 @@ func _handle_reunion(npc: Dictionary, location: String) -> void:
 	var template: String = _reunion_lines[randi() % _reunion_lines.size()]
 	var text: String = template.replace("{name}", npc_name).replace("{loc}", loc_cn)
 	var changes := {"affection": 3, "sanity": 3, "eq": 1}
-	GameManager.add_activity("社交", "在%s遇到了%s，聊了几句" % [loc_cn, npc_name])
+	GameManager.add_activity("社交", "在%s遇到了%s，聊了几句" % [loc_cn, npc_name], changes)
 	_show_story_then_apply_npc_changes(text, {}, {}, npc_name, _finish_location_event_after(), "【结算】", npc_id, changes)
 
 
@@ -1727,6 +1747,17 @@ func _location_story(location: String, config: Dictionary) -> String:
 	return story
 
 
+func _record_location_activity(location: String, config: Dictionary, changes: Dictionary, payment_changes: Dictionary, visit_index: int) -> void:
+	var logged_changes := _merge_change_dicts(payment_changes, changes)
+	var desc := str(config.get("activity", config.get("name", location)))
+	if visit_index > 0:
+		desc += "（本周第%d次，正向收益约%d%%）" % [
+			visit_index + 1,
+			int(round(_location_repeat_scale(visit_index) * 100.0)),
+		]
+	GameManager.add_activity(str(config.get("category", "日常")), desc, logged_changes)
+
+
 func _show_location_result_from_config(location: String, config: Dictionary, pending_changes: Dictionary, already_applied_changes: Dictionary = {}, after: Callable = Callable()) -> void:
 	_show_story_then_apply_changes(_location_story(location, config), pending_changes, already_applied_changes, _finish_location_event_after(after))
 
@@ -1789,7 +1820,7 @@ func _run_location_after_payment(location: String, config: Dictionary, payment_c
 	_record_weekly_location_visit(location)
 	var encounter_npc := _check_encounter(location)
 	if encounter_npc.size() > 0:
-		_handle_encounter(encounter_npc, location, config, tuned_changes, payment_changes)
+		_handle_encounter(encounter_npc, location, config, tuned_changes, payment_changes, visit_index)
 		return
 
 	var roll := randf()
@@ -1800,14 +1831,14 @@ func _run_location_after_payment(location: String, config: Dictionary, payment_c
 			main_node()._show_event(event, func() -> void:
 				_show_location_result_from_config(location, config, tuned_changes, payment_changes)
 			)
-			GameManager.add_activity(config.get("category", "日常"), config.get("activity", config.get("name", location)))
+			_record_location_activity(location, config, tuned_changes, payment_changes, visit_index)
 			return
 
 	if roll < 0.50 and _city_fragments.get(location, []).size() > 0:
 		_trigger_city_fragment(location, tuned_changes, payment_changes)
 	else:
 		_show_location_result_from_config(location, config, tuned_changes, payment_changes)
-	GameManager.add_activity(config.get("category", "日常"), config.get("activity", config.get("name", location)))
+	_record_location_activity(location, config, tuned_changes, payment_changes, visit_index)
 
 
 func _show_reunion_result(npc: Dictionary, location: String, base_changes: Dictionary) -> void:
@@ -1819,11 +1850,11 @@ func _show_reunion_result(npc: Dictionary, location: String, base_changes: Dicti
 	var text: String = template.replace("{name}", npc_name).replace("{loc}", loc_cn)
 	var bonus := {"affection": 3, "sanity": 3, "eq": 1}
 	_show_story_then_apply_npc_changes(text, base_changes, {}, npc_name, _finish_location_event_after(), "【结算】", npc_id, bonus)
-	GameManager.add_activity("社交", "在%s遇到了%s，聊了几句" % [loc_cn, npc_name])
+	GameManager.add_activity("社交", "在%s遇到了%s，聊了几句" % [loc_cn, npc_name], _merge_change_dicts(base_changes, bonus))
 
 
 ## 处理邂逅场景（通用版）
-func _handle_encounter(npc: Dictionary, location: String, config: Dictionary, pending_changes: Dictionary, already_applied_changes: Dictionary = {}) -> void:
+func _handle_encounter(npc: Dictionary, location: String, config: Dictionary, pending_changes: Dictionary, already_applied_changes: Dictionary = {}, visit_index: int = 0) -> void:
 	var enc: Dictionary = npc.get("encounter", {})
 	var npc_id: String = npc.get("id", "")
 	var npc_name: String = npc.get("name", "")
@@ -1848,7 +1879,8 @@ func _handle_encounter(npc: Dictionary, location: String, config: Dictionary, pe
 			main_node().galgame.show_galgame_dialog(pages, func() -> void:
 				_show_story_then_apply_npc_changes("", pending_changes, display_changes, npc_name, _finish_location_event_after(), "【结算】", npc_id, pass_changes)
 			)
-		GameManager.add_activity("社交", "在%s邂逅了%s" % [location, npc_name])
+		var encounter_changes := _merge_change_dicts(_merge_change_dicts(already_applied_changes, pending_changes), pass_changes)
+		GameManager.add_activity("社交", "在%s邂逅了%s" % [str(config.get("name", location)), npc_name], encounter_changes)
 	else:
 		var fail_pages: Array = []
 		for line in enc.get("scene_lines", []):
@@ -1862,6 +1894,7 @@ func _handle_encounter(npc: Dictionary, location: String, config: Dictionary, pe
 			fail_pages.append("（你的属性不满足邂逅条件，擦肩而过...）")
 		_encounter_cooldowns[npc_id] = GameManager.turn_count + 4
 		main_node().galgame.show_galgame_dialog(fail_pages, func() -> void:
+				_record_location_activity(location, config, pending_changes, already_applied_changes, visit_index)
 				_show_location_result_from_config(location, config, pending_changes, already_applied_changes)
 		)
 
@@ -1909,7 +1942,7 @@ func _on_food_low() -> void:
 		GameManager.monthly_food_cost += 300
 		GameManager.modify_stat("sanity", -5)
 		_changes = {"monthly_food_cost": 300, "sanity": -5}
-	GameManager.add_activity("日常", "吃了挂逼生存套餐（沙县/拉面），花费300元")
+	GameManager.add_activity("日常", "吃了挂逼生存套餐（沙县/拉面），花费300元", _changes)
 	GameManager.consecutive_poor_food += 1
 	GameManager.consecutive_overtime = 0
 	# 连续吃土死法检查
@@ -1930,7 +1963,7 @@ func _on_food_mid() -> void:
 		GameManager.monthly_food_cost += 800
 		GameManager.modify_stat("energy", 10)
 		_changes = {"monthly_food_cost": 800, "energy": 10}
-	GameManager.add_activity("日常", "吃了打工人标配（肯德基/火锅），花费800元")
+	GameManager.add_activity("日常", "吃了打工人标配（肯德基/火锅），花费800元", _changes)
 	GameManager.consecutive_poor_food = 0
 	GameManager.consecutive_overtime = 0
 	_unlock_work_buttons()
@@ -1947,7 +1980,7 @@ func _on_food_high() -> void:
 		GameManager.modify_stat("sanity", 20)
 		GameManager.modify_stat("energy", 15)
 		_changes = {"monthly_food_cost": 2000, "sanity": 20, "energy": 15}
-	GameManager.add_activity("日常", "吃了小资高档（日料/西餐），花费2000元")
+	GameManager.add_activity("日常", "吃了小资高档（日料/西餐），花费2000元", _changes)
 	GameManager.consecutive_poor_food = 0
 	GameManager.consecutive_overtime = 0
 	_unlock_work_buttons()
@@ -2410,6 +2443,70 @@ func _diary_category_color(category: String) -> Color:
 			return Color(0.14, 0.22, 0.20, 1)
 
 
+func _diary_stat_name(stat_name: String) -> String:
+	var extra_names := {
+		"affection": "好感",
+		"family_affection": "亲情",
+		"max_energy": "精力上限",
+		"pending_salary": "待发工资",
+		"monthly_food_cost": "餐饮账单",
+		"night_school_progress": "夜校学分",
+		"degree": "学历",
+		"job_level": "职位",
+		"huabei_debt": "花呗欠款",
+		"huabei_installment_debt": "花呗分期",
+	}
+	return GameManager.stat_names.get(stat_name, extra_names.get(stat_name, stat_name))
+
+
+func _compact_diary_changes(changes: Dictionary) -> Dictionary:
+	var compact: Dictionary = {}
+	for stat_name in changes:
+		var key := str(stat_name)
+		if key == "huabei_debt" and changes.has("credit_debt"):
+			continue
+		var amount := int(changes[stat_name])
+		if amount != 0:
+			compact[key] = int(compact.get(key, 0)) + amount
+	return compact
+
+
+func _diary_changes_text(changes: Dictionary) -> String:
+	var compact := _compact_diary_changes(changes)
+	if compact.is_empty():
+		return ""
+	var ordered := [
+		"money", "pending_salary", "monthly_food_cost", "credit_debt",
+		"energy", "max_energy", "sanity", "charm", "intellect", "eq",
+		"night_school_progress", "degree", "job_level", "affection", "family_affection",
+	]
+	var used: Dictionary = {}
+	var parts: Array = []
+	for key: String in ordered:
+		if compact.has(key):
+			var amount := int(compact[key])
+			var sign := "+" if amount > 0 else ""
+			parts.append("%s %s%d" % [_diary_stat_name(key), sign, amount])
+			used[key] = true
+	for key in compact:
+		var key_text := str(key)
+		if used.has(key_text):
+			continue
+		var amount := int(compact[key])
+		var sign := "+" if amount > 0 else ""
+		parts.append("%s %s%d" % [_diary_stat_name(key_text), sign, amount])
+	return "变化：" + " / ".join(parts)
+
+
+func _diary_changes_color(changes: Dictionary) -> Color:
+	var compact := _compact_diary_changes(changes)
+	var pressure_keys := ["monthly_food_cost", "credit_debt", "huabei_debt", "huabei_installment_debt"]
+	for key in compact:
+		if pressure_keys.has(str(key)) and int(compact[key]) > 0:
+			return Color(0.62, 0.28, 0.18, 1)
+	return Color(0.10, 0.40, 0.30, 1)
+
+
 func _diary_week_str(entry: Dictionary) -> String:
 	if entry.has("age") and entry.has("month") and entry.has("week_in_month"):
 		return "%d岁 %d月第%d周" % [entry["age"], entry["month"], entry["week_in_month"]]
@@ -2483,6 +2580,15 @@ func _add_diary_log_entry(entry: Dictionary) -> void:
 	desc_label.add_theme_font_size_override("font_size", 14)
 	desc_label.add_theme_color_override("font_color", Color(0.12, 0.18, 0.17, 1))
 	box.add_child(desc_label)
+	var changes_text := _diary_changes_text(entry.get("changes", {}))
+	if changes_text != "":
+		var changes_label := Label.new()
+		changes_label.text = changes_text
+		changes_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		changes_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		changes_label.add_theme_font_size_override("font_size", 12)
+		changes_label.add_theme_color_override("font_color", _diary_changes_color(entry.get("changes", {})))
+		box.add_child(changes_label)
 
 
 # ==================== 深夜网抑云失眠系统 ====================

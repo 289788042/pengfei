@@ -1818,12 +1818,13 @@ func _on_work_normal() -> void:
 func _on_work_overtime() -> void:
 	GameManager.consecutive_overtime += 1
 	var amount: int = _get_salary("overtime")
-	GameManager.add_activity("日常", "疯狂加班，待发工资 +%d" % amount)
-	_show_action_result("你选择继续加班，把这周的时间全压进了工位里。", {"energy": -60, "sanity": -30, "pending_salary": amount}, Callable(self, "_finish_workday"))
+	var changes := {"energy": -60, "sanity": -30, "pending_salary": amount}
+	GameManager.add_activity("日常", "疯狂加班，待发工资 +%d" % amount, changes)
+	_show_action_result("你选择继续加班，把这周的时间全压进了工位里。", changes, Callable(self, "_finish_workday"))
 
 
 func _complete_work_action(label: String, changes: Dictionary, activity_desc: String) -> void:
-	GameManager.add_activity("日常", activity_desc)
+	GameManager.add_activity("日常", activity_desc, changes)
 	_show_action_result("这周你选择了%s。" % label, changes, Callable(self, "_finish_workday"))
 
 

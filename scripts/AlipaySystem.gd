@@ -571,14 +571,14 @@ func _on_pay_mix() -> void:
 	GameManager.modify_stat("money", -cost)
 	_last_payment_changes = {"money": -cost}
 	GameManager.add_finance(-cost, _pending_pay_desc, false, _pending_pay_category)
-	GameManager.add_activity(_pending_pay_category, _pending_pay_desc + "现金支付")
+	GameManager.add_activity(_pending_pay_category, _pending_pay_desc + "现金支付", _last_payment_changes)
 	_finish_payment()
 func _on_pay_huabei() -> void:
 	GameManager.huabei_debt += _pending_pay_cost
 	GameManager.credit_debt = GameManager.huabei_debt
-	_last_payment_changes = {"credit_debt": _pending_pay_cost, "huabei_debt": _pending_pay_cost}
+	_last_payment_changes = {"credit_debt": _pending_pay_cost}
 	GameManager.add_finance(-_pending_pay_cost, _pending_pay_desc, true, _pending_pay_category)
-	GameManager.add_activity(_pending_pay_category, _pending_pay_desc + "（花呗透支）")
+	GameManager.add_activity(_pending_pay_category, _pending_pay_desc + "（花呗透支）", _last_payment_changes)
 	_finish_payment()
 
 func _on_pay_cancel() -> void:
@@ -1114,6 +1114,9 @@ func _on_installment() -> void:
 	GameManager.credit_debt = 0
 	var fee_amount: int = total_with_fee - principal
 	GameManager.add_finance(-total_with_fee, "办理12期花呗分期(含15%%手续费)", true, "分期")
-	GameManager.add_activity("消费", "办理了花呑12期分期，本金 %d + 手续费 %d = 共需还款 %d，每月扣 %d" % [principal, fee_amount, total_with_fee, monthly_pay])
+	GameManager.add_activity("消费", "办理了花呑12期分期，本金 %d + 手续费 %d = 共需还款 %d，每月扣 %d" % [principal, fee_amount, total_with_fee, monthly_pay], {
+		"credit_debt": -principal,
+		"huabei_installment_debt": total_with_fee,
+	})
 	main_node().show_message("分期成功！\n分期本金：%d 元\n手续费(15%%)：%d 元\n总还款：%d 元\n每月固定扣款：%d 元，共12期" % [principal, fee_amount, total_with_fee, monthly_pay])
 	_refresh_alipay_ui()
