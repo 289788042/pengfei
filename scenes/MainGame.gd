@@ -330,13 +330,13 @@ func _setup_phone_home_layout() -> void:
 	if is_instance_valid(grid):
 		grid.columns = 3
 		grid.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		grid.add_theme_constant_override("h_separation", 14)
-		grid.add_theme_constant_override("v_separation", 12)
+		grid.add_theme_constant_override("h_separation", 10)
+		grid.add_theme_constant_override("v_separation", 10)
 		var wrapper := grid.get_parent() as MarginContainer
 		if is_instance_valid(wrapper):
-			wrapper.add_theme_constant_override("margin_left", 18)
+			wrapper.add_theme_constant_override("margin_left", 12)
 			wrapper.add_theme_constant_override("margin_top", 10)
-			wrapper.add_theme_constant_override("margin_right", 18)
+			wrapper.add_theme_constant_override("margin_right", 12)
 			wrapper.add_theme_constant_override("margin_bottom", 6)
 	var app_buttons: Array[Button] = [
 		btn_app_map,
@@ -353,8 +353,8 @@ func _setup_phone_home_layout() -> void:
 	for button: Button in app_buttons:
 		if not is_instance_valid(button):
 			continue
-		button.custom_minimum_size = Vector2(104, 80)
-		button.add_theme_font_size_override("font_size", 13)
+		button.custom_minimum_size = Vector2(84, 70)
+		button.add_theme_font_size_override("font_size", 12)
 
 
 func _notification(what: int) -> void:
@@ -554,7 +554,7 @@ func has_blocking_dialog() -> bool:
 
 
 func can_open_phone_app() -> bool:
-	return not has_blocking_dialog()
+	return current_phase == Phase.WEEKEND and not has_blocking_dialog()
 
 
 func _repair_next_week_button_state() -> void:
@@ -689,7 +689,7 @@ func _enter_weekday() -> void:
 	return_to_home_environment("weekday")
 	btn_next_week.visible = false
 	_hide_all_popups()
-	_enable_app_grid()
+	_disable_app_grid()
 	GameManager.check_auto_unlock_npcs()
 	# 动态更新工作按钮薪资显示
 	btn_work_normal.text = "正常打卡 (精力-30, 情绪-15, 待发工资+%d)" % _get_salary("normal")
@@ -755,15 +755,17 @@ func _set_phone_app_state(button: Button, app_id: String, interactable: bool) ->
 	if not button.has_meta("phone_app_base_text"):
 		button.set_meta("phone_app_base_text", button.text)
 	var unlocked := app_id == "" or GameManager.is_app_unlocked(app_id)
+	if not unlocked:
+		button.visible = false
+		button.disabled = true
+		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.text = str(button.get_meta("phone_app_base_text"))
+		return
 	button.visible = true
 	button.disabled = not interactable
-	button.mouse_filter = Control.MOUSE_FILTER_STOP
-	if unlocked:
-		button.text = str(button.get_meta("phone_app_base_text"))
-		button.modulate = Color(1, 1, 1, 1) if interactable else Color(1, 1, 1, 0.58)
-	else:
-		button.text = "锁定\n" + GameManager.get_app_display_name(app_id)
-		button.modulate = Color(0.42, 0.44, 0.48, 0.82) if interactable else Color(0.32, 0.34, 0.38, 0.58)
+	button.mouse_filter = Control.MOUSE_FILTER_STOP if interactable else Control.MOUSE_FILTER_IGNORE
+	button.text = str(button.get_meta("phone_app_base_text"))
+	button.modulate = Color(1, 1, 1, 1) if interactable else Color(1, 1, 1, 0.48)
 
 
 func _show_opening_intro() -> void:
@@ -916,17 +918,11 @@ func _setup_finance_widgets() -> void:
 	label_pressure_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	label_early_goal = parent.get_node_or_null("LabelEarlyGoal") as Label
-	if label_early_goal == null:
-		label_early_goal = Label.new()
-		label_early_goal.name = "LabelEarlyGoal"
-		parent.add_child(label_early_goal)
-	label_early_goal.add_theme_font_size_override("font_size", 13)
-	label_early_goal.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label_early_goal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	label_early_goal.add_theme_color_override("font_color", Color(0.78, 0.92, 1.0, 1))
+	if label_early_goal:
+		label_early_goal.text = ""
+		label_early_goal.visible = false
 
-	parent.move_child(label_early_goal, mini(label_player_info.get_index() + 1, parent.get_child_count() - 1))
-	parent.move_child(label_pressure_summary, mini(label_early_goal.get_index() + 1, parent.get_child_count() - 1))
+	parent.move_child(label_pressure_summary, mini(label_player_info.get_index() + 1, parent.get_child_count() - 1))
 	parent.move_child(label_pressure_hint, mini(label_pressure_summary.get_index() + 1, parent.get_child_count() - 1))
 
 
@@ -958,11 +954,8 @@ func _update_finance_widgets() -> void:
 	label_pressure_hint.text = "%s\n%s" % [growth_text, pressure_hint] if pressure_hint != "" else growth_text
 	label_pressure_hint.add_theme_color_override("font_color", pressure.get("hint_color", Color(0.62, 0.66, 0.72)))
 	if label_early_goal:
-		var goal := _get_current_goal_hint(preview, pressure)
-		label_early_goal.text = _format_home_goal_text(str(goal.get("text", "")))
-		label_early_goal.visible = label_early_goal.text != ""
-		var goal_color: Color = goal.get("color", Color(0.62, 0.72, 0.92))
-		label_early_goal.add_theme_color_override("font_color", goal_color)
+		label_early_goal.text = ""
+		label_early_goal.visible = false
 
 
 func _format_home_goal_text(text: String) -> String:

@@ -388,49 +388,38 @@ func _on_app_map() -> void:
 	if not _ensure_app_unlocked("map"):
 		return
 	_close_all_menus()
-	_setup_heavy_app_layer(location_menu, 80, Vector2(1040, 720))
+	_restore_map_to_phone_layer()
 	for child in location_menu.get_children():
 		child.queue_free()
 
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	center.offset_left = 24
-	center.offset_top = 24
-	center.offset_right = -24
-	center.offset_bottom = -24
-	location_menu.add_child(center)
+	var outer := MarginContainer.new()
+	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	outer.add_theme_constant_override("margin_left", 12)
+	outer.add_theme_constant_override("margin_top", 12)
+	outer.add_theme_constant_override("margin_right", 12)
+	outer.add_theme_constant_override("margin_bottom", 12)
+	location_menu.add_child(outer)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(1040, 720)
-	panel.add_theme_stylebox_override("panel", _make_flat_style(Color(0.945, 0.965, 0.955, 1), Color(0.18, 0.45, 0.38, 0.38), 1, 14))
-	center.add_child(panel)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", _make_flat_style(Color(0.94, 0.965, 0.955, 1), Color(0.18, 0.45, 0.38, 0.45), 1, 10))
+	outer.add_child(panel)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 10)
 	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
 	panel.add_child(margin)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
+	vbox.add_theme_constant_override("separation", 7)
 	margin.add_child(vbox)
-
-	var header := PanelContainer.new()
-	header.custom_minimum_size = Vector2(0, 70)
-	header.add_theme_stylebox_override("panel", _make_flat_style(Color(0.09, 0.36, 0.30, 1), Color(0.21, 0.56, 0.47, 0.55), 1, 12))
-	vbox.add_child(header)
-
-	var header_margin := MarginContainer.new()
-	header_margin.add_theme_constant_override("margin_left", 12)
-	header_margin.add_theme_constant_override("margin_right", 10)
-	header_margin.add_theme_constant_override("margin_top", 8)
-	header_margin.add_theme_constant_override("margin_bottom", 8)
-	header.add_child(header_margin)
 
 	var header_row := HBoxContainer.new()
 	header_row.add_theme_constant_override("separation", 8)
-	header_margin.add_child(header_row)
+	vbox.add_child(header_row)
 
 	var title_box := VBoxContainer.new()
 	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -439,41 +428,23 @@ func _on_app_map() -> void:
 
 	var title_lbl := Label.new()
 	title_lbl.text = "高德地图"
-	title_lbl.add_theme_font_size_override("font_size", 22)
-	title_lbl.add_theme_color_override("font_color", Color.WHITE)
+	title_lbl.add_theme_font_size_override("font_size", 18)
+	title_lbl.add_theme_color_override("font_color", Color(0.06, 0.22, 0.18, 1))
 	title_box.add_child(title_lbl)
 
 	var status_lbl := Label.new()
 	status_lbl.text = _map_player_status_text()
 	status_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status_lbl.add_theme_font_size_override("font_size", 14)
-	status_lbl.add_theme_color_override("font_color", Color(0.80, 0.94, 0.90, 1))
+	status_lbl.add_theme_font_size_override("font_size", 11)
+	status_lbl.add_theme_color_override("font_color", Color(0.28, 0.40, 0.36, 1))
 	title_box.add_child(status_lbl)
 
 	var close_btn := Button.new()
-	close_btn.text = "关闭"
-	close_btn.custom_minimum_size = Vector2(70, 38)
-	_style_text_button(close_btn, Color(0.86, 0.94, 0.90, 1), Color(0.76, 0.88, 0.82, 1), Color(0.05, 0.25, 0.20, 1))
+	close_btn.text = "×"
+	close_btn.custom_minimum_size = Vector2(42, 34)
+	_style_text_button(close_btn, Color(0.80, 0.88, 0.84, 1), Color(0.70, 0.82, 0.76, 1), Color(0.05, 0.25, 0.20, 1))
 	close_btn.pressed.connect(_on_close_loc)
 	header_row.add_child(close_btn)
-
-	var hint_panel := PanelContainer.new()
-	hint_panel.add_theme_stylebox_override("panel", _make_flat_style(Color(1.0, 0.985, 0.92, 1), Color(0.80, 0.70, 0.42, 0.40), 1, 9))
-	vbox.add_child(hint_panel)
-
-	var hint_margin := MarginContainer.new()
-	hint_margin.add_theme_constant_override("margin_left", 10)
-	hint_margin.add_theme_constant_override("margin_right", 10)
-	hint_margin.add_theme_constant_override("margin_top", 6)
-	hint_margin.add_theme_constant_override("margin_bottom", 6)
-	hint_panel.add_child(hint_margin)
-
-	var hint_lbl := Label.new()
-	hint_lbl.text = "地点行动会先播放左侧剧情，数值变化在剧情结束后统一结算。条件不足时可以点“查看原因”。"
-	hint_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint_lbl.add_theme_font_size_override("font_size", 14)
-	hint_lbl.add_theme_color_override("font_color", Color(0.34, 0.27, 0.12, 1))
-	hint_margin.add_child(hint_lbl)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -483,13 +454,59 @@ func _on_app_map() -> void:
 
 	var loc_list := VBoxContainer.new()
 	loc_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	loc_list.add_theme_constant_override("separation", 8)
+	loc_list.add_theme_constant_override("separation", 7)
 	scroll.add_child(loc_list)
 
-	for loc: Dictionary in _map_location_defs():
-		_add_map_location_card(loc_list, loc)
+	for location_id: String in _map_location_order():
+		_add_small_map_location_button(loc_list, location_id)
 
 	_set_layer_visible(location_menu, true)
+
+
+func _restore_map_to_phone_layer() -> void:
+	if _heavy_app_layers.has(location_menu):
+		_heavy_app_layers.erase(location_menu)
+	var phone_screen := main_node().find_child("PhoneScreen", true, false) as Control
+	if is_instance_valid(phone_screen) and location_menu.get_parent() != phone_screen:
+		var old_parent := location_menu.get_parent()
+		if old_parent:
+			old_parent.remove_child(location_menu)
+		phone_screen.add_child(location_menu)
+	_setup_phone_layer(location_menu, 55)
+
+
+func _map_location_order() -> Array[String]:
+	return ["library", "gym", "bar", "home", "park", "cafe", "market", "overtime"]
+
+
+func _add_small_map_location_button(parent: VBoxContainer, location_id: String) -> void:
+	var config := _location_config(location_id)
+	if config.is_empty():
+		return
+	var state := _map_location_state(location_id, config)
+	var req_text := _map_requirement_summary(config)
+	var lines: Array[String] = []
+	lines.append("%s｜%s" % [str(config.get("name", location_id)), str(state.get("text", ""))])
+	lines.append("消耗：" + _map_cost_summary(location_id, config))
+	lines.append("收益：" + _map_change_summary(config.get("changes", {}), true, location_id))
+	if req_text != "无":
+		lines.append("条件：" + req_text)
+	var btn := Button.new()
+	btn.name = "LocBtn_" + location_id
+	btn.text = "\n".join(lines)
+	btn.custom_minimum_size = Vector2(0, 90 if req_text == "无" else 108)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	btn.add_theme_font_size_override("font_size", 12)
+	if bool(state.get("can_go", false)):
+		_style_text_button(btn, Color(0.10, 0.48, 0.38, 1), Color(0.12, 0.58, 0.46, 1), Color.WHITE)
+	else:
+		_style_text_button(btn, Color(0.54, 0.58, 0.56, 1), Color(0.62, 0.66, 0.64, 1), Color.WHITE)
+	btn.tooltip_text = "点击后直接前往；条件不足时会显示原因。"
+	parent.add_child(btn)
+	btn.pressed.connect(func() -> void:
+		_start_location(location_id)
+	)
 
 
 func _map_location_defs() -> Array:
