@@ -2236,7 +2236,7 @@ func _on_emo_bag() -> void:
 	GameManager.add_activity("消费", "深夜失眠，冲动消费换取了短暂的安慰。")
 	_set_layer_visible(late_night_popup, false)
 	_show_story_then_apply_changes("下单了。屏幕上弹出支付成功的提示，短暂的快乐之后，是更深的空虚。", changes, {}, func() -> void:
-		GameManager.add_finance(-imp["huabei"], imp["desc"], true)
+		GameManager.add_finance(-imp["huabei"], imp["desc"], true, "消费")
 		main_node()._proceed_next_week()
 	)
 

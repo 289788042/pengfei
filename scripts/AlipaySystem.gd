@@ -29,12 +29,17 @@ var label_al_summary: Label
 var input_repay_amount: LineEdit
 var label_payment_cost: Label
 var payment_popup: ColorRect
+var btn_pay_mix: Button
+var btn_pay_huabei: Button
+var btn_pay_cancel: Button
 var _alipay_pages: Dictionary = {}
 var _alipay_tab_buttons: Dictionary = {}
 var _current_alipay_tab: String = "overview"
 var _label_huabei_detail: Label
 var _label_finance_hint: Label
 var _label_bill_hint: Label
+var _label_bill_month_totals: Label
+var _label_bill_month_forecast: Label
 var _label_about: Label
 var _label_overview_risk: Label
 var _label_overview_cashflow: Label
@@ -72,6 +77,9 @@ func init(main: Node) -> void:
 	input_repay_amount = main.input_repay_amount
 	label_payment_cost = main.label_payment_cost
 	payment_popup = main.payment_popup
+	btn_pay_mix = main.btn_pay_mix
+	btn_pay_huabei = main.btn_pay_huabei
+	btn_pay_cancel = main.btn_pay_cancel
 	_setup_phone_alipay_ui()
 
 # ==================== 辅助方法 ====================
@@ -108,8 +116,11 @@ func _setup_phone_alipay_ui() -> void:
 	_style_label(label_al_fin_risk, 13, Color(0.10, 0.18, 0.22, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
 	_style_label(label_al_installment, 12, Color(0.55, 0.18, 0.13, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
 	_style_label(label_al_summary, 12, Color(0.16, 0.22, 0.25, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
+	_style_label(label_payment_cost, 15, Color(0.10, 0.18, 0.22, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
 	if is_instance_valid(label_al_summary):
 		label_al_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if is_instance_valid(label_payment_cost):
+		label_payment_cost.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if is_instance_valid(input_repay_amount):
 		input_repay_amount.placeholder_text = "还款金额"
 		input_repay_amount.custom_minimum_size = Vector2(0, 36)
@@ -379,7 +390,11 @@ func _build_bill_page(parent: Node) -> void:
 	var page := _make_page("bill", parent)
 	_add_section_title(page, "流水账单")
 	_label_bill_hint = _make_body_label("")
+	_label_bill_month_totals = _make_body_label("")
+	_label_bill_month_forecast = _make_body_label("")
 	_add_card(page, "本月判断", [_label_bill_hint])
+	_add_card(page, "本月收支汇总", [_label_bill_month_totals])
+	_add_card(page, "月底账单预估", [_label_bill_month_forecast])
 	_add_card(page, "最近流水", [alipay_log_container])
 
 
@@ -389,9 +404,12 @@ func _build_about_page(parent: Node) -> void:
 	_label_about = _make_body_label(
 		"这里是你的财务中枢。\n\n" +
 		"1. 总览看现金、花呗和月底预计现金。\n" +
-		"2. 花呗页可以主动还款，也可以在欠款较高时办理分期。\n" +
-		"3. 理财不是稳定变富按钮，高风险基金会在月末结算波动。\n" +
-		"4. 账单页记录收入、消费和花呗透支，方便复盘为什么钱没了。\n\n" +
+		"2. 月底结算顺序：工资到账 -> 扣房租 -> 扣餐饮 -> 扣分期月供 -> 扣花呗最低还款。\n" +
+		"3. 花呗最低还款 = 未分期欠款的 10% + 200，上限不超过欠款本身。\n" +
+		"4. 最低还款后仍未还清的未分期欠款，会在月底滚入 5% 利息。\n" +
+		"5. 分期会把未分期花呗转成 12 期月供，短期舒服，但总手续费 15%。\n" +
+		"6. 理财不是稳定变富按钮，高风险基金会在月末结算波动。\n" +
+		"7. 账单页记录收入、固定账单、消费、还款和花呗滚息，方便复盘为什么钱没了。\n\n" +
 		"游戏建议：每次大额消费后都回来看一眼月底预计现金。你不是输在买了一件东西，而是输在每一笔都以为下个月再说。"
 	)
 	_add_card(page, "使用说明", [_label_about])
@@ -492,11 +510,58 @@ func request_payment(cost: int, desc: String, category: String, on_success: Call
 	_pending_pay_category = category
 	_pending_pay_callback = on_success
 	_last_payment_changes = {}
-	label_payment_cost.text = "请选择支付方式\n（本次消费：%d 元）" % cost
+	var preview := _get_payment_preview_text(cost, desc)
+	label_payment_cost.text = preview
+	if is_instance_valid(btn_pay_mix):
+		btn_pay_mix.disabled = GameManager.money < cost
+		if GameManager.money >= cost:
+			btn_pay_mix.text = "现金支付 -%d" % cost
+		else:
+			btn_pay_mix.text = "现金不足（差 %d）" % (cost - GameManager.money)
+	if is_instance_valid(btn_pay_huabei):
+		btn_pay_huabei.disabled = false
+		btn_pay_huabei.text = "花呗透支 +%d" % cost
+	if is_instance_valid(btn_pay_cancel):
+		btn_pay_cancel.text = "取消"
 	if main_node().has_method("set_ui_layer_visible"):
 		main_node().set_ui_layer_visible(payment_popup, true, false)
 	else:
 		payment_popup.visible = true
+
+
+func _get_payment_preview_text(cost: int, desc: String) -> String:
+	var month_preview := _get_month_end_preview_safe()
+	var projected_cash := int(month_preview.get("cash_after_all", GameManager.get_projected_balance()))
+	var current_min := _get_huabei_min_payment_for(GameManager.huabei_debt)
+	var huabei_after := GameManager.huabei_debt + cost
+	var min_after := _get_huabei_min_payment_for(huabei_after)
+	var min_delta := maxi(min_after - current_min, 0)
+	var cash_after_pay := GameManager.money - cost
+	var cash_month_after := projected_cash - cost
+	var huabei_month_cash_after := projected_cash - min_delta
+	var total_debt_after := huabei_after + GameManager.huabei_installment_debt
+	var warning := "现金支付会立刻压低安全垫；花呗支付会把压力推到月底。"
+	if cash_month_after < 0:
+		warning = "现金支付后，按当前账单月底现金会变负。"
+	elif huabei_month_cash_after < 0:
+		warning = "花呗支付后，月底最低还款也可能压穿现金。"
+	return (
+		"%s\n本次消费：%d 元\n\n" % [desc, cost]
+		+ "现金支付：当前余额 %d -> %d，月底预计 %d。\n" % [GameManager.money, cash_after_pay, cash_month_after]
+		+ "花呗支付：未分期欠款 %d -> %d，总债务 %d，月底最低还款至少 +%d。\n" % [
+			GameManager.huabei_debt,
+			huabei_after,
+			total_debt_after,
+			min_delta,
+		]
+		+ warning
+	)
+
+
+func _get_huabei_min_payment_for(debt: int) -> int:
+	if debt <= 0:
+		return 0
+	return mini(int(debt * 0.1 + 200), debt)
 
 func _on_pay_mix() -> void:
 	if GameManager.money < _pending_pay_cost:
@@ -505,14 +570,14 @@ func _on_pay_mix() -> void:
 	var cost := _pending_pay_cost
 	GameManager.modify_stat("money", -cost)
 	_last_payment_changes = {"money": -cost}
-	GameManager.add_finance(-cost, _pending_pay_desc, false)
+	GameManager.add_finance(-cost, _pending_pay_desc, false, _pending_pay_category)
 	GameManager.add_activity(_pending_pay_category, _pending_pay_desc + "现金支付")
 	_finish_payment()
 func _on_pay_huabei() -> void:
 	GameManager.huabei_debt += _pending_pay_cost
 	GameManager.credit_debt = GameManager.huabei_debt
-	_last_payment_changes = {"credit_debt": _pending_pay_cost}
-	GameManager.add_finance(-_pending_pay_cost, _pending_pay_desc, true)
+	_last_payment_changes = {"credit_debt": _pending_pay_cost, "huabei_debt": _pending_pay_cost}
+	GameManager.add_finance(-_pending_pay_cost, _pending_pay_desc, true, _pending_pay_category)
 	GameManager.add_activity(_pending_pay_category, _pending_pay_desc + "（花呗透支）")
 	_finish_payment()
 
@@ -605,6 +670,7 @@ func _refresh_alipay_ui() -> void:
 			if bool(entry.get("is_huabei", false)):
 				huabei_count += 1
 		_label_bill_hint.text = "已记录 %d 条流水，其中 %d 条使用花呗。负数是支出，带 [花呗] 的支出会变成未来压力。" % [log_count, huabei_count]
+	_refresh_bill_summary(month_preview)
 	_refresh_overview_summary()
 	_refresh_alipay_log()
 
@@ -625,12 +691,15 @@ func _refresh_overview_summary() -> void:
 			continue
 		var amount := int(entry.get("amount", 0))
 		var is_huabei := bool(entry.get("is_huabei", false))
+		var category := str(entry.get("category", "流水"))
 		if recent_count < 3:
 			recent_lines.append(_format_finance_line(entry))
 			recent_count += 1
+		if category == "理财":
+			continue
 		if amount >= 0:
 			income_total += amount
-		elif is_huabei:
+		elif is_huabei and category != "利息" and category != "分期":
 			huabei_spend_total += -amount
 		else:
 			cash_spend_total += -amount
@@ -724,11 +793,92 @@ func _overview_risk_advice(projected: int, total_debt: int, cash: int) -> String
 	return "当前还算稳，但每一笔大额消费后都应该回来看一次。"
 
 
+func _refresh_bill_summary(month_preview: Dictionary) -> void:
+	var totals := _get_current_month_finance_totals()
+	if is_instance_valid(_label_bill_month_totals):
+		_label_bill_month_totals.text = (
+			"收入：+%d\n"
+			+ "现金流出：-%d（固定账单 -%d / 还款 -%d）\n"
+			+ "花呗新增：-%d\n"
+			+ "花呗滚息：-%d\n"
+			+ "理财调仓：%d 笔，合计流转 %d"
+		) % [
+			int(totals.get("income", 0)),
+			int(totals.get("cash_out", 0)),
+			int(totals.get("fixed", 0)),
+			int(totals.get("repayment", 0)),
+			int(totals.get("huabei_new", 0)),
+			int(totals.get("interest", 0)),
+			int(totals.get("invest_count", 0)),
+			int(totals.get("invest_turnover", 0)),
+		]
+	if is_instance_valid(_label_bill_month_forecast):
+		_label_bill_month_forecast.text = (
+			"待发工资：+%d\n"
+			+ "月底固定待扣：房租 -%d / 餐饮 -%d / 分期 -%d / 花呗最低 -%d\n"
+			+ "预计实际扣款：-%d\n"
+			+ "结算后现金：%d\n"
+			+ "结算后总债：%d"
+		) % [
+			int(month_preview.get("salary", 0)),
+			int(month_preview.get("rent", 0)),
+			int(month_preview.get("food", 0)),
+			int(month_preview.get("installment_due", 0)),
+			int(month_preview.get("huabei_min", 0)),
+			int(month_preview.get("actual_cash_cost", 0)),
+			int(month_preview.get("cash_after_all", 0)),
+			int(month_preview.get("total_debt_after", 0)),
+		]
+
+
+func _get_current_month_finance_totals() -> Dictionary:
+	var month_start_week := GameManager.turn_count - GameManager.week_in_month + 1
+	var totals := {
+		"income": 0,
+		"cash_out": 0,
+		"fixed": 0,
+		"repayment": 0,
+		"huabei_new": 0,
+		"interest": 0,
+		"invest_count": 0,
+		"invest_turnover": 0,
+	}
+	for entry: Dictionary in GameManager.financial_log:
+		var week := int(entry.get("week", 0))
+		if week < month_start_week:
+			continue
+		var amount := int(entry.get("amount", 0))
+		var category := str(entry.get("category", "流水"))
+		var is_huabei := bool(entry.get("is_huabei", false))
+		match category:
+			"理财":
+				totals["invest_count"] = int(totals["invest_count"]) + 1
+				totals["invest_turnover"] = int(totals["invest_turnover"]) + absi(amount)
+			"固定账单":
+				totals["cash_out"] = int(totals["cash_out"]) + max(-amount, 0)
+				totals["fixed"] = int(totals["fixed"]) + max(-amount, 0)
+			"还款":
+				totals["cash_out"] = int(totals["cash_out"]) + max(-amount, 0)
+				totals["repayment"] = int(totals["repayment"]) + max(-amount, 0)
+			"利息":
+				totals["interest"] = int(totals["interest"]) + max(-amount, 0)
+			_:
+				if amount >= 0:
+					totals["income"] = int(totals["income"]) + amount
+				elif is_huabei:
+					totals["huabei_new"] = int(totals["huabei_new"]) + -amount
+				else:
+					totals["cash_out"] = int(totals["cash_out"]) + -amount
+	return totals
+
+
 func _format_finance_line(entry: Dictionary) -> String:
 	var amount := int(entry.get("amount", 0))
 	var sign_str := "+" if amount >= 0 else ""
 	var hb_tag := " [花呗]" if bool(entry.get("is_huabei", false)) else ""
-	return "[第%d周] %s%s：%s%d" % [int(entry.get("week", 0)), str(entry.get("desc", "")), hb_tag, sign_str, amount]
+	var category := str(entry.get("category", "流水"))
+	var month_text := "%d月第%d周" % [int(entry.get("month", GameManager.month)), int(entry.get("week_in_month", 0))]
+	return "[%s][%s] %s%s：%s%d" % [month_text, category, str(entry.get("desc", "")), hb_tag, sign_str, amount]
 
 
 func _get_month_end_preview_safe() -> Dictionary:
@@ -802,11 +952,13 @@ func _refresh_alipay_log() -> void:
 		var entry: Dictionary = logs[i]
 		var lbl := Label.new()
 		lbl.add_theme_font_size_override("font_size", 12)
-		var sign_str := "+" if entry["amount"] >= 0 else ""
-		var hb_tag := " [花呗]" if entry.get("is_huabei", false) else ""
-		lbl.text = "[第%d周] %s%s：%s%d" % [entry["week"], entry["desc"], hb_tag, sign_str, entry["amount"]]
-		if entry["amount"] >= 0:
+		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var amount := int(entry.get("amount", 0))
+		lbl.text = _format_finance_line(entry)
+		if amount >= 0:
 			lbl.add_theme_color_override("font_color", Color(0.09, 0.55, 0.27, 1))
+		elif bool(entry.get("is_huabei", false)):
+			lbl.add_theme_color_override("font_color", Color(0.76, 0.24, 0.10, 1))
 		else:
 			lbl.add_theme_color_override("font_color", Color(0.76, 0.12, 0.10, 1))
 		alipay_log_container.add_child(lbl)
@@ -843,7 +995,7 @@ func _on_al_fin_safe_in() -> void:
 		return
 	GameManager.modify_stat("money", -500)
 	GameManager.invest_safe += 500
-	GameManager.add_finance(-500, "存入稳健宝", false)
+	GameManager.add_finance(-500, "存入稳健宝", false, "理财")
 	main_node().float_stat("-500 存入稳健宝", -500, main_node().get_global_mouse_position())
 	main_node().show_message("成功存入 500 到稳健宝！")
 	_refresh_alipay_ui()
@@ -854,7 +1006,7 @@ func _on_al_fin_risk_in() -> void:
 		return
 	GameManager.modify_stat("money", -500)
 	GameManager.invest_risk += 500
-	GameManager.add_finance(-500, "存入高风险基金", false)
+	GameManager.add_finance(-500, "存入高风险基金", false, "理财")
 	main_node().float_stat("-500 存入高风险", -500, main_node().get_global_mouse_position())
 	main_node().show_message("成功存入 500 到高风险基金！祝你好运...")
 	_refresh_alipay_ui()
@@ -866,7 +1018,7 @@ func _on_al_fin_safe_out() -> void:
 	var amount := GameManager.invest_safe
 	GameManager.modify_stat("money", amount)
 	GameManager.invest_safe = 0
-	GameManager.add_finance(amount, "取出稳健宝", false)
+	GameManager.add_finance(amount, "取出稳健宝", false, "理财")
 	main_node().float_stat("+%d 取出稳健宝" % amount, amount, main_node().get_global_mouse_position())
 	main_node().show_message("已从稳健宝取出 %d" % amount)
 	_refresh_alipay_ui()
@@ -878,7 +1030,7 @@ func _on_al_fin_risk_out() -> void:
 	var amount := GameManager.invest_risk
 	GameManager.modify_stat("money", amount)
 	GameManager.invest_risk = 0
-	GameManager.add_finance(amount, "取出高风险基金", false)
+	GameManager.add_finance(amount, "取出高风险基金", false, "理财")
 	main_node().float_stat("+%d 取出高风险" % amount, amount, main_node().get_global_mouse_position())
 	main_node().show_message("已从高风险基金取出 %d" % amount)
 	_refresh_alipay_ui()
@@ -935,7 +1087,7 @@ func _on_repay_huabei() -> void:
 			repay_msg += "分期已提前还清！"
 
 	var actual_repay := mini(amount, combined_debt)
-	GameManager.add_finance(-actual_repay, "花呗主动还款", false)
+	GameManager.add_finance(-actual_repay, "花呗主动还款", false, "还款")
 	main_node().input_repay_amount.text = ""
 	main_node().float_stat("还款 -%d" % actual_repay, -actual_repay, main_node().get_global_mouse_position())
 	var still_owe := GameManager.huabei_debt + GameManager.huabei_installment_debt
@@ -961,7 +1113,7 @@ func _on_installment() -> void:
 	GameManager.huabei_debt = 0
 	GameManager.credit_debt = 0
 	var fee_amount: int = total_with_fee - principal
-	GameManager.add_finance(-total_with_fee, "办理12期花呗分期(含15%%手续费)", true)
+	GameManager.add_finance(-total_with_fee, "办理12期花呗分期(含15%%手续费)", true, "分期")
 	GameManager.add_activity("消费", "办理了花呑12期分期，本金 %d + 手续费 %d = 共需还款 %d，每月扣 %d" % [principal, fee_amount, total_with_fee, monthly_pay])
 	main_node().show_message("分期成功！\n分期本金：%d 元\n手续费(15%%)：%d 元\n总还款：%d 元\n每月固定扣款：%d 元，共12期" % [principal, fee_amount, total_with_fee, monthly_pay])
 	_refresh_alipay_ui()

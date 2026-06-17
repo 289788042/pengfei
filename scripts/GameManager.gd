@@ -350,9 +350,23 @@ func modify_stat(stat_name: String, amount: int) -> void:
 func add_activity(category: String, desc: String) -> void:
 	activity_log.append({"week": turn_count, "month": month, "week_in_month": week_in_month, "age": age, "category": category, "desc": desc})
 
-## 记录财务流水（is_huabei: 是否花呗支付）
-func add_finance(amount: int, desc: String, is_huabei: bool) -> void:
-	financial_log.append({"week": turn_count, "amount": amount, "desc": desc, "is_huabei": is_huabei})
+## 记录财务流水（is_huabei: 是否花呗/债务相关；category 用于账单汇总）
+func add_finance(amount: int, desc: String, is_huabei: bool, category: String = "流水") -> void:
+	var logged_week_in_month: int = clampi(week_in_month, 1, 4)
+	financial_log.append({
+		"week": turn_count,
+		"month": month,
+		"week_in_month": logged_week_in_month,
+		"age": age,
+		"amount": amount,
+		"desc": desc,
+		"is_huabei": is_huabei,
+		"category": category,
+		"cash_after": money,
+		"huabei_debt_after": huabei_debt,
+		"installment_debt_after": huabei_installment_debt,
+		"total_debt_after": huabei_debt + huabei_installment_debt,
+	})
 
 ## 增加NPC好感度（含自动升级逻辑：每50好感升一级）
 func add_npc_affection(npc_id: String, amount: int) -> void:
@@ -405,6 +419,7 @@ func advance_week() -> void:
 ## 月度结算确认后调用（严格按5步执行 + 春节 + 关系人审视 + 结局判定）
 func start_new_month() -> void:
 	awaiting_month_settle = false
+	var settlement_cash_before: int = money
 
 	# 步骤1：理财结算
 	var invest_profit_safe: int = 0
@@ -420,15 +435,21 @@ func start_new_month() -> void:
 	invest_settled.emit(invest_profit_safe, invest_profit_risk)
 
 	# 步骤2：账单扣除（严格按四步顺序执行）
-	var salary_paid: int = pending_salary
-
 	# 第1步：扣除刚性支出（房租+餐饮）
 	money += pending_salary
+	if pending_salary > 0:
+		add_finance(pending_salary, "本月工资到账", false, "收入")
 	money -= base_rent
+	if base_rent > 0:
+		add_finance(-base_rent, "月底房租", false, "固定账单")
 	money -= monthly_food_cost
+	if monthly_food_cost > 0:
+		add_finance(-monthly_food_cost, "本月餐饮账单", false, "固定账单")
 
 	# 第2步：处理分期账单
 	if huabei_installment_months_left > 0:
+		var installment_pay: int = huabei_installment_monthly_pay
+		var installment_months_before: int = huabei_installment_months_left
 		money -= huabei_installment_monthly_pay
 		huabei_installment_months_left -= 1
 		var principal_this_month: int = int(float(huabei_installment_monthly_pay) / 1.15)
@@ -436,25 +457,37 @@ func start_new_month() -> void:
 		if huabei_installment_months_left <= 0:
 			huabei_installment_debt = 0
 			huabei_installment_monthly_pay = 0
+		add_finance(-installment_pay, "花呗分期月供（原剩余%d期）" % installment_months_before, false, "还款")
 
 	# 第3步：处理未分期的花呗最低还款
 	if huabei_debt > 0:
 		var min_payment: int = mini(int(huabei_debt * 0.1 + 200), huabei_debt)
+		var actual_huabei_paid: int = 0
 		if money >= min_payment:
 			money -= min_payment
 			huabei_debt -= min_payment
+			actual_huabei_paid = min_payment
 		else:
 			var available_payment := maxi(money, 0)
 			huabei_debt -= available_payment
 			money -= available_payment
+			actual_huabei_paid = available_payment
 			sanity -= 50
+			if actual_huabei_paid > 0:
+				add_finance(-actual_huabei_paid, "花呗最低还款（未足额）", false, "还款")
 			if sanity <= 0:
 				sanity = 0
 				game_over.emit("【负债累累】", "花呗最低还款都付不起了。\n催收电话打到公司前台，同事看你的眼神都变了。\n你把手机关机，蜷缩在出租屋的角落，感觉自己被整个世界抛弃了。")
 				stats_updated.emit()
 				return
+		if actual_huabei_paid > 0 and actual_huabei_paid >= min_payment:
+			add_finance(-actual_huabei_paid, "花呗最低还款", false, "还款")
 		if huabei_debt > 0:
+			var before_interest: int = huabei_debt
 			huabei_debt = int(float(huabei_debt) * 1.05)
+			var interest: int = huabei_debt - before_interest
+			if interest > 0:
+				add_finance(-interest, "花呗未还滚息", true, "利息")
 	credit_debt = huabei_debt
 
 	# 第4步：破产惩罚（入不敷出）
@@ -477,7 +510,7 @@ func start_new_month() -> void:
 			return
 
 	# 月度结算提示
-	var net_change: int = salary_paid - total_cost
+	var net_change: int = money - settlement_cash_before
 	monthly_settled.emit(net_change)
 
 	# 岁月催人老（每3个月触发，延迟到工作日结束后显示）
