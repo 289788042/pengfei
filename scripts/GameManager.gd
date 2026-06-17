@@ -106,6 +106,19 @@ var _app_unlock_turn: Dictionary = {
 	"map": 1, "wechat": 1, "job": 1, "diary": 1,
 	"baotao": 3, "dating": 5, "tuanmei": 9, "zodiac": 13, "house": 17,
 }
+## APP显示名：用于锁定占位和提示
+var _app_display_names: Dictionary = {
+	"map": "高德地图",
+	"wechat": "微信",
+	"alipay": "支服了宝",
+	"diary": "日记本",
+	"job": "BOSS弯聘",
+	"baotao": "宝淘",
+	"dating": "滑动交友",
+	"tuanmei": "团美医美",
+	"zodiac": "星座",
+	"house": "贝壳找房",
+}
 ## APP解锁通知文案
 var _app_unlock_msg: Dictionary = {
 	"baotao": "同事推荐了一个叫「宝淘」的APP，说上面护肤品质价比很高。",
@@ -122,6 +135,20 @@ func is_app_unlocked(app_id: String) -> bool:
 	if not _app_unlock_turn.has(app_id):
 		return true
 	return turn_count >= _app_unlock_turn[app_id]
+
+func get_app_display_name(app_id: String) -> String:
+	return str(_app_display_names.get(app_id, app_id))
+
+func get_app_unlock_turn(app_id: String) -> int:
+	return int(_app_unlock_turn.get(app_id, 1))
+
+func get_app_unlock_hint(app_id: String) -> String:
+	if app_id == "" or is_app_unlocked(app_id):
+		return ""
+	return "%s暂未解锁：第%d周开放。继续推进主循环后会出现在手机里。" % [
+		get_app_display_name(app_id),
+		get_app_unlock_turn(app_id),
+	]
 
 ## 获取本次新解锁的APP通知（首次触发时返回文案列表）
 func get_new_unlocks() -> Array:

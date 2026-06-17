@@ -477,6 +477,10 @@ func _show_wechat_choices_phase() -> void:
 		left_dialog_box.modulate.a = 0.0
 		left_dialog_box.visible = false
 		return
+	_gal_pages.clear()
+	_gal_page_idx = 0
+	_gal_typing = false
+	_stop_arrow_anim()
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	_show_phone_dim()
@@ -580,16 +584,18 @@ func _on_encounter_choice(option: Dictionary) -> void:
 			if init_msgs.size() == 0 and encounter_npc_id != "":
 				init_msgs = [{"sender": "npc", "text": "刚才太匆忙了，抱歉。你小心点，外面下雨了。"}]
 			if GameManager.npcs.has(encounter_npc_id):
+				if not GameManager.npcs[encounter_npc_id].has("messages"):
+					GameManager.npcs[encounter_npc_id]["messages"] = []
 				for msg in init_msgs:
 					GameManager.npcs[encounter_npc_id]["messages"].append(msg.duplicate(true))
 					GameManager.add_unread(encounter_npc_id)
-				if main_node().get("wechat") and main_node().wechat.has_method("_build_chat_items"):
-					main_node().wechat._build_chat_items()
-					main_node().wechat.call_deferred("_build_chat_items")
+				_refresh_wechat_contacts_after_unlock()
 		for stat_name in stat_changes:
 			var val: int = int(stat_changes[stat_name])
 			if stat_name == "affection" and encounter_npc_id != "" and should_unlock:
 				GameManager.add_npc_affection(encounter_npc_id, val)
+			elif stat_name == "affection":
+				continue
 			else:
 				GameManager.modify_stat(stat_name, val)
 		if flag != "" and encounter_npc_id != "":
@@ -611,6 +617,18 @@ func _on_encounter_choice(option: Dictionary) -> void:
 		else:
 			apply_choice.call()
 	)
+
+
+func _refresh_wechat_contacts_after_unlock() -> void:
+	var wc = main_node().get("wechat")
+	if wc:
+		if wc.has_method("_build_chat_items"):
+			wc._build_chat_items()
+			wc.call_deferred("_build_chat_items")
+		if wc.has_method("_refresh_wechat_ui"):
+			wc._refresh_wechat_ui()
+			wc.call_deferred("_refresh_wechat_ui")
+	GameManager.stats_updated.emit()
 
 
 # ==================== 场景背景图 + 环境音管理 ====================

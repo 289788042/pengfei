@@ -193,12 +193,21 @@ func _can_open_phone_app() -> bool:
 	return true
 
 
+func _ensure_app_unlocked(app_id: String) -> bool:
+	if app_id == "" or GameManager.is_app_unlocked(app_id):
+		return true
+	var hint := GameManager.get_app_unlock_hint(app_id)
+	main_node().show_message(hint if hint != "" else "这个 App 还没有解锁。")
+	return false
+
+
 func _set_layer_visible(layer: Control, is_visible: bool) -> void:
 	if not is_instance_valid(layer):
 		return
 	if is_visible:
 		if _is_heavy_app_layer(layer):
-			_setup_heavy_app_layer(layer)
+			var panel_size := Vector2(1040, 720) if layer == location_menu else Vector2(960, 760)
+			_setup_heavy_app_layer(layer, 80, panel_size)
 		else:
 			_setup_phone_layer(layer)
 	if is_instance_valid(_main) and _main.has_method("set_ui_layer_visible"):
@@ -314,10 +323,11 @@ func _show_story_then_changes(story_text: String, changes: Dictionary, after: Ca
 
 func _show_story_then_apply_changes(story_text: String, pending_changes: Dictionary, already_applied_changes: Dictionary = {}, after: Callable = Callable(), title: String = "【结算】") -> void:
 	var clean_story := _strip_embedded_result_lines(story_text)
+	var safe_pending_changes := _drop_unbound_affection(pending_changes)
 	var show_and_apply := func() -> void:
-		var display_changes := _merge_change_dicts(already_applied_changes, pending_changes)
+		var display_changes := _merge_change_dicts(already_applied_changes, safe_pending_changes)
 		_show_result(_format_result(display_changes, title), func() -> void:
-			_apply_location_changes(pending_changes)
+			_apply_location_changes(safe_pending_changes)
 			if after.is_valid():
 				after.call()
 		)
@@ -329,13 +339,15 @@ func _show_story_then_apply_changes(story_text: String, pending_changes: Diction
 
 func _show_story_then_apply_npc_changes(story_text: String, pending_changes: Dictionary, already_applied_changes: Dictionary, npc_name: String, after: Callable = Callable(), title: String = "【结算】", npc_id: String = "", npc_pending_changes: Dictionary = {}) -> void:
 	var clean_story := _strip_embedded_result_lines(story_text)
+	var safe_pending_changes := _drop_unbound_affection(pending_changes)
+	var safe_npc_changes := _drop_unbound_affection(npc_pending_changes, npc_id)
 	var show_and_apply := func() -> void:
-		var pending_display := _merge_change_dicts(npc_pending_changes, pending_changes)
+		var pending_display := _merge_change_dicts(safe_npc_changes, safe_pending_changes)
 		var display_changes := _merge_change_dicts(already_applied_changes, pending_display)
 		_show_result(_format_npc_result(display_changes, npc_name, title), func() -> void:
-			if npc_pending_changes.size() > 0:
-				_apply_npc_bonus_changes(npc_id, npc_pending_changes)
-			_apply_location_changes(pending_changes)
+			if safe_npc_changes.size() > 0:
+				_apply_npc_bonus_changes(npc_id, safe_npc_changes)
+			_apply_location_changes(safe_pending_changes)
 			if after.is_valid():
 				after.call()
 		)
@@ -373,163 +385,324 @@ func _on_close_loc() -> void:
 func _on_app_map() -> void:
 	if not _can_open_phone_app():
 		return
+	if not _ensure_app_unlocked("map"):
+		return
 	_close_all_menus()
-	## 清除旧子节点
+	_setup_heavy_app_layer(location_menu, 80, Vector2(1040, 720))
 	for child in location_menu.get_children():
 		child.queue_free()
-	## 地点面板
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.offset_left = 24
+	center.offset_top = 24
+	center.offset_right = -24
+	center.offset_bottom = -24
+	location_menu.add_child(center)
+
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(400, 0)
-	## 用锚点居中，上下各留 40px 边距
-	## 全屏锚点 + 居中对齐
-	panel.anchor_left = 0.0
-	panel.anchor_right = 1.0
-	panel.anchor_top = 0.05
-	panel.anchor_bottom = 0.95
-	panel.offset_left = 20
-	panel.offset_right = -20
-	panel.offset_top = 0
-	panel.offset_bottom = 0
-	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.95, 0.95, 0.95, 1)
-	panel_style.set_corner_radius_all(12.0)
-	panel_style.set_content_margin_all(0)
-	panel.add_theme_stylebox_override("panel", panel_style)
-	location_menu.add_child(panel)
-	## 主VBox
+	panel.custom_minimum_size = Vector2(1040, 720)
+	panel.add_theme_stylebox_override("panel", _make_flat_style(Color(0.945, 0.965, 0.955, 1), Color(0.18, 0.45, 0.38, 0.38), 1, 14))
+	center.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	panel.add_child(margin)
+
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 0)
-	panel.add_child(vbox)
-	## 顶部蓝色栏
-	var top_bar := PanelContainer.new()
-	top_bar.custom_minimum_size = Vector2(0, 50)
-	var top_style := StyleBoxFlat.new()
-	top_style.bg_color = Color(0.15, 0.55, 0.95, 1)
-	top_style.corner_radius_top_left = 12.0
-	top_style.corner_radius_top_right = 12.0
-	top_style.set_content_margin_all(0)
-	top_bar.add_theme_stylebox_override("panel", top_style)
-	vbox.add_child(top_bar)
-	var top_hbox := HBoxContainer.new()
-	top_hbox.add_theme_constant_override("separation", 0)
-	top_bar.add_child(top_hbox)
-	var title_ml := Control.new()
-	title_ml.custom_minimum_size = Vector2(16, 0)
-	top_hbox.add_child(title_ml)
+	vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(vbox)
+
+	var header := PanelContainer.new()
+	header.custom_minimum_size = Vector2(0, 70)
+	header.add_theme_stylebox_override("panel", _make_flat_style(Color(0.09, 0.36, 0.30, 1), Color(0.21, 0.56, 0.47, 0.55), 1, 12))
+	vbox.add_child(header)
+
+	var header_margin := MarginContainer.new()
+	header_margin.add_theme_constant_override("margin_left", 12)
+	header_margin.add_theme_constant_override("margin_right", 10)
+	header_margin.add_theme_constant_override("margin_top", 8)
+	header_margin.add_theme_constant_override("margin_bottom", 8)
+	header.add_child(header_margin)
+
+	var header_row := HBoxContainer.new()
+	header_row.add_theme_constant_override("separation", 8)
+	header_margin.add_child(header_row)
+
+	var title_box := VBoxContainer.new()
+	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_box.add_theme_constant_override("separation", 2)
+	header_row.add_child(title_box)
+
 	var title_lbl := Label.new()
 	title_lbl.text = "高德地图"
-	title_lbl.add_theme_font_size_override("font_size", 18)
+	title_lbl.add_theme_font_size_override("font_size", 22)
 	title_lbl.add_theme_color_override("font_color", Color.WHITE)
-	top_hbox.add_child(title_lbl)
-	var title_sp := Control.new()
-	title_sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top_hbox.add_child(title_sp)
+	title_box.add_child(title_lbl)
+
+	var status_lbl := Label.new()
+	status_lbl.text = _map_player_status_text()
+	status_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_lbl.add_theme_font_size_override("font_size", 14)
+	status_lbl.add_theme_color_override("font_color", Color(0.80, 0.94, 0.90, 1))
+	title_box.add_child(status_lbl)
+
 	var close_btn := Button.new()
-	close_btn.text = "X"
-	close_btn.add_theme_font_size_override("font_size", 14)
-	close_btn.add_theme_color_override("font_color", Color.WHITE)
-	close_btn.flat = true
+	close_btn.text = "关闭"
+	close_btn.custom_minimum_size = Vector2(70, 38)
+	_style_text_button(close_btn, Color(0.86, 0.94, 0.90, 1), Color(0.76, 0.88, 0.82, 1), Color(0.05, 0.25, 0.20, 1))
 	close_btn.pressed.connect(_on_close_loc)
-	top_hbox.add_child(close_btn)
-	var title_mr := Control.new()
-	title_mr.custom_minimum_size = Vector2(12, 0)
-	top_hbox.add_child(title_mr)
-	## 地点列表（可滚动）
+	header_row.add_child(close_btn)
+
+	var hint_panel := PanelContainer.new()
+	hint_panel.add_theme_stylebox_override("panel", _make_flat_style(Color(1.0, 0.985, 0.92, 1), Color(0.80, 0.70, 0.42, 0.40), 1, 9))
+	vbox.add_child(hint_panel)
+
+	var hint_margin := MarginContainer.new()
+	hint_margin.add_theme_constant_override("margin_left", 10)
+	hint_margin.add_theme_constant_override("margin_right", 10)
+	hint_margin.add_theme_constant_override("margin_top", 6)
+	hint_margin.add_theme_constant_override("margin_bottom", 6)
+	hint_panel.add_child(hint_margin)
+
+	var hint_lbl := Label.new()
+	hint_lbl.text = "地点行动会先播放左侧剧情，数值变化在剧情结束后统一结算。条件不足时可以点“查看原因”。"
+	hint_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint_lbl.add_theme_font_size_override("font_size", 14)
+	hint_lbl.add_theme_color_override("font_color", Color(0.34, 0.27, 0.12, 1))
+	hint_margin.add_child(hint_lbl)
+
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vbox.add_child(scroll)
+
 	var loc_list := VBoxContainer.new()
 	loc_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	loc_list.add_theme_constant_override("separation", 0)
+	loc_list.add_theme_constant_override("separation", 8)
 	scroll.add_child(loc_list)
-	## 地点数据
-	var map_locs: Array = [
-		{"name": "图书馆", "icon_color": Color(0.2, 0.5, 0.9), "cost": "-20精力 | +3学识 +5情绪", "action": _on_loc_library},
-		{"name": "健身房", "icon_color": Color(0.2, 0.75, 0.3), "cost": "-45精力 -200金 | +2颜值 +5情绪 体力上限+1", "action": _on_loc_gym},
-		{"name": "高档酒吧", "icon_color": Color(0.6, 0.3, 0.8), "cost": "-30精力 -500金 | +2情商 +25情绪 | 需情商>=10", "action": _on_loc_bar},
-		{"name": "宅家刷手机", "icon_color": Color(0.55, 0.55, 0.55), "cost": "-10精力 | +20情绪", "action": _on_loc_home},
-		{"name": "公园·深圳湾", "icon_color": Color(0.1, 0.7, 0.4), "cost": "0精力 0金 | +3情绪 精力+10", "action": _on_loc_park},
-		{"name": "咖啡厅", "icon_color": Color(0.55, 0.35, 0.15), "cost": "-15精力 -80金 | +2学识 +2情商", "action": _on_loc_cafe},
-		{"name": "夜市·大排档", "icon_color": Color(0.85, 0.55, 0.1), "cost": "-10精力 -100金 | +15情绪", "action": _on_loc_market},
-		{"name": "公司加班", "icon_color": Color(0.3, 0.3, 0.7), "cost": "-40精力 | +500~800金", "action": _on_loc_overtime},
-	]
-	## 构建每行
-	for loc in map_locs:
-		var wrapper := Control.new()
-		wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		wrapper.custom_minimum_size = Vector2(0, 72)
-		loc_list.add_child(wrapper)
-		var row := Panel.new()
-		row.set_anchors_preset(Control.PRESET_FULL_RECT)
-		var row_style := StyleBoxFlat.new()
-		row_style.bg_color = Color(1, 1, 1, 1)
-		row_style.set_content_margin_all(0)
-		row.add_theme_stylebox_override("panel", row_style)
-		wrapper.add_child(row)
-		var row_hbox := HBoxContainer.new()
-		row_hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-		row_hbox.add_theme_constant_override("separation", 12)
-		row.add_child(row_hbox)
-		## 左侧图标占位
-		var icon_ml := Control.new()
-		icon_ml.custom_minimum_size = Vector2(16, 0)
-		row_hbox.add_child(icon_ml)
-		var icon := ColorRect.new()
-		icon.custom_minimum_size = Vector2(48, 48)
-		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		icon.color = loc["icon_color"]
-		row_hbox.add_child(icon)
-		## 右侧信息
-		var info_vbox := VBoxContainer.new()
-		info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		info_vbox.add_theme_constant_override("separation", 4)
-		info_vbox.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row_hbox.add_child(info_vbox)
-		var name_lbl := Label.new()
-		name_lbl.text = loc["name"]
-		name_lbl.add_theme_font_size_override("font_size", 16)
-		name_lbl.add_theme_color_override("font_color", Color(0.15, 0.15, 0.15, 1))
-		info_vbox.add_child(name_lbl)
-		var cost_lbl := Label.new()
-		cost_lbl.text = loc["cost"]
-		cost_lbl.add_theme_font_size_override("font_size", 12)
-		cost_lbl.add_theme_color_override("font_color", Color(0.55, 0.55, 0.55, 1))
-		info_vbox.add_child(cost_lbl)
-		## 右侧箭头
-		var arrow_sp := Control.new()
-		arrow_sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row_hbox.add_child(arrow_sp)
-		var arrow_lbl := Label.new()
-		arrow_lbl.text = ">"
-		arrow_lbl.add_theme_font_size_override("font_size", 20)
-		arrow_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75, 1))
-		arrow_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row_hbox.add_child(arrow_lbl)
-		var arrow_mr := Control.new()
-		arrow_mr.custom_minimum_size = Vector2(12, 0)
-		row_hbox.add_child(arrow_mr)
-		## 点击事件
-		var captured_action: Callable = loc["action"]
-		var click_btn := Button.new()
-		click_btn.name = "LocBtn_" + loc["name"]
-		click_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-		click_btn.flat = true
-		click_btn.focus_mode = Control.FOCUS_NONE
-		var btn_style := StyleBoxFlat.new()
-		btn_style.bg_color = Color(0, 0, 0, 0)
-		btn_style.set_content_margin_all(0)
-		click_btn.add_theme_stylebox_override("normal", btn_style)
-		click_btn.add_theme_stylebox_override("hover", btn_style)
-		click_btn.add_theme_stylebox_override("pressed", btn_style)
-		wrapper.add_child(click_btn)
-		click_btn.pressed.connect(func() -> void:
-			_on_close_loc()
-			captured_action.call()
-		)
+
+	for loc: Dictionary in _map_location_defs():
+		_add_map_location_card(loc_list, loc)
+
 	_set_layer_visible(location_menu, true)
+
+
+func _map_location_defs() -> Array:
+	return [
+		{"id": "library", "color": Color(0.18, 0.42, 0.78, 1), "role": "成长", "note": "低成本提升学识"},
+		{"id": "gym", "color": Color(0.15, 0.62, 0.33, 1), "role": "成长", "note": "颜值与精力上限"},
+		{"id": "bar", "color": Color(0.48, 0.30, 0.70, 1), "role": "社交", "note": "高消费换情绪与情商"},
+		{"id": "home", "color": Color(0.42, 0.47, 0.50, 1), "role": "恢复", "note": "便宜回血但消耗精力"},
+		{"id": "park", "color": Color(0.08, 0.58, 0.40, 1), "role": "恢复", "note": "每周一次的免费散心"},
+		{"id": "cafe", "color": Color(0.54, 0.34, 0.18, 1), "role": "成长", "note": "学识与情商的均衡点"},
+		{"id": "market", "color": Color(0.82, 0.46, 0.10, 1), "role": "恢复", "note": "便宜情绪补给"},
+		{"id": "overtime", "color": Color(0.26, 0.32, 0.66, 1), "role": "收入", "note": "高压换现金"},
+	]
+
+
+func _map_player_status_text() -> String:
+	var debt_total: int = GameManager.huabei_debt + GameManager.huabei_installment_debt
+	return "第%d月 第%d周 | 精力 %d/%d | 现金 %d | 花呗 %d" % [
+		GameManager.month,
+		GameManager.week_in_month,
+		GameManager.energy,
+		GameManager.max_energy,
+		GameManager.money,
+		debt_total,
+	]
+
+
+func _map_stat_name(stat_name: String) -> String:
+	var extra_names := {
+		"max_energy": "精力上限",
+		"huabei_debt": "花呗欠款",
+		"huabei_installment_debt": "花呗分期",
+	}
+	return GameManager.stat_names.get(stat_name, extra_names.get(stat_name, stat_name))
+
+
+func _map_change_summary(changes: Dictionary, positive: bool, location: String = "") -> String:
+	var parts: Array = []
+	if positive and location == "overtime":
+		parts.append("金钱 +500~800")
+	for stat_name in changes:
+		var key := str(stat_name)
+		var amount := int(changes[stat_name])
+		if amount == 0:
+			continue
+		if location == "overtime" and positive and key == "money":
+			continue
+		if positive and amount <= 0:
+			continue
+		if not positive and amount >= 0:
+			continue
+		var sign := "+" if amount > 0 else ""
+		parts.append("%s %s%d" % [_map_stat_name(key), sign, amount])
+	if parts.is_empty():
+		return "无直接收益" if positive else "无直接消耗"
+	return " / ".join(parts)
+
+
+func _map_cost_summary(location: String, config: Dictionary) -> String:
+	var parts: Array = []
+	var payment_cost := int(config.get("payment_cost", 0))
+	if payment_cost > 0:
+		parts.append("现金 -%d（可花呗）" % payment_cost)
+	var change_text := _map_change_summary(config.get("changes", {}), false, location)
+	if change_text != "无直接消耗":
+		parts.append(change_text)
+	if parts.is_empty():
+		return "无直接消耗"
+	return " / ".join(parts)
+
+
+func _map_requirement_summary(config: Dictionary) -> String:
+	var parts: Array = []
+	var req_stats: Dictionary = config.get("req_stats", {})
+	for stat_name in req_stats:
+		var key := str(stat_name)
+		var needed := int(req_stats[stat_name])
+		var current := int(GameManager.get(key))
+		parts.append("%s≥%d（当前%d）" % [_map_stat_name(key), needed, current])
+	if bool(config.get("once_per_week", false)):
+		parts.append("每周一次")
+	return "无" if parts.is_empty() else " / ".join(parts)
+
+
+func _map_location_state(location: String, config: Dictionary) -> Dictionary:
+	if not is_instance_valid(_main):
+		return {"can_go": false, "text": "未就绪", "bg": Color(0.50, 0.50, 0.50, 1), "fg": Color.WHITE}
+	if main_node().current_phase != main_node().Phase.WEEKEND:
+		return {"can_go": false, "text": "仅周末", "bg": Color(0.58, 0.48, 0.36, 1), "fg": Color.WHITE}
+	if bool(config.get("once_per_week", false)) and _park_visited_week == GameManager.turn_count:
+		return {"can_go": false, "text": "本周已去", "bg": Color(0.58, 0.48, 0.36, 1), "fg": Color.WHITE}
+	var energy_req := int(config.get("energy_req", 0))
+	if energy_req > 0 and GameManager.energy < energy_req:
+		return {"can_go": false, "text": "精力不足", "bg": Color(0.70, 0.22, 0.20, 1), "fg": Color.WHITE}
+	var req_stats: Dictionary = config.get("req_stats", {})
+	for stat_name in req_stats:
+		var key := str(stat_name)
+		var needed := int(req_stats[stat_name])
+		var current := int(GameManager.get(key))
+		if current < needed:
+			return {"can_go": false, "text": "%s不足" % _map_stat_name(key), "bg": Color(0.70, 0.22, 0.20, 1), "fg": Color.WHITE}
+	return {"can_go": true, "text": "可前往", "bg": Color(0.08, 0.53, 0.37, 1), "fg": Color.WHITE}
+
+
+func _make_map_pill(text: String, bg: Color, fg: Color) -> PanelContainer:
+	var pill := PanelContainer.new()
+	pill.add_theme_stylebox_override("panel", _make_flat_style(bg, Color(1, 1, 1, 0.12), 1, 999))
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_top", 3)
+	margin.add_theme_constant_override("margin_bottom", 3)
+	pill.add_child(margin)
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 13)
+	label.add_theme_color_override("font_color", fg)
+	margin.add_child(label)
+	return pill
+
+
+func _add_map_info_label(parent: VBoxContainer, text: String, color: Color) -> void:
+	var label := Label.new()
+	label.text = text
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.add_theme_font_size_override("font_size", 15)
+	label.add_theme_color_override("font_color", color)
+	parent.add_child(label)
+
+
+func _add_map_location_card(parent: VBoxContainer, loc: Dictionary) -> void:
+	var location_id := str(loc.get("id", ""))
+	var config := _location_config(location_id)
+	if config.is_empty():
+		return
+	var state := _map_location_state(location_id, config)
+	var can_go := bool(state.get("can_go", false))
+	var accent_color: Color = loc.get("color", Color(0.20, 0.45, 0.40, 1))
+
+	var card := PanelContainer.new()
+	card.name = "MapCard_" + location_id
+	card.custom_minimum_size = Vector2(0, 156)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.add_theme_stylebox_override("panel", _make_flat_style(Color(1, 1, 1, 1), Color(0.76, 0.86, 0.82, 1), 1, 11))
+	parent.add_child(card)
+
+	var card_margin := MarginContainer.new()
+	card_margin.add_theme_constant_override("margin_left", 10)
+	card_margin.add_theme_constant_override("margin_right", 10)
+	card_margin.add_theme_constant_override("margin_top", 9)
+	card_margin.add_theme_constant_override("margin_bottom", 9)
+	card.add_child(card_margin)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 9)
+	card_margin.add_child(row)
+
+	var accent := PanelContainer.new()
+	accent.custom_minimum_size = Vector2(7, 0)
+	accent.add_theme_stylebox_override("panel", _make_flat_style(accent_color, accent_color, 0, 999))
+	row.add_child(accent)
+
+	var body := VBoxContainer.new()
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 5)
+	row.add_child(body)
+
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 6)
+	body.add_child(top)
+
+	var name_lbl := Label.new()
+	name_lbl.text = config.get("name", location_id)
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_lbl.add_theme_font_size_override("font_size", 19)
+	name_lbl.add_theme_color_override("font_color", Color(0.10, 0.18, 0.16, 1))
+	top.add_child(name_lbl)
+
+	top.add_child(_make_map_pill(str(loc.get("role", config.get("category", "地点"))), accent_color.lightened(0.12), Color.WHITE))
+	top.add_child(_make_map_pill(str(state.get("text", "")), state.get("bg", Color(0.50, 0.50, 0.50, 1)), state.get("fg", Color.WHITE)))
+
+	var note_lbl := Label.new()
+	note_lbl.text = str(loc.get("note", ""))
+	note_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note_lbl.add_theme_font_size_override("font_size", 14)
+	note_lbl.add_theme_color_override("font_color", Color(0.32, 0.42, 0.38, 1))
+	body.add_child(note_lbl)
+
+	_add_map_info_label(body, "消耗：" + _map_cost_summary(location_id, config), Color(0.48, 0.24, 0.20, 1))
+	_add_map_info_label(body, "收益：" + _map_change_summary(config.get("changes", {}), true, location_id), Color(0.10, 0.42, 0.30, 1))
+
+	var req_text := _map_requirement_summary(config)
+	if req_text != "无":
+		_add_map_info_label(body, "条件：" + req_text, Color(0.42, 0.34, 0.16, 1))
+
+	var action_btn := Button.new()
+	action_btn.name = "LocBtn_" + location_id
+	action_btn.text = "前往" if can_go else "查看原因"
+	action_btn.custom_minimum_size = Vector2(96, 44)
+	action_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if can_go:
+		_style_text_button(action_btn, Color(0.10, 0.52, 0.42, 1), Color(0.12, 0.62, 0.50, 1), Color.WHITE)
+	else:
+		_style_text_button(action_btn, Color(0.72, 0.75, 0.72, 1), Color(0.80, 0.82, 0.80, 1), Color(0.10, 0.18, 0.16, 1))
+	row.add_child(action_btn)
+
+	action_btn.pressed.connect(func() -> void:
+		if can_go:
+			_start_location(location_id)
+		else:
+			_can_start_location(location_id, config)
+	)
 
 
 func _close_all_menus() -> void:
@@ -541,6 +714,8 @@ func _close_all_menus() -> void:
 func _on_app_diary() -> void:
 	if not _can_open_phone_app():
 		return
+	if not _ensure_app_unlocked("diary"):
+		return
 	_close_all_menus()
 	_refresh_diary_ui()
 	_set_layer_visible(diary_popup, true)
@@ -548,6 +723,8 @@ func _on_app_diary() -> void:
 
 func _on_app_baotao() -> void:
 	if not _can_open_phone_app():
+		return
+	if not _ensure_app_unlocked("baotao"):
 		return
 	_close_all_menus()
 	for child in baotao_menu.get_children():
@@ -564,6 +741,8 @@ func _on_app_baotao() -> void:
 func _on_app_tuanmei() -> void:
 	if not _can_open_phone_app():
 		return
+	if not _ensure_app_unlocked("tuanmei"):
+		return
 	_close_all_menus()
 	for child in tuanmei_menu.get_children():
 		child.queue_free()
@@ -579,6 +758,8 @@ func _on_app_tuanmei() -> void:
 func _on_app_zodiac() -> void:
 	if not _can_open_phone_app():
 		return
+	if not _ensure_app_unlocked("zodiac"):
+		return
 	_close_all_menus()
 	label_zodiac_content.text = "亲爱的%s宝宝，本周运势：\n请注意控制消费，警惕烂桃花哦！" % GameManager.player_zodiac
 	_set_layer_visible(zodiac_popup, true)
@@ -586,6 +767,8 @@ func _on_app_zodiac() -> void:
 
 func _on_app_house() -> void:
 	if not _can_open_phone_app():
+		return
+	if not _ensure_app_unlocked("house"):
 		return
 	_close_all_menus()
 	for child in house_menu.get_children():
@@ -618,6 +801,8 @@ func _on_app_house() -> void:
 
 func _on_app_dating() -> void:
 	if not _can_open_phone_app():
+		return
+	if not _ensure_app_unlocked("dating"):
 		return
 	_close_all_menus()
 	if GameManager.charm < 10:
@@ -1214,13 +1399,21 @@ func _merge_change_dicts(base: Dictionary, extra: Dictionary) -> Dictionary:
 	return merged
 
 
+func _drop_unbound_affection(changes: Dictionary, npc_id: String = "") -> Dictionary:
+	var cleaned := changes.duplicate()
+	if npc_id == "" and cleaned.has("affection"):
+		cleaned.erase("affection")
+	return cleaned
+
+
 func _apply_location_changes(changes: Dictionary) -> Dictionary:
+	var safe_changes := _drop_unbound_affection(changes)
 	var service = _action_service()
 	if service and service.has_method("apply_stat_changes"):
-		return service.apply_stat_changes(changes)
+		return service.apply_stat_changes(safe_changes)
 	var applied: Dictionary = {}
-	for stat_name in changes:
-		var amount := int(changes[stat_name])
+	for stat_name in safe_changes:
+		var amount := int(safe_changes[stat_name])
 		if amount == 0:
 			continue
 		match str(stat_name):
@@ -1240,9 +1433,10 @@ func _apply_location_changes(changes: Dictionary) -> Dictionary:
 
 
 func _apply_npc_bonus_changes(npc_id: String, changes: Dictionary) -> Dictionary:
+	var safe_changes := _drop_unbound_affection(changes, npc_id)
 	var applied: Dictionary = {}
-	for stat_name in changes:
-		var amount := int(changes[stat_name])
+	for stat_name in safe_changes:
+		var amount := int(safe_changes[stat_name])
 		if amount == 0:
 			continue
 		if stat_name == "affection" and npc_id != "":
@@ -1685,6 +1879,8 @@ func _client_lock_reason() -> String:
 
 func _on_app_job() -> void:
 	if not _can_open_phone_app():
+		return
+	if not _ensure_app_unlocked("job"):
 		return
 	_close_all_menus()
 	for child in job_menu.get_children():

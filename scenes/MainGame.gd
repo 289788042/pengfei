@@ -308,6 +308,7 @@ func _ready() -> void:
 	phone_case.add_child(_phone_dim)
 	_setup_stat_bars()
 	_setup_finance_widgets()
+	_setup_phone_home_layout()
 	_refresh_action_tooltips()
 	left_bg = find_child("BgImage", true, false) as ColorRect
 	_setup_foundation_services()
@@ -322,6 +323,38 @@ func _ready() -> void:
 	else:
 		_enter_weekday()
 	pass
+
+
+func _setup_phone_home_layout() -> void:
+	var grid := btn_app_map.get_parent() as GridContainer
+	if is_instance_valid(grid):
+		grid.columns = 3
+		grid.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		grid.add_theme_constant_override("h_separation", 14)
+		grid.add_theme_constant_override("v_separation", 12)
+		var wrapper := grid.get_parent() as MarginContainer
+		if is_instance_valid(wrapper):
+			wrapper.add_theme_constant_override("margin_left", 18)
+			wrapper.add_theme_constant_override("margin_top", 10)
+			wrapper.add_theme_constant_override("margin_right", 18)
+			wrapper.add_theme_constant_override("margin_bottom", 6)
+	var app_buttons: Array[Button] = [
+		btn_app_map,
+		btn_app_wechat,
+		btn_app_alipay,
+		btn_app_diary,
+		btn_app_job,
+		btn_app_baotao,
+		btn_app_dating,
+		btn_app_tuanmei,
+		btn_app_zodiac,
+		btn_app_house,
+	]
+	for button: Button in app_buttons:
+		if not is_instance_valid(button):
+			continue
+		button.custom_minimum_size = Vector2(104, 80)
+		button.add_theme_font_size_override("font_size", 13)
 
 
 func _notification(what: int) -> void:
@@ -414,14 +447,14 @@ func _advance_left_dialog_input(skip_all: bool) -> bool:
 	if not galgame:
 		return false
 	if galgame.has_method("is_visible") and galgame.is_visible():
+		if is_instance_valid(galgame._gal_choice_container) and galgame._gal_choice_container.visible:
+			return false
 		if galgame._gal_pages.size() > 0:
 			if skip_all:
 				galgame.skip_all()
 			else:
 				galgame.gal_on_click()
 			return true
-		if is_instance_valid(galgame._gal_choice_container) and galgame._gal_choice_container.visible:
-			return false
 		galgame.dismiss_dialog()
 		return true
 	galgame.dismiss_dialog()
@@ -719,10 +752,18 @@ func _sync_phone_home_apps(interactable: bool) -> void:
 func _set_phone_app_state(button: Button, app_id: String, interactable: bool) -> void:
 	if not is_instance_valid(button):
 		return
+	if not button.has_meta("phone_app_base_text"):
+		button.set_meta("phone_app_base_text", button.text)
 	var unlocked := app_id == "" or GameManager.is_app_unlocked(app_id)
-	button.visible = unlocked
-	button.disabled = not interactable or not unlocked
-	button.mouse_filter = Control.MOUSE_FILTER_STOP if unlocked else Control.MOUSE_FILTER_IGNORE
+	button.visible = true
+	button.disabled = not interactable
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	if unlocked:
+		button.text = str(button.get_meta("phone_app_base_text"))
+		button.modulate = Color(1, 1, 1, 1) if interactable else Color(1, 1, 1, 0.58)
+	else:
+		button.text = "锁定\n" + GameManager.get_app_display_name(app_id)
+		button.modulate = Color(0.42, 0.44, 0.48, 0.82) if interactable else Color(0.32, 0.34, 0.38, 0.58)
 
 
 func _show_opening_intro() -> void:
@@ -800,13 +841,12 @@ func _show_event(event: Dictionary, after_callback: Callable) -> void:
 # ==================== UI 刷新 ====================
 
 func _refresh_ui() -> void:
-	label_week.text = "%d岁 | 第%d月 | 第%d周" % [GameManager.age, GameManager.month, GameManager.week_in_month]
+	label_week.text = "%d岁  %d月第%d周" % [GameManager.age, GameManager.month, GameManager.week_in_month]
 	label_money.text = str(GameManager.money)
 	label_psalary.text = str(GameManager.pending_salary)
-	label_player_info.text = "姓名:%s | 星座:%s" % [
-		GameManager.player_name,
-		GameManager.player_zodiac,
-	]
+	var display_name := GameManager.player_name if GameManager.player_name != "" else "未命名"
+	var zodiac_name := GameManager.player_zodiac if GameManager.player_zodiac != "" else "未定星座"
+	label_player_info.text = "%s · %s" % [display_name, zodiac_name]
 	_update_finance_widgets()
 	_refresh_action_tooltips()
 	# 更新进度条 + 数值标签
@@ -845,16 +885,24 @@ func _setup_finance_widgets() -> void:
 	label_player_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	label_player_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label_player_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	label_player_info.add_theme_font_size_override("font_size", 12)
+	label_player_info.add_theme_font_size_override("font_size", 11)
+	label_player_info.add_theme_color_override("font_color", Color(0.62, 0.70, 0.78, 1))
 	if label_week:
-		label_week.add_theme_font_size_override("font_size", 13)
+		label_week.add_theme_font_size_override("font_size", 12)
+		label_week.add_theme_color_override("font_color", Color(0.82, 0.90, 0.96, 1))
+
+	var profile_area := parent.get_parent() as HBoxContainer
+	if is_instance_valid(profile_area):
+		var avatar := profile_area.get_node_or_null("PlayerAvatar") as ColorRect
+		if is_instance_valid(avatar):
+			avatar.visible = false
 
 	label_pressure_summary = parent.get_node_or_null("LabelPressureSummary") as Label
 	if label_pressure_summary == null:
 		label_pressure_summary = Label.new()
 		label_pressure_summary.name = "LabelPressureSummary"
 		parent.add_child(label_pressure_summary)
-	label_pressure_summary.add_theme_font_size_override("font_size", 12)
+	label_pressure_summary.add_theme_font_size_override("font_size", 11)
 	label_pressure_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label_pressure_summary.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
@@ -872,9 +920,14 @@ func _setup_finance_widgets() -> void:
 		label_early_goal = Label.new()
 		label_early_goal.name = "LabelEarlyGoal"
 		parent.add_child(label_early_goal)
-	label_early_goal.add_theme_font_size_override("font_size", 11)
+	label_early_goal.add_theme_font_size_override("font_size", 13)
 	label_early_goal.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label_early_goal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label_early_goal.add_theme_color_override("font_color", Color(0.78, 0.92, 1.0, 1))
+
+	parent.move_child(label_early_goal, mini(label_player_info.get_index() + 1, parent.get_child_count() - 1))
+	parent.move_child(label_pressure_summary, mini(label_early_goal.get_index() + 1, parent.get_child_count() - 1))
+	parent.move_child(label_pressure_hint, mini(label_pressure_summary.get_index() + 1, parent.get_child_count() - 1))
 
 
 func _update_finance_widgets() -> void:
@@ -885,7 +938,7 @@ func _update_finance_widgets() -> void:
 	var debt_total: int = GameManager.huabei_debt + GameManager.huabei_installment_debt
 	var cash_after: int = int(preview.get("cash_after_all", 0))
 	var mandatory_cost: int = int(preview.get("mandatory_cost", 0))
-	label_pressure_summary.text = "压力:%s | 月底:%d | 账单:%d | 债:%d" % [
+	label_pressure_summary.text = "财务｜%s  月底 %d  账单 %d  债 %d" % [
 		str(pressure.get("name", "未知")),
 		cash_after,
 		mandatory_cost,
@@ -902,14 +955,23 @@ func _update_finance_widgets() -> void:
 		GameManager.night_school_progress,
 	]
 	var pressure_hint := str(pressure.get("hint", ""))
-	label_pressure_hint.text = "%s\n%s" % [pressure_hint, growth_text] if pressure_hint != "" else growth_text
+	label_pressure_hint.text = "%s\n%s" % [growth_text, pressure_hint] if pressure_hint != "" else growth_text
 	label_pressure_hint.add_theme_color_override("font_color", pressure.get("hint_color", Color(0.62, 0.66, 0.72)))
 	if label_early_goal:
 		var goal := _get_current_goal_hint(preview, pressure)
-		label_early_goal.text = str(goal.get("text", ""))
+		label_early_goal.text = _format_home_goal_text(str(goal.get("text", "")))
 		label_early_goal.visible = label_early_goal.text != ""
 		var goal_color: Color = goal.get("color", Color(0.62, 0.72, 0.92))
 		label_early_goal.add_theme_color_override("font_color", goal_color)
+
+
+func _format_home_goal_text(text: String) -> String:
+	var clean := text.strip_edges()
+	if clean.begins_with("目标："):
+		clean = clean.substr("目标：".length()).strip_edges()
+	if clean == "":
+		return ""
+	return "下一步｜" + clean
 
 
 func _get_current_goal_hint(preview: Dictionary, _pressure: Dictionary) -> Dictionary:
@@ -1002,7 +1064,7 @@ func _set_app_tooltip(button: Button, app_id: String, unlocked_text: String) -> 
 	if app_id == "" or GameManager.is_app_unlocked(app_id):
 		button.tooltip_text = unlocked_text
 	else:
-		button.tooltip_text = "未解锁：继续推进主循环后开放。"
+		button.tooltip_text = GameManager.get_app_unlock_hint(app_id)
 
 
 func _get_huabei_min_payment() -> int:
