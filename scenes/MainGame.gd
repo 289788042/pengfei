@@ -1182,19 +1182,14 @@ func _show_opening_intro() -> void:
 	weekday_panel.visible = false
 	btn_next_week.visible = false
 	var opening_pages: Array = [
-		"墙皮在掉。",
-		"绿斑从天花板角落往下蔓延。深圳三月的回南天让人喘不过气。",
-		"我坐在城中村的单人床上，盯着手机屏幕。花呗账单页面的红色数字跳了两下：[b][color=FFD700]2876.32[/color][/b]。",
-		"我在心里把房租、吃饭和最低还款加了一遍。工资会来，但不一定够。",
-		"上个月买的那件连衣裙，穿了一次，被奶茶泼了。退不了。",
-		"朋友圈里小雅的动态又更新了。定位南山一家私房菜馆，九宫格第一张是个男人的手，腕上一块绿水鬼，正在给小雅夹菜。配文三个字：被投喂。",
-		"我把手机扣在床上。",
-		"被子和枕头发粘，晾了三天的内衣摸上去也没干。",
-		"这个六平米的隔断间实在待不下去了。",
-		"一直盯着账单不会让数字变少。先看清月底会扣什么，再决定出门去哪。",
-		"我换了条裤子，抓起包往外走。",
-		"出了村口，深南大道上车水马龙。",
-		"我掏出[color=FFD700]手机[/color]。先看[color=FFD700]支付宝[/color]，再打开[color=FFD700]高德地图[/color]。这个月的目标很简单：别被第一张账单给劝退回老家了。",
+		"墙皮又掉了一块。",
+		"深圳三月的回南天黏在被子上，也黏在账单上。",
+		"我坐在城中村的单人床上，盯着花呗页面。红色数字跳了一下：[b][color=FFD700]2876.32[/color][/b]。",
+		"这不是很多钱。问题是它刚好堵在房租、吃饭和发工资中间。",
+		"我把手机扣在床上，躺了十秒，又坐起来。",
+		"一直盯着它不会让它变少。",
+		"先看[color=FFD700]支付宝[/color]，弄清月底到底差几口气。再打开[color=FFD700]高德地图[/color]，找个能把这口气接上的地方。",
+		"这个月的目标很简单：别被第一张账单给劝退回老家。",
 	]
 	galgame.show_galgame_dialog(opening_pages, func() -> void:
 		_enter_weekend()
@@ -1395,13 +1390,13 @@ func _get_first_month_week_goal(preview: Dictionary) -> String:
 		return "账单会压穿现金。先停消费，去支付宝确认缺口，再用加班或低成本行动补救。"
 	match GameManager.week_in_month:
 		1:
-			return "先看支付宝月底预测，再去高德地图做一次低成本行动。"
+			return "先看支付宝，把月底缺口看清楚。再去公司加班，先止血。"
 		2:
-			return "身体开始报警。精力低就回出租屋或去公园，恢复不是浪费周末。"
+			return "身体开始报警。去深圳湾、夜市或回出租屋，把自己捡回来。"
 		3:
-			return "别把压力全推给花呗。想变强去图书馆/咖啡馆，缺钱再考虑加班。"
+			return "不能只靠硬扛。图书馆、咖啡厅和健身房会决定下个月的路。"
 		_:
-			return "发薪日前夜。先确认账单风险，再决定补现金还是补状态。"
+			return "发薪日前夜。先查支付宝，再决定补现金还是补状态。"
 
 
 func _get_current_goal_hint(preview: Dictionary, _pressure: Dictionary) -> Dictionary:
@@ -1453,15 +1448,13 @@ func _get_weekend_goal_text(preview: Dictionary) -> String:
 	if GameManager.month <= 1:
 		match GameManager.week_in_month:
 			1:
-				return "目标：先看支付宝月底预测，再去地图低成本探索。"
+				return "目标：先查支付宝，再去公司加班补一口现金。"
 			2:
-				return "目标：观察花呗和餐饮账单，少做冲动消费。"
+				return "目标：别只硬扛。选一个恢复地点，把精力和情绪拉回来。"
 			3:
-				if GameManager.is_app_unlocked("job"):
-					return "目标：看 BOSS 弯聘，确认职位门槛和收入线。"
-				return "目标：探索成长线，别把精力全花在消费上。"
+				return "目标：探索成长线。先变强，再谈换工作和关系。"
 			_:
-				return "目标：月底前查支付宝，确认账单压得住。"
+				return "目标：月底前查支付宝，确认该补现金还是补状态。"
 	if GameManager.huabei_debt + GameManager.huabei_installment_debt > 0:
 		return "目标：先看支付宝，决定还款、分期或停止新增消费。"
 	if int(preview.get("cash_after_all", 0)) < 1000:
@@ -1858,6 +1851,8 @@ func _on_week_advanced(_new_week: int) -> void:
 
 
 func _push_npc_unread_messages() -> void:
+	if GameManager.month <= 1:
+		return
 	## 家庭群：未读未清空时不推新消息
 	var _family_unread: int = GameManager.npcs.get("family_group", {}).get("unread", 0)
 	if _family_unread <= 0 and GameManager.npcs.get("family_group", {}).get("unlocked", false):

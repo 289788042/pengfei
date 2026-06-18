@@ -524,11 +524,11 @@ func _map_location_order() -> Array[String]:
 	if GameManager.month <= 1:
 		match GameManager.week_in_month:
 			1:
-				return ["overtime", "library", "park", "home", "market", "cafe", "gym", "bar"]
+				return ["overtime", "park", "home", "market", "library", "cafe", "gym", "bar"]
 			2:
-				return ["home", "park", "market", "library", "cafe", "gym", "overtime", "bar"]
+				return ["park", "home", "market", "overtime", "library", "cafe", "gym", "bar"]
 			3:
-				return ["library", "cafe", "gym", "home", "park", "market", "overtime", "bar"]
+				return ["library", "cafe", "gym", "park", "home", "market", "overtime", "bar"]
 			_:
 				if _map_projected_cash_after() < 1000:
 					return ["overtime", "home", "park", "market", "library", "cafe", "gym", "bar"]
@@ -719,10 +719,10 @@ func _map_locked_hint(location_id: String) -> String:
 			return "第2周开放"
 		"market":
 			return "第2周开放"
-		"cafe", "gym":
+		"park":
+			return "第2周开放"
+		"library", "cafe", "gym":
 			return "第3周开放"
-		"overtime":
-			return "第4周开放"
 		"bar":
 			return "第二个月开放"
 	return "后续开放"
@@ -742,8 +742,6 @@ func _map_guidance_for(location_id: String) -> Dictionary:
 			1:
 				if location_id == "overtime":
 					return {"text": "先去加班", "bg": Color(0.76, 0.22, 0.18, 1), "fg": Color.WHITE}
-				if location_id in ["library", "park"]:
-					return {"text": "低成本", "bg": Color(0.18, 0.48, 0.74, 1), "fg": Color.WHITE}
 			2:
 				if location_id in ["home", "park", "market"]:
 					return {"text": "推荐恢复", "bg": Color(0.12, 0.50, 0.36, 1), "fg": Color.WHITE}
@@ -995,11 +993,11 @@ func _map_location_unlocked(location_id: String) -> bool:
 		return true
 	match GameManager.week_in_month:
 		1:
-			return location_id in ["overtime", "library", "park"]
+			return location_id == "overtime"
 		2:
-			return location_id in ["library", "park", "home", "market"]
+			return location_id in ["park", "home", "market", "overtime"]
 		3:
-			return location_id in ["library", "park", "home", "market", "cafe", "gym"]
+			return location_id in ["library", "park", "home", "market", "cafe", "gym", "overtime"]
 		_:
 			return location_id != "bar"
 	return true

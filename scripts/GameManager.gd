@@ -129,7 +129,7 @@ var _app_unlock_msg: Dictionary = {
 	"dating": "妈妈微信转了个链接：「这个相亲APP不错，你试试？」",
 	"tuanmei": "朋友圈刷到一条医美广告，你鬼使神差地点了进去...",
 	"zodiac": "加班到很晚，无聊刷到了星座APP。也许该看看运势？",
-	"house": "中介的电话打了进来：「哥，考虑换个好点的房子吗？」",
+	"house": "中介的电话打了进来：「姐，考虑换个好点的房子吗？」",
 }
 ## 已播报过的解锁（只通知一次）
 var _announced_unlocks: Dictionary = {}
