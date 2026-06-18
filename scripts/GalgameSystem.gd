@@ -57,7 +57,7 @@ func init(main: Node) -> void:
 	_ambient_player.volume_db = -40.0
 	main.add_child(_ambient_player)
 	left_dialog_box = main.left_dialog_box
-	left_dialog_box.z_index = 50
+	left_dialog_box.z_index = 220
 	left_dialog_text = main.left_dialog_text
 	portrait = main.character_portrait
 	scene_bg = main.left_bg
@@ -264,6 +264,7 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 	_gal_fading_out = false
 	_gal_pending_end_callback = Callable()
 	_gal_pending_has_encounter = false
+	left_dialog_box.z_index = 220
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	# 暗化手机区域
@@ -366,6 +367,12 @@ func _apply_page_color(raw: String) -> void:
 
 
 ## 箭头指示器动画：上下轻微浮动
+func _get_arrow_base_position() -> Vector2:
+	if not is_instance_valid(left_dialog_box):
+		return Vector2.ZERO
+	return Vector2(left_dialog_box.size.x - 50.0, left_dialog_box.size.y - 35.0)
+
+
 func _start_arrow_anim() -> void:
 	if not is_instance_valid(_arrow_label):
 		_arrow_label = Label.new()
@@ -374,7 +381,7 @@ func _start_arrow_anim() -> void:
 		_arrow_label.add_theme_font_size_override('font_size', 22)
 		_arrow_label.add_theme_color_override('font_color', Color(1, 1, 1, 0.7))
 		left_dialog_box.add_child(_arrow_label)
-		_arrow_label.position = Vector2(left_dialog_box.size.x - 50, left_dialog_box.size.y - 35)
+	_arrow_label.position = _get_arrow_base_position()
 	_arrow_label.visible = true
 	_arrow_label.modulate.a = 1.0
 	if _arrow_tween and _arrow_tween.is_valid():

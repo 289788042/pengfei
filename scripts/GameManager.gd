@@ -53,14 +53,16 @@ var max_weekend_actions: int = 3
 
 # ==================== 核心数值变量 ====================
 
+const INITIAL_HUABEI_DEBT: int = 2876
+
 ## 初始3000，制造"虚假繁荣"错觉
 var money: int = 3000
 ## 待发工资（月末结算时发放）
 var pending_salary: int = 0
 ## 花呗/信用卡欠款（兼容旧引用，新逻辑使用 huabei_debt）
-var credit_debt: int = 0
+var credit_debt: int = INITIAL_HUABEI_DEBT
 ## 花呗欠款（分期还款模式，结算时仅扣最低还款额）
-var huabei_debt: int = 0
+var huabei_debt: int = INITIAL_HUABEI_DEBT
 ## 花呗分期负债本金
 var huabei_installment_debt: int = 0
 ## 花呗分期剩余月数
@@ -103,8 +105,8 @@ var awaiting_month_settle: bool = false
 
 ## APP渐进解锁：app_id -> 所需最小turn_count
 var _app_unlock_turn: Dictionary = {
-	"map": 1, "wechat": 1, "job": 1, "diary": 1,
-	"baotao": 3, "dating": 5, "tuanmei": 9, "zodiac": 13, "house": 17,
+	"map": 1, "wechat": 1, "diary": 5, "job": 5,
+	"baotao": 6, "dating": 7, "tuanmei": 9, "zodiac": 13, "house": 17,
 }
 ## APP显示名：用于锁定占位和提示
 var _app_display_names: Dictionary = {
@@ -121,6 +123,8 @@ var _app_display_names: Dictionary = {
 }
 ## APP解锁通知文案
 var _app_unlock_msg: Dictionary = {
+	"diary": "你开始把每周做过的事记下来。至少要知道自己是怎么撑过来的。",
+	"job": "熬过第一个月后，你终于开始认真看招聘软件上的职位门槛。",
 	"baotao": "同事推荐了一个叫「宝淘」的APP，说上面护肤品质价比很高。",
 	"dating": "妈妈微信转了个链接：「这个相亲APP不错，你试试？」",
 	"tuanmei": "朋友圈刷到一条医美广告，你鬼使神差地点了进去...",
@@ -261,8 +265,8 @@ func reset_game() -> void:
 
 	money = 3000
 	pending_salary = 0
-	credit_debt = 0
-	huabei_debt = 0
+	credit_debt = INITIAL_HUABEI_DEBT
+	huabei_debt = INITIAL_HUABEI_DEBT
 	huabei_installment_debt = 0
 	huabei_installment_months_left = 0
 	huabei_installment_monthly_pay = 0
@@ -792,6 +796,8 @@ func get_npc_contact_summary(npc_id: String) -> Dictionary:
 
 ## 检查自动解锁NPC（每周开始时调用）
 func check_auto_unlock_npcs() -> void:
+	if month <= 1:
+		return
 	for npc in npc_database:
 		var enc: Dictionary = npc.get("encounter", {})
 		if not enc.get("auto_unlock", false):

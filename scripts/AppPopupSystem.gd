@@ -305,6 +305,12 @@ func _finish_location_event_after(after: Callable = Callable()) -> Callable:
 		if after.is_valid():
 			after.call()
 		_end_location_event()
+		if is_instance_valid(_main) and main_node().current_phase == main_node().Phase.EVENT:
+			main_node().current_phase = main_node().Phase.WEEKEND
+			if main_node().has_method("sync_ui_state"):
+				main_node().sync_ui_state()
+			if main_node().has_method("_refresh_ui"):
+				main_node()._refresh_ui()
 
 
 func _show_story_then_result(story_text: String, result_text: String, after: Callable = Callable()) -> void:
@@ -515,6 +521,18 @@ func _restore_map_to_phone_layer() -> void:
 
 
 func _map_location_order() -> Array[String]:
+	if GameManager.month <= 1:
+		match GameManager.week_in_month:
+			1:
+				return ["overtime", "library", "park", "home", "market", "cafe", "gym", "bar"]
+			2:
+				return ["home", "park", "market", "library", "cafe", "gym", "overtime", "bar"]
+			3:
+				return ["library", "cafe", "gym", "home", "park", "market", "overtime", "bar"]
+			_:
+				if _map_projected_cash_after() < 1000:
+					return ["overtime", "home", "park", "market", "library", "cafe", "gym", "bar"]
+				return ["home", "park", "library", "cafe", "gym", "market", "overtime", "bar"]
 	return ["library", "gym", "bar", "home", "park", "cafe", "market", "overtime"]
 
 
@@ -527,26 +545,33 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 	var req_text := _map_requirement_summary(config)
 	var repeat_text := _map_repeat_hint(location_id)
 	var meta := _map_location_meta(location_id)
+	var guidance := _map_guidance_for(location_id)
 	var accent_color: Color = meta.get("color", Color(0.12, 0.48, 0.40, 1))
+	var tutorial_locked := not _map_location_unlocked(location_id)
 
 	var card := PanelContainer.new()
 	card.name = "MapCard_" + location_id
-	var card_height := 104
-	if req_text != "无":
+	var card_height := 88 if tutorial_locked else 104
+	if not tutorial_locked and req_text != "无":
 		card_height += 18
-	if repeat_text != "":
+	if not tutorial_locked and repeat_text != "":
 		card_height += 16
 	card.custom_minimum_size = Vector2(0, card_height)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	card.tooltip_text = "点击前往%s" % str(config.get("name", location_id)) if can_go else "点击查看不能前往的原因"
-	var card_bg := Color(1, 1, 1, 0.96) if can_go else Color(0.92, 0.94, 0.93, 0.94)
-	card.add_theme_stylebox_override("panel", _make_flat_style(card_bg, Color(0.70, 0.82, 0.76, 0.70), 1, 11))
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if can_go else Control.CURSOR_ARROW
+	card.tooltip_text = "地点行动：%s" % str(config.get("name", location_id)) if can_go else "暂未开放"
+	var card_bg := Color(1, 1, 1, 0.96) if can_go else Color(0.88, 0.90, 0.89, 0.86)
+	var border_color := Color(0.70, 0.82, 0.76, 0.70) if can_go else Color(0.70, 0.73, 0.72, 0.55)
+	var card_style := _make_flat_style(card_bg, border_color, 1, 11)
+	card.add_theme_stylebox_override("panel", card_style)
 	parent.add_child(card)
+	if _should_pulse_map_location_card(location_id, can_go):
+		_start_map_location_card_pulse(card, card_style)
 	card.gui_input.connect(func(event: InputEvent) -> void:
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			card.accept_event()
-			_activate_map_location(location_id, can_go, config)
+			if can_go:
+				_start_location(location_id)
 	)
 
 	var card_margin := MarginContainer.new()
@@ -560,18 +585,10 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 	row.add_theme_constant_override("separation", 8)
 	card_margin.add_child(row)
 
-	var marker := PanelContainer.new()
-	marker.custom_minimum_size = Vector2(34, 34)
-	marker.add_theme_stylebox_override("panel", _make_flat_style(accent_color, accent_color.darkened(0.05), 1, 999))
+	var marker := ColorRect.new()
+	marker.custom_minimum_size = Vector2(6, 0)
+	marker.color = accent_color if can_go else Color(0.58, 0.62, 0.60, 0.72)
 	row.add_child(marker)
-
-	var marker_label := Label.new()
-	marker_label.text = str(meta.get("mark", "去"))
-	marker_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	marker_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	marker_label.add_theme_font_size_override("font_size", 14)
-	marker_label.add_theme_color_override("font_color", Color.WHITE)
-	marker.add_child(marker_label)
 
 	var body := VBoxContainer.new()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -586,45 +603,49 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 	name_lbl.text = str(config.get("name", location_id))
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.add_theme_font_size_override("font_size", 14)
-	name_lbl.add_theme_color_override("font_color", Color(0.06, 0.17, 0.15, 1))
+	name_lbl.add_theme_color_override("font_color", Color(0.06, 0.17, 0.15, 1) if can_go else Color(0.40, 0.45, 0.43, 1))
 	top_row.add_child(name_lbl)
-	top_row.add_child(_make_map_tag(str(state.get("text", "")), state.get("bg", Color(0.50, 0.50, 0.50, 1)), state.get("fg", Color.WHITE)))
+	if can_go and not guidance.is_empty():
+		top_row.add_child(_make_map_tag(str(guidance.get("text", "")), guidance.get("bg", Color(0.62, 0.44, 0.16, 1)), guidance.get("fg", Color.WHITE)))
+	if not can_go:
+		top_row.add_child(_make_map_tag(str(state.get("text", "锁定")), state.get("bg", Color(0.50, 0.50, 0.50, 1)), state.get("fg", Color.WHITE)))
 
 	var note_lbl := Label.new()
 	note_lbl.text = "%s · %s" % [str(meta.get("role", "地点")), str(meta.get("note", ""))]
 	note_lbl.add_theme_font_size_override("font_size", 10)
-	note_lbl.add_theme_color_override("font_color", Color(0.35, 0.45, 0.41, 1))
+	note_lbl.add_theme_color_override("font_color", Color(0.35, 0.45, 0.41, 1) if can_go else Color(0.54, 0.58, 0.56, 1))
 	note_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	body.add_child(note_lbl)
 
-	_add_small_map_line(body, "消耗", _map_cost_summary(location_id, config), Color(0.55, 0.25, 0.18, 1))
-	_add_small_map_line(body, "收益", _map_change_summary(_map_preview_changes(location_id, config), true, location_id), Color(0.08, 0.42, 0.30, 1))
-	if req_text != "无":
-		_add_small_map_line(body, "条件", req_text, Color(0.56, 0.42, 0.14, 1))
-	if repeat_text != "":
-		_add_small_map_line(body, "本周", repeat_text, Color(0.56, 0.42, 0.14, 1))
-
-	var action_btn := Button.new()
-	action_btn.name = "LocBtn_" + location_id
-	action_btn.text = "去" if can_go else "原因"
-	action_btn.custom_minimum_size = Vector2(50, 34)
-	action_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	if can_go:
-		_style_text_button(action_btn, Color(0.08, 0.55, 0.43, 1), Color(0.10, 0.64, 0.50, 1), Color.WHITE)
+	if tutorial_locked:
+		_add_small_map_line(body, "状态", _map_locked_hint(location_id), Color(0.50, 0.54, 0.52, 1))
 	else:
-		_style_text_button(action_btn, Color(0.72, 0.76, 0.74, 1), Color(0.80, 0.84, 0.82, 1), Color(0.12, 0.18, 0.16, 1))
-	row.add_child(action_btn)
+		_add_small_map_line(body, "消耗", _map_cost_summary(location_id, config), Color(0.55, 0.25, 0.18, 1))
+		_add_small_map_line(body, "收益", _map_change_summary(_map_preview_changes(location_id, config), true, location_id), Color(0.08, 0.42, 0.30, 1))
+		if req_text != "无":
+			_add_small_map_line(body, "条件", req_text, Color(0.56, 0.42, 0.14, 1))
+		if repeat_text != "":
+			_add_small_map_line(body, "本周", repeat_text, Color(0.56, 0.42, 0.14, 1))
 
-	action_btn.pressed.connect(func() -> void:
-		_activate_map_location(location_id, can_go, config)
-	)
+
+func _should_pulse_map_location_card(location_id: String, can_go: bool) -> bool:
+	return can_go and GameManager.month == 1 and GameManager.week_in_month == 1 and location_id == "overtime"
 
 
-func _activate_map_location(location_id: String, can_go: bool, config: Dictionary) -> void:
-	if can_go:
-		_start_location(location_id)
-	else:
-		_can_start_location(location_id, config)
+func _start_map_location_card_pulse(card: PanelContainer, style: StyleBoxFlat) -> void:
+	if not is_instance_valid(card) or not is_instance_valid(main_node()):
+		return
+	style.shadow_offset = Vector2.ZERO
+	style.shadow_color = Color(1.0, 0.58, 0.12, 0.35)
+	style.shadow_size = 8
+	style.border_color = Color(0.95, 0.46, 0.20, 0.90)
+	var tween := main_node().create_tween().bind_node(card).set_loops()
+	tween.tween_property(card, "modulate", Color(1.0, 0.96, 0.82, 1.0), 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.parallel().tween_property(style, "shadow_size", 22, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.parallel().tween_property(style, "shadow_color", Color(1.0, 0.64, 0.10, 0.82), 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(card, "modulate", Color(1, 1, 1, 1), 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.parallel().tween_property(style, "shadow_size", 8, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.parallel().tween_property(style, "shadow_color", Color(1.0, 0.58, 0.12, 0.35), 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _make_map_route_summary() -> PanelContainer:
@@ -645,18 +666,102 @@ func _make_map_route_summary() -> PanelContainer:
 	margin.add_child(box)
 
 	var title := Label.new()
-	title.text = "从城中村出租屋出发"
+	title.text = _map_route_title()
 	title.add_theme_font_size_override("font_size", 12)
 	title.add_theme_color_override("font_color", Color(0.05, 0.24, 0.18, 1))
 	box.add_child(title)
 
 	var sub := Label.new()
-	sub.text = "点卡片或右侧按钮前往，事件结算后回家。"
+	sub.text = _map_route_hint()
 	sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	sub.add_theme_font_size_override("font_size", 10)
 	sub.add_theme_color_override("font_color", Color(0.28, 0.42, 0.36, 1))
 	box.add_child(sub)
 	return route
+
+
+func _map_month_end_preview() -> Dictionary:
+	if is_instance_valid(_main) and main_node().has_method("_get_month_end_preview"):
+		var result: Variant = main_node().call("_get_month_end_preview")
+		if result is Dictionary:
+			return result
+	return {}
+
+
+func _map_projected_cash_after() -> int:
+	var preview := _map_month_end_preview()
+	return int(preview.get("cash_after_all", GameManager.money))
+
+
+func _map_route_title() -> String:
+	if GameManager.month <= 1:
+		return "第一月路线 · 活过第一张账单"
+	return "从城中村出租屋出发"
+
+
+func _map_route_hint() -> String:
+	if GameManager.month <= 1:
+		match GameManager.week_in_month:
+			1:
+				return "先去公司加班，挣一笔应急现金，再决定要不要低成本行动。"
+			2:
+				return "身体开始报警，恢复类地点不是浪费周末。"
+			3:
+				return "成长能改变下个月，缺现金时再选高压加班。"
+			_:
+				return "月底前最后修正：缺钱补现金，太累先补状态。"
+	return "点亮起的地点卡片行动，事件结算后回家。"
+
+
+func _map_locked_hint(location_id: String) -> String:
+	match location_id:
+		"home":
+			return "第2周开放"
+		"market":
+			return "第2周开放"
+		"cafe", "gym":
+			return "第3周开放"
+		"overtime":
+			return "第4周开放"
+		"bar":
+			return "第二个月开放"
+	return "后续开放"
+
+
+func _map_guidance_for(location_id: String) -> Dictionary:
+	var cash_after := _map_projected_cash_after()
+	var energy_low := GameManager.energy <= 35
+	if GameManager.month <= 1 and location_id == "bar":
+		return {"text": "谨慎消费", "bg": Color(0.72, 0.32, 0.22, 1), "fg": Color.WHITE}
+	if cash_after < 0 and location_id == "overtime":
+		return {"text": "应急现金", "bg": Color(0.76, 0.22, 0.18, 1), "fg": Color.WHITE}
+	if energy_low and location_id in ["home", "park"]:
+		return {"text": "推荐恢复", "bg": Color(0.12, 0.50, 0.36, 1), "fg": Color.WHITE}
+	if GameManager.month <= 1:
+		match GameManager.week_in_month:
+			1:
+				if location_id == "overtime":
+					return {"text": "先去加班", "bg": Color(0.76, 0.22, 0.18, 1), "fg": Color.WHITE}
+				if location_id in ["library", "park"]:
+					return {"text": "低成本", "bg": Color(0.18, 0.48, 0.74, 1), "fg": Color.WHITE}
+			2:
+				if location_id in ["home", "park", "market"]:
+					return {"text": "推荐恢复", "bg": Color(0.12, 0.50, 0.36, 1), "fg": Color.WHITE}
+				if location_id == "overtime":
+					return {"text": "谨慎耗损", "bg": Color(0.62, 0.44, 0.16, 1), "fg": Color.WHITE}
+			3:
+				if location_id in ["library", "cafe", "gym"]:
+					return {"text": "推荐成长", "bg": Color(0.18, 0.48, 0.74, 1), "fg": Color.WHITE}
+				if location_id == "overtime":
+					return {"text": "缺钱再去", "bg": Color(0.62, 0.44, 0.16, 1), "fg": Color.WHITE}
+			_:
+				if cash_after < 1000 and location_id == "overtime":
+					return {"text": "补现金", "bg": Color(0.76, 0.22, 0.18, 1), "fg": Color.WHITE}
+				if location_id in ["home", "park"]:
+					return {"text": "补状态", "bg": Color(0.12, 0.50, 0.36, 1), "fg": Color.WHITE}
+				if cash_after >= 1000 and location_id in ["library", "cafe"]:
+					return {"text": "可选成长", "bg": Color(0.18, 0.48, 0.74, 1), "fg": Color.WHITE}
+	return {}
 
 
 func _make_map_metric_chip(title: String, value: String, accent: Color) -> PanelContainer:
@@ -695,15 +800,15 @@ func _make_map_metric_chip(title: String, value: String, accent: Color) -> Panel
 
 func _map_available_count_text() -> String:
 	var total := 0
-	var available := 0
+	var unlocked := 0
 	for location_id: String in _map_location_order():
 		var config := _location_config(location_id)
 		if config.is_empty():
 			continue
 		total += 1
-		if bool(_map_location_state(location_id, config).get("can_go", false)):
-			available += 1
-	return "可前往 %d/%d" % [available, total]
+		if _map_location_unlocked(location_id):
+			unlocked += 1
+	return "已开放 %d/%d" % [unlocked, total]
 
 
 func _map_location_meta(location_id: String) -> Dictionary:
@@ -868,6 +973,8 @@ func _map_location_state(location: String, config: Dictionary) -> Dictionary:
 		return {"can_go": false, "text": "未就绪", "bg": Color(0.50, 0.50, 0.50, 1), "fg": Color.WHITE}
 	if main_node().current_phase != main_node().Phase.WEEKEND:
 		return {"can_go": false, "text": "仅周末", "bg": Color(0.58, 0.48, 0.36, 1), "fg": Color.WHITE}
+	if not _map_location_unlocked(location):
+		return {"can_go": false, "text": "未开放", "bg": Color(0.46, 0.50, 0.48, 1), "fg": Color.WHITE}
 	if bool(config.get("once_per_week", false)) and _park_visited_week == GameManager.turn_count:
 		return {"can_go": false, "text": "本周已去", "bg": Color(0.58, 0.48, 0.36, 1), "fg": Color.WHITE}
 	var energy_req := int(config.get("energy_req", 0))
@@ -880,7 +987,22 @@ func _map_location_state(location: String, config: Dictionary) -> Dictionary:
 		var current := int(GameManager.get(key))
 		if current < needed:
 			return {"can_go": false, "text": "%s不足" % _map_stat_name(key), "bg": Color(0.70, 0.22, 0.20, 1), "fg": Color.WHITE}
-	return {"can_go": true, "text": "可前往", "bg": Color(0.08, 0.53, 0.37, 1), "fg": Color.WHITE}
+	return {"can_go": true, "text": "", "bg": Color(0.08, 0.53, 0.37, 1), "fg": Color.WHITE}
+
+
+func _map_location_unlocked(location_id: String) -> bool:
+	if GameManager.month > 1:
+		return true
+	match GameManager.week_in_month:
+		1:
+			return location_id in ["overtime", "library", "park"]
+		2:
+			return location_id in ["library", "park", "home", "market"]
+		3:
+			return location_id in ["library", "park", "home", "market", "cafe", "gym"]
+		_:
+			return location_id != "bar"
+	return true
 
 
 func _make_map_pill(text: String, bg: Color, fg: Color) -> PanelContainer:
@@ -923,8 +1045,15 @@ func _add_map_location_card(parent: VBoxContainer, loc: Dictionary) -> void:
 	card.name = "MapCard_" + location_id
 	card.custom_minimum_size = Vector2(0, 156)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if can_go else Control.CURSOR_ARROW
 	card.add_theme_stylebox_override("panel", _make_flat_style(Color(1, 1, 1, 1), Color(0.76, 0.86, 0.82, 1), 1, 11))
 	parent.add_child(card)
+	card.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			card.accept_event()
+			if can_go:
+				_start_location(location_id)
+	)
 
 	var card_margin := MarginContainer.new()
 	card_margin.add_theme_constant_override("margin_left", 10)
@@ -959,7 +1088,8 @@ func _add_map_location_card(parent: VBoxContainer, loc: Dictionary) -> void:
 	top.add_child(name_lbl)
 
 	top.add_child(_make_map_pill(str(loc.get("role", config.get("category", "地点"))), accent_color.lightened(0.12), Color.WHITE))
-	top.add_child(_make_map_pill(str(state.get("text", "")), state.get("bg", Color(0.50, 0.50, 0.50, 1)), state.get("fg", Color.WHITE)))
+	if not can_go:
+		top.add_child(_make_map_pill(str(state.get("text", "锁定")), state.get("bg", Color(0.50, 0.50, 0.50, 1)), state.get("fg", Color.WHITE)))
 
 	var note_lbl := Label.new()
 	note_lbl.text = str(loc.get("note", ""))
@@ -974,24 +1104,6 @@ func _add_map_location_card(parent: VBoxContainer, loc: Dictionary) -> void:
 	var req_text := _map_requirement_summary(config)
 	if req_text != "无":
 		_add_map_info_label(body, "条件：" + req_text, Color(0.42, 0.34, 0.16, 1))
-
-	var action_btn := Button.new()
-	action_btn.name = "LocBtn_" + location_id
-	action_btn.text = "前往" if can_go else "查看原因"
-	action_btn.custom_minimum_size = Vector2(96, 44)
-	action_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	if can_go:
-		_style_text_button(action_btn, Color(0.10, 0.52, 0.42, 1), Color(0.12, 0.62, 0.50, 1), Color.WHITE)
-	else:
-		_style_text_button(action_btn, Color(0.72, 0.75, 0.72, 1), Color(0.80, 0.82, 0.80, 1), Color(0.10, 0.18, 0.16, 1))
-	row.add_child(action_btn)
-
-	action_btn.pressed.connect(func() -> void:
-		if can_go:
-			_start_location(location_id)
-		else:
-			_can_start_location(location_id, config)
-	)
 
 
 func _close_all_menus() -> void:
@@ -1554,6 +1666,7 @@ func _get_encounter_bg(location: String) -> String:
 		return gym_bgs[randi() % gym_bgs.size()]
 	var bg_map: Dictionary = {
 		"library": "res://Assets/Backgrounds/library/Bookshop_bg_day1.png",
+		"park": "res://Assets/Backgrounds/park/beach.jpg",
 	}
 	return bg_map.get(location, "")
 
@@ -1572,6 +1685,8 @@ func _show_location_background(location: String) -> void:
 
 ## 检查指定地点是否有NPC邂逅
 func _check_encounter(location: String) -> Dictionary:
+	if GameManager.month <= 1:
+		return {}
 	for npc in GameManager.npc_database:
 		var enc: Dictionary = npc.get("encounter", {})
 		if enc.get("location", "") != location:

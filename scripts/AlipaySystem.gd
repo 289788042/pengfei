@@ -109,13 +109,13 @@ func _setup_phone_alipay_ui() -> void:
 	if vbox:
 		_rebuild_expanded_alipay_layout(vbox)
 
-	_style_label(label_alipay_balance, 18, Color(0.06, 0.13, 0.17, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
-	_style_label(label_alipay_huabei, 14, Color(0.28, 0.09, 0.08, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
-	_style_label(label_alipay_warning, 12, Color(0.78, 0.30, 0.08, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
+	_style_label(label_alipay_balance, 24, Color(0.06, 0.13, 0.17, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
+	_style_label(label_alipay_huabei, 17, Color(0.28, 0.09, 0.08, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
+	_style_label(label_alipay_warning, 15, Color(0.78, 0.30, 0.08, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
 	_style_label(label_al_fin_safe, 13, Color(0.10, 0.18, 0.22, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
 	_style_label(label_al_fin_risk, 13, Color(0.10, 0.18, 0.22, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
 	_style_label(label_al_installment, 12, Color(0.55, 0.18, 0.13, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
-	_style_label(label_al_summary, 12, Color(0.16, 0.22, 0.25, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
+	_style_label(label_al_summary, 16, Color(0.16, 0.22, 0.25, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
 	_style_label(label_payment_cost, 15, Color(0.10, 0.18, 0.22, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
 	if is_instance_valid(label_al_summary):
 		label_al_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -219,16 +219,14 @@ func _rebuild_expanded_alipay_layout(vbox: VBoxContainer) -> void:
 	_alipay_pages.clear()
 	_alipay_tab_buttons.clear()
 	_add_alipay_tab(nav, "overview", "总览")
-	_add_alipay_tab(nav, "huabei", "花呗")
-	_add_alipay_tab(nav, "finance", "理财")
 	_add_alipay_tab(nav, "bill", "账单")
-	_add_alipay_tab(nav, "about", "关于")
+	_add_alipay_tab(nav, "huabei", "花呗")
+	_add_alipay_tab(nav, "finance", "理财", true)
 
 	_build_overview_page(page_stack)
+	_build_bill_page(page_stack)
 	_build_huabei_page(page_stack)
 	_build_finance_page(page_stack)
-	_build_bill_page(page_stack)
-	_build_about_page(page_stack)
 
 
 func _build_alipay_header() -> Control:
@@ -281,13 +279,17 @@ func _make_page(page_id: String, parent: Node) -> VBoxContainer:
 	return page
 
 
-func _add_alipay_tab(parent: VBoxContainer, page_id: String, label: String) -> void:
+func _add_alipay_tab(parent: VBoxContainer, page_id: String, label: String, locked: bool = false) -> void:
 	var btn := Button.new()
 	btn.text = label
 	btn.custom_minimum_size = Vector2(0, 42)
 	btn.focus_mode = Control.FOCUS_NONE
+	btn.disabled = locked
+	btn.tooltip_text = "后续开放" if locked else ""
 	var captured_id := page_id
 	btn.pressed.connect(func() -> void:
+		if btn.disabled:
+			return
 		_select_alipay_tab(captured_id)
 	)
 	parent.add_child(btn)
@@ -296,6 +298,9 @@ func _add_alipay_tab(parent: VBoxContainer, page_id: String, label: String) -> v
 
 func _select_alipay_tab(page_id: String) -> void:
 	if not _alipay_pages.has(page_id):
+		return
+	var selected_btn := _alipay_tab_buttons.get(page_id, null) as Button
+	if is_instance_valid(selected_btn) and selected_btn.disabled:
 		return
 	_current_alipay_tab = page_id
 	for key: String in _alipay_pages.keys():
@@ -321,7 +326,9 @@ func _style_tab_button(button: Button, selected: bool) -> void:
 	if not is_instance_valid(button):
 		return
 	button.add_theme_font_size_override("font_size", 15)
-	if selected:
+	if button.disabled:
+		_style_button(button, Color(0.70, 0.76, 0.78, 1), Color(0.70, 0.76, 0.78, 1), Color(0.42, 0.48, 0.50, 1))
+	elif selected:
 		_style_button(button, Color(0.05, 0.48, 0.70, 1), Color(0.06, 0.56, 0.80, 1), Color.WHITE)
 	else:
 		_style_button(button, Color(0.88, 0.94, 0.96, 1), Color(0.80, 0.90, 0.94, 1), Color(0.05, 0.20, 0.26, 1))
@@ -332,8 +339,8 @@ func _build_overview_page(parent: Node) -> void:
 	_add_section_title(page, "财务总览")
 	var grid := GridContainer.new()
 	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 12)
-	grid.add_theme_constant_override("v_separation", 12)
+	grid.add_theme_constant_override("h_separation", 16)
+	grid.add_theme_constant_override("v_separation", 16)
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.add_child(grid)
 	_add_card(grid, "现金", [label_alipay_balance])
@@ -346,24 +353,10 @@ func _build_overview_page(parent: Node) -> void:
 	_overview_risk_bar.max_value = 100
 	_overview_risk_bar.value = 0
 	_overview_risk_bar.show_percentage = false
-	_overview_risk_bar.custom_minimum_size = Vector2(0, 16)
+	_overview_risk_bar.custom_minimum_size = Vector2(0, 22)
 	_overview_risk_bar.add_theme_stylebox_override("background", _make_style(Color(0.90, 0.95, 0.96, 1), Color(0.76, 0.86, 0.90, 1), 1, 8))
 	_label_overview_risk = _make_body_label("")
 	_add_card(page, "月末风险条", [_overview_risk_bar, _label_overview_risk])
-
-	var detail_grid := GridContainer.new()
-	detail_grid.columns = 2
-	detail_grid.add_theme_constant_override("h_separation", 12)
-	detail_grid.add_theme_constant_override("v_separation", 12)
-	detail_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page.add_child(detail_grid)
-	_label_overview_recent = _make_body_label("")
-	_label_overview_biggest = _make_body_label("")
-	_add_card(detail_grid, "近三笔流水", [_label_overview_recent])
-	_add_card(detail_grid, "本月最大支出", [_label_overview_biggest])
-
-	_label_overview_cashflow = _make_body_label("")
-	_add_card(page, "现金流拆解", [_label_overview_cashflow])
 
 
 func _build_huabei_page(parent: Node) -> void:
@@ -418,13 +411,13 @@ func _build_about_page(parent: Node) -> void:
 func _add_section_title(parent: VBoxContainer, text: String) -> void:
 	var label := Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", 20)
+	label.add_theme_font_size_override("font_size", 24)
 	label.add_theme_color_override("font_color", Color(0.05, 0.18, 0.24, 1))
 	parent.add_child(label)
 
 
 func _make_body_label(text: String) -> Label:
-	return HeavyAppUI.make_body_label(text, 14, Color(0.12, 0.20, 0.24, 1))
+	return HeavyAppUI.make_body_label(text, 16, Color(0.12, 0.20, 0.24, 1))
 
 
 func _add_card(parent: Node, title: String, controls: Array) -> void:
@@ -433,18 +426,18 @@ func _add_card(parent: Node, title: String, controls: Array) -> void:
 	card.add_theme_stylebox_override("panel", _make_style(Color(0.965, 0.985, 0.992, 1), Color(0.78, 0.88, 0.92, 1), 1, 9))
 	parent.add_child(card)
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 14)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_right", 14)
-	margin.add_theme_constant_override("margin_bottom", 12)
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 14)
 	card.add_child(margin)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
+	box.add_theme_constant_override("separation", 10)
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.add_child(box)
 	var title_label := Label.new()
 	title_label.text = title
-	title_label.add_theme_font_size_override("font_size", 15)
+	title_label.add_theme_font_size_override("font_size", 18)
 	title_label.add_theme_color_override("font_color", Color(0.04, 0.28, 0.36, 1))
 	box.add_child(title_label)
 	for control_variant in controls:
@@ -603,11 +596,12 @@ func _finish_payment() -> void:
 # ==================== 支服了宝 UI ====================
 
 func _refresh_alipay_ui() -> void:
-	_style_label(label_alipay_balance, 22, Color(0.06, 0.13, 0.17, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
+	_style_label(label_alipay_balance, 28, Color(0.06, 0.13, 0.17, 1.0), HORIZONTAL_ALIGNMENT_LEFT)
 	label_alipay_balance.text = "现金余额  %d" % GameManager.money
 
 	var combined_debt := GameManager.huabei_debt + GameManager.huabei_installment_debt
 	if combined_debt > 0:
+		label_alipay_huabei.add_theme_font_size_override("font_size", 17)
 		label_alipay_huabei.add_theme_color_override("font_color", Color(0.76, 0.12, 0.10, 1))
 		var huabei_min := mini(int(GameManager.huabei_debt * 0.1 + 200), GameManager.huabei_debt)
 		var debt_detail := "花呗总欠款  %d" % combined_debt
@@ -617,6 +611,7 @@ func _refresh_alipay_ui() -> void:
 			debt_detail += "\n分期剩余本金 %d  |  本月月供 %d" % [GameManager.huabei_installment_debt, GameManager.huabei_installment_monthly_pay]
 		label_alipay_huabei.text = debt_detail
 	else:
+		label_alipay_huabei.add_theme_font_size_override("font_size", 17)
 		label_alipay_huabei.add_theme_color_override("font_color", Color(0.027, 0.757, 0.376, 1))
 		label_alipay_huabei.text = "花呗欠款  0\n信用良好，别主动给自己挖坑。"
 	var month_preview := _get_month_end_preview_safe()
@@ -635,9 +630,11 @@ func _refresh_alipay_ui() -> void:
 	btn_al_fin_risk_out.text = "全部取出高风险"
 
 	var total_debt := GameManager.huabei_debt + GameManager.huabei_installment_debt
+	label_al_summary.add_theme_font_size_override("font_size", 16)
 	label_al_summary.add_theme_color_override("font_color", Color(0.16, 0.22, 0.25, 1))
 	label_al_summary.text = "月底结算后现金  %d\n全额还清后现金  %d\n待扣：房租 %d / 餐饮 %d / 花呗债务 %d" % [month_cash_after, full_clear_balance, GameManager.base_rent, GameManager.monthly_food_cost, total_debt]
 	if is_instance_valid(label_alipay_warning):
+		label_alipay_warning.add_theme_font_size_override("font_size", 15)
 		if month_cash_after < 0:
 			label_alipay_warning.text = "预警：按当前账单，月底现金会变负。先停消费，优先打工或还款。"
 		elif total_debt > 0:
@@ -987,6 +984,8 @@ func _on_close_alipay() -> void:
 		main_node().set_ui_layer_visible(alipay_popup, false)
 	else:
 		alipay_popup.visible = false
+	if main_node().has_method("on_alipay_closed"):
+		main_node().on_alipay_closed()
 
 # 支服了宝 - 理财操作
 func _on_al_fin_safe_in() -> void:

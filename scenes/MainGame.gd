@@ -181,6 +181,15 @@ var _skip_week_confirm: bool = false
 var _phone_dim: ColorRect = null
 var _runtime_disposed: bool = false
 var _transition_token: int = 0
+var _first_week_app_gate: String = ""
+var _first_week_app_tutorial_done: bool = false
+var _first_week_alipay_tutorial_shown: bool = false
+var _phone_focus_button: Button = null
+var _phone_focus_tween: Tween = null
+var _phone_focus_halo: Panel = null
+var _alipay_tutorial_overlay: Control = null
+var _tutorial_flash_tweens: Array = []
+var _tutorial_flash_targets: Array = []
 var current_phase: Phase = Phase.WEEKDAY
 # ==================== 生命周期 ====================
 
@@ -245,7 +254,7 @@ func _ready() -> void:
 	btn_pay_rent.pressed.connect(_on_pay_rent)
 
 
-	btn_app_map.pressed.connect(app._on_app_map)
+	btn_app_map.pressed.connect(_on_app_map_pressed)
 	btn_app_wechat.pressed.connect(_on_app_wechat)
 	btn_app_alipay.pressed.connect(_on_app_alipay)
 	btn_app_diary.pressed.connect(app._on_app_diary)
@@ -398,6 +407,8 @@ func _dispose_runtime_systems() -> void:
 
 
 func _on_app_wechat() -> void:
+	if not _allow_first_week_app_open("wechat"):
+		return
 	if not can_open_phone_app():
 		return
 	_hide_all_popups()
@@ -411,17 +422,379 @@ func _on_app_wechat() -> void:
 
 
 func _on_app_alipay() -> void:
+	if not _allow_first_week_app_open("alipay"):
+		return
+	if _first_week_app_gate == "alipay":
+		_force_clear_dialog_overlay()
 	if not can_open_phone_app():
 		return
 	_hide_all_popups()
 	alipay._refresh_alipay_ui()
 	set_ui_layer_visible(alipay_popup, true)
+	if _first_week_app_gate == "alipay":
+		_stop_phone_focus_pulse()
+		_show_first_week_alipay_tutorial()
+
+
+func _on_app_map_pressed() -> void:
+	if not _allow_first_week_app_open("map"):
+		return
+	var was_first_week_map_gate := _first_week_app_gate == "map"
+	app._on_app_map()
+	if was_first_week_map_gate:
+		_finish_first_week_app_tutorial()
+		_show_tutorial_dialog(["先去[color=FFD700]加班[/color]吧，加班费可能会让我挺过这个月。"])
+
+
+func _is_first_week_app_tutorial_context() -> bool:
+	return GameManager.month == 1 and GameManager.week_in_month == 1 and GameManager.turn_count == 1
+
+
+func _maybe_start_first_week_app_tutorial() -> void:
+	if _first_week_app_tutorial_done or _first_week_app_gate != "":
+		return
+	if not _is_first_week_app_tutorial_context():
+		return
+	_first_week_app_gate = "alipay"
+	_hide_phone_dim_overlay()
+	_refresh_first_week_app_focus()
+
+
+func _allow_first_week_app_open(app_id: String) -> bool:
+	if _first_week_app_gate == "":
+		return true
+	if not _is_first_week_app_tutorial_context():
+		return true
+	if app_id == _first_week_app_gate:
+		return true
+	if _first_week_app_gate == "alipay":
+		_show_tutorial_dialog(["先打开支服了宝，看看账单吧"])
+	elif _first_week_app_gate == "map":
+		_show_tutorial_dialog(["现在打开高德地图，再决定出门去哪。"])
+	return false
+
+
+func _refresh_first_week_app_focus() -> void:
+	if _first_week_app_gate == "":
+		_stop_phone_focus_pulse()
+		return
+	var target: Button = null
+	match _first_week_app_gate:
+		"alipay":
+			target = btn_app_alipay
+			_keep_tutorial_app_button_normal(btn_app_map)
+			_keep_tutorial_app_button_normal(btn_app_wechat)
+		"map":
+			target = btn_app_map
+			_keep_tutorial_app_button_normal(btn_app_alipay)
+			_keep_tutorial_app_button_normal(btn_app_wechat)
+	if is_instance_valid(target):
+		target.disabled = false
+		target.mouse_filter = Control.MOUSE_FILTER_STOP
+		_start_phone_focus_pulse(target)
+
+
+func _keep_tutorial_app_button_normal(button: Button) -> void:
+	if not is_instance_valid(button) or not button.visible:
+		return
+	button.disabled = false
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.modulate = Color(1, 1, 1, 1)
+	button.scale = Vector2.ONE
+
+
+func _start_phone_focus_pulse(button: Button) -> void:
+	if _phone_focus_button == button and is_instance_valid(_phone_focus_halo):
+		return
+	_stop_phone_focus_pulse()
+	_phone_focus_button = button
+	button.modulate = Color(1, 1, 1, 1)
+	button.pivot_offset = button.size * 0.5
+	_phone_focus_halo = _create_phone_focus_halo(button)
+	_update_phone_focus_breathing()
+
+
+func _create_phone_focus_halo(button: Button) -> Panel:
+	var halo := Panel.new()
+	halo.name = "TutorialFocusHalo"
+	halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	halo.show_behind_parent = false
+	halo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	halo.offset_left = -10
+	halo.offset_top = -10
+	halo.offset_right = 10
+	halo.offset_bottom = 10
+	halo.z_index = 8
+	halo.pivot_offset = button.size * 0.5
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.58, 1.0, 0.0)
+	style.border_color = Color(0.72, 0.94, 1.0, 0.82)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(38)
+	style.shadow_color = Color(0.18, 0.78, 1.0, 0.45)
+	style.shadow_size = 18
+	style.shadow_offset = Vector2.ZERO
+	halo.add_theme_stylebox_override("panel", style)
+	halo.scale = Vector2(0.98, 0.98)
+	halo.modulate.a = 0.20
+	button.add_child(halo)
+	return halo
+
+
+func _update_phone_focus_breathing() -> void:
+	if not is_instance_valid(_phone_focus_button):
+		return
+	var pulse := (sin(float(Time.get_ticks_msec()) * 0.0065) + 1.0) * 0.5
+	var button_scale := lerpf(1.0, 1.045, pulse)
+	_phone_focus_button.scale = Vector2(button_scale, button_scale)
+	_phone_focus_button.modulate = Color(1, 1, 1, 1)
+	if is_instance_valid(_phone_focus_halo):
+		var halo_scale := lerpf(0.98, 1.045, pulse)
+		_phone_focus_halo.scale = Vector2(halo_scale, halo_scale)
+		_phone_focus_halo.modulate.a = lerpf(0.18, 0.58, pulse)
+
+
+func _stop_phone_focus_pulse(restore: bool = true) -> void:
+	if _phone_focus_tween and _phone_focus_tween.is_valid():
+		_phone_focus_tween.kill()
+	_phone_focus_tween = null
+	if is_instance_valid(_phone_focus_halo):
+		_phone_focus_halo.queue_free()
+	_phone_focus_halo = null
+	if restore and is_instance_valid(_phone_focus_button):
+		_phone_focus_button.modulate = Color(1, 1, 1, 1)
+		_phone_focus_button.scale = Vector2.ONE
+	_phone_focus_button = null
+
+
+func _show_first_week_alipay_tutorial() -> void:
+	if _first_week_alipay_tutorial_shown:
+		return
+	_first_week_alipay_tutorial_shown = true
+	_stop_tutorial_flash()
+	_force_clear_dialog_overlay()
+	call_deferred("_show_alipay_tutorial_callouts")
+
+
+func _show_alipay_tutorial_callouts() -> void:
+	_clear_alipay_tutorial_callouts()
+	if not is_instance_valid(alipay_popup) or not alipay_popup.visible:
+		return
+	var overlay := Control.new()
+	overlay.name = "AlipayTutorialOverlay"
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.z_index = 180
+	alipay_popup.add_child(overlay)
+	_alipay_tutorial_overlay = overlay
+
+	var overview_tab := _get_alipay_tutorial_tab("overview")
+	var bill_tab := _get_alipay_tutorial_tab("bill")
+	var huabei_tab := _get_alipay_tutorial_tab("huabei")
+	_add_alipay_tutorial_callout(
+		overlay,
+		overview_tab,
+		"总览：这里显示你的资产状况。\n你手里的现金、花呗，和月底预估会剩的钱；",
+		"left",
+		Vector2(350, 82),
+		Vector2(0, -16)
+	)
+	_add_alipay_tutorial_callout(
+		overlay,
+		bill_tab,
+		"账单：这里会显示你的消费记录，\n包括下月房租等财务详情",
+		"left",
+		Vector2(350, 74),
+		Vector2(0, 3)
+	)
+	_add_alipay_tutorial_callout(
+		overlay,
+		huabei_tab,
+		"花呗：这里会显示花呗的数额、\n还款/分期等详情；",
+		"left",
+		Vector2(350, 74),
+		Vector2(0, 22)
+	)
+	_add_alipay_tutorial_callout(
+		overlay,
+		btn_close_alipay,
+		"看完关闭，再去高德地图。",
+		"left",
+		Vector2(220, 54)
+	)
+
+
+func _get_alipay_tutorial_tab(page_id: String) -> Control:
+	if not alipay:
+		return null
+	var raw_tabs: Variant = alipay.get("_alipay_tab_buttons")
+	if typeof(raw_tabs) != TYPE_DICTIONARY:
+		return null
+	var tabs := raw_tabs as Dictionary
+	return tabs.get(page_id, null) as Control
+
+
+func _clear_alipay_tutorial_callouts() -> void:
+	if is_instance_valid(_alipay_tutorial_overlay):
+		_alipay_tutorial_overlay.queue_free()
+	_alipay_tutorial_overlay = null
+
+
+func _add_alipay_tutorial_callout(overlay: Control, target: Control, text: String, side: String, bubble_size: Vector2, bubble_offset: Vector2 = Vector2.ZERO) -> void:
+	if not is_instance_valid(overlay) or not is_instance_valid(target):
+		return
+	var target_rect := target.get_global_rect()
+	var overlay_rect := overlay.get_global_rect()
+	var local_rect := Rect2(target_rect.position - overlay_rect.position, target_rect.size)
+	var anchor_rect := _fit_alipay_tutorial_anchor_rect(local_rect)
+	_add_alipay_tutorial_frame(overlay, anchor_rect)
+	var bubble := _make_alipay_tutorial_bubble(text, bubble_size)
+	overlay.add_child(bubble)
+	var pos := anchor_rect.position
+	match side:
+		"left":
+			pos.x = anchor_rect.position.x - bubble_size.x - 10
+			pos.y = anchor_rect.position.y + anchor_rect.size.y * 0.5 - bubble_size.y * 0.5
+		"right":
+			pos.x = anchor_rect.position.x + anchor_rect.size.x + 10
+			pos.y = anchor_rect.position.y + anchor_rect.size.y * 0.5 - bubble_size.y * 0.5
+		"above":
+			pos.x = anchor_rect.position.x + anchor_rect.size.x * 0.5 - bubble_size.x * 0.5
+			pos.y = anchor_rect.position.y - bubble_size.y - 10
+		_:
+			pos.x = anchor_rect.position.x + anchor_rect.size.x * 0.5 - bubble_size.x * 0.5
+			pos.y = anchor_rect.position.y + anchor_rect.size.y + 10
+	bubble.position = _clamp_alipay_tutorial_pos(pos + bubble_offset, bubble_size, overlay.size)
+	bubble.size = bubble_size
+
+
+func _fit_alipay_tutorial_anchor_rect(rect: Rect2) -> Rect2:
+	var fitted_size := Vector2(
+		clampf(rect.size.x, 44.0, 330.0),
+		clampf(rect.size.y, 24.0, 76.0)
+	)
+	return Rect2(rect.position, fitted_size)
+
+
+func _add_alipay_tutorial_frame(overlay: Control, local_rect: Rect2) -> void:
+	var frame := Panel.new()
+	frame.name = "AlipayTutorialFocus"
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.position = local_rect.position - Vector2(6, 6)
+	frame.size = local_rect.size + Vector2(12, 12)
+	frame.z_index = 1
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1, 0.86, 0.28, 0.0)
+	style.border_color = Color(1, 0.78, 0.18, 0.85)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(7)
+	style.shadow_color = Color(1, 0.72, 0.16, 0.35)
+	style.shadow_size = 10
+	style.shadow_offset = Vector2.ZERO
+	frame.add_theme_stylebox_override("panel", style)
+	overlay.add_child(frame)
+
+
+func _make_alipay_tutorial_bubble(text: String, bubble_size: Vector2) -> Panel:
+	var bubble := Panel.new()
+	bubble.name = "AlipayTutorialBubble"
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bubble.custom_minimum_size = Vector2.ZERO
+	bubble.size = bubble_size
+	bubble.z_index = 2
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.025, 0.12, 0.16, 0.94)
+	style.border_color = Color(0.52, 0.88, 1.0, 0.90)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(8)
+	style.shadow_color = Color(0, 0, 0, 0.25)
+	style.shadow_size = 8
+	style.shadow_offset = Vector2(0, 2)
+	bubble.add_theme_stylebox_override("panel", style)
+	var label := Label.new()
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = text
+	label.position = Vector2(10, 7)
+	label.size = bubble_size - Vector2(20, 14)
+	label.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	label.clip_text = true
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_color_override("font_color", Color(0.92, 0.98, 1.0, 1))
+	bubble.add_child(label)
+	return bubble
+
+
+func _clamp_alipay_tutorial_pos(pos: Vector2, bubble_size: Vector2, overlay_size: Vector2) -> Vector2:
+	var max_x := maxf(8.0, overlay_size.x - bubble_size.x - 8.0)
+	var max_y := maxf(8.0, overlay_size.y - bubble_size.y - 8.0)
+	return Vector2(clampf(pos.x, 8.0, max_x), clampf(pos.y, 8.0, max_y))
+
+
+func _show_tutorial_dialog(pages: Array) -> void:
+	if is_instance_valid(left_dialog_box):
+		left_dialog_box.z_index = 220
+	show_galgame_dialog(pages)
+	_hide_phone_dim_overlay()
+
+
+func _hide_phone_dim_overlay() -> void:
+	if galgame and galgame.has_method("_hide_phone_dim"):
+		galgame.call("_hide_phone_dim")
+	if is_instance_valid(_phone_dim):
+		_phone_dim.visible = false
+		_phone_dim.modulate.a = 1.0
+		_phone_dim.color.a = 0.0
+
+
+func _start_tutorial_flash(nodes: Array) -> void:
+	_stop_tutorial_flash(false)
+	for node in nodes:
+		if not is_instance_valid(node):
+			continue
+		_tutorial_flash_targets.append(node)
+		node.modulate = Color(1, 1, 1, 1)
+		var tween := create_tween().set_loops(6)
+		tween.tween_property(node, "modulate", Color(1.0, 0.88, 0.30, 1.0), 0.32).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(node, "modulate", Color(1, 1, 1, 1), 0.32).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_tutorial_flash_tweens.append(tween)
+
+
+func _stop_tutorial_flash(restore: bool = true) -> void:
+	for tween in _tutorial_flash_tweens:
+		if tween and tween.is_valid():
+			tween.kill()
+	_tutorial_flash_tweens.clear()
+	if restore:
+		for node in _tutorial_flash_targets:
+			if is_instance_valid(node):
+				node.modulate = Color(1, 1, 1, 1)
+	_tutorial_flash_targets.clear()
+
+
+func on_alipay_closed() -> void:
+	_clear_alipay_tutorial_callouts()
+	_stop_tutorial_flash()
+	if _first_week_app_gate != "alipay":
+		return
+	_first_week_app_gate = "map"
+	_sync_phone_home_apps(true)
+	_refresh_first_week_app_focus()
+
+
+func _finish_first_week_app_tutorial() -> void:
+	_first_week_app_gate = ""
+	_first_week_app_tutorial_done = true
+	_clear_alipay_tutorial_callouts()
+	_stop_phone_focus_pulse()
+	_sync_phone_home_apps(true)
 
 
 func _process(_delta: float) -> void:
 	if ui_state and ui_state.has_method("sync_all"):
 		ui_state.sync_all()
 	_repair_next_week_button_state()
+	_update_phone_focus_breathing()
 
 
 func _input(event: InputEvent) -> void:
@@ -487,7 +860,10 @@ func _close_top_popup() -> void:
 		set_ui_layer_visible(payment_popup, false)
 		return
 	if alipay_popup.visible:
-		set_ui_layer_visible(alipay_popup, false)
+		if alipay and alipay.has_method("_on_close_alipay"):
+			alipay._on_close_alipay()
+		else:
+			set_ui_layer_visible(alipay_popup, false)
 		return
 	if diary_popup.visible:
 		set_ui_layer_visible(diary_popup, false)
@@ -737,6 +1113,7 @@ func _enter_weekend() -> void:
 	_refresh_ui()
 	sync_ui_state()
 	btn_next_week.disabled = false
+	_maybe_start_first_week_app_tutorial()
 
 
 func _update_weekend_ui() -> void:
@@ -761,13 +1138,15 @@ func _sync_phone_home_apps(interactable: bool) -> void:
 	_set_phone_app_state(btn_app_map, "map", interactable)
 	_set_phone_app_state(btn_app_wechat, "wechat", interactable)
 	_set_phone_app_state(btn_app_alipay, "", interactable)
-	_set_phone_app_state(btn_app_diary, "", interactable)
+	_set_phone_app_state(btn_app_diary, "diary", interactable)
 	_set_phone_app_state(btn_app_job, "job", interactable)
 	_set_phone_app_state(btn_app_baotao, "baotao", interactable)
 	_set_phone_app_state(btn_app_dating, "dating", interactable)
 	_set_phone_app_state(btn_app_tuanmei, "tuanmei", interactable)
 	_set_phone_app_state(btn_app_zodiac, "zodiac", interactable)
 	_set_phone_app_state(btn_app_house, "house", interactable)
+	if interactable:
+		_refresh_first_week_app_focus()
 
 
 func _set_phone_app_state(button: Button, app_id: String, interactable: bool) -> void:
@@ -786,7 +1165,8 @@ func _set_phone_app_state(button: Button, app_id: String, interactable: bool) ->
 	button.disabled = not interactable
 	button.mouse_filter = Control.MOUSE_FILTER_STOP if interactable else Control.MOUSE_FILTER_IGNORE
 	button.text = str(button.get_meta("phone_app_base_text"))
-	button.modulate = Color(1, 1, 1, 1) if interactable else Color(1, 1, 1, 0.48)
+	if button != _phone_focus_button:
+		button.modulate = Color(1, 1, 1, 1) if interactable else Color(1, 1, 1, 0.48)
 
 
 func _show_opening_intro() -> void:
@@ -804,15 +1184,17 @@ func _show_opening_intro() -> void:
 	var opening_pages: Array = [
 		"墙皮在掉。",
 		"绿斑从天花板角落往下蔓延。深圳三月的回南天让人喘不过气。",
-		"我坐在城中村的单人床上，盯着手机屏幕。花呗账单页面的红色数字跳了两下：2876.32。",
+		"我坐在城中村的单人床上，盯着手机屏幕。花呗账单页面的红色数字跳了两下：[b][color=FFD700]2876.32[/color][/b]。",
+		"我在心里把房租、吃饭和最低还款加了一遍。工资会来，但不一定够。",
 		"上个月买的那件连衣裙，穿了一次，被奶茶泼了。退不了。",
 		"朋友圈里小雅的动态又更新了。定位南山一家私房菜馆，九宫格第一张是个男人的手，腕上一块绿水鬼，正在给小雅夹菜。配文三个字：被投喂。",
 		"我把手机扣在床上。",
 		"被子和枕头发粘，晾了三天的内衣摸上去也没干。",
 		"这个六平米的隔断间实在待不下去了。",
+		"一直盯着账单不会让数字变少。先看清月底会扣什么，再决定出门去哪。",
 		"我换了条裤子，抓起包往外走。",
 		"出了村口，深南大道上车水马龙。",
-		"我掏出[color=FFD700]手机[/color]，打开[color=FFD700]高德地图[/color]，看看去哪里逛一逛。",
+		"我掏出[color=FFD700]手机[/color]。先看[color=FFD700]支付宝[/color]，再打开[color=FFD700]高德地图[/color]。这个月的目标很简单：别被第一张账单给劝退回老家了。",
 	]
 	galgame.show_galgame_dialog(opening_pages, func() -> void:
 		_enter_weekend()
@@ -825,6 +1207,7 @@ func _disable_app_grid() -> void:
 
 
 func _hide_all_popups() -> void:
+	_clear_alipay_tutorial_callouts()
 	set_ui_layer_visible(baotao_menu, false)
 	set_ui_layer_visible(tuanmei_menu, false)
 	set_ui_layer_visible(zodiac_popup, false)
@@ -848,15 +1231,19 @@ func _show_event(event: Dictionary, after_callback: Callable) -> void:
 			continue
 		stat_changes[key] = int(event[key])
 	var pages: Array = [desc]
+	var finish_event := func() -> void:
+		for key in stat_changes:
+			GameManager.modify_stat(str(key), int(stat_changes[key]))
+		if after_callback.is_valid():
+			after_callback.call()
+		elif current_phase == Phase.EVENT:
+			current_phase = Phase.WEEKEND
+			sync_ui_state()
 	galgame.show_galgame_dialog(pages, func() -> void:
-		show_stat_result(stat_changes, func() -> void:
-			for key in event:
-				if key == "desc":
-					continue
-				GameManager.modify_stat(key, event[key])
-			if after_callback.is_valid():
-				after_callback.call()
-		)
+		if stat_changes.is_empty():
+			finish_event.call()
+		else:
+			show_stat_result(stat_changes, finish_event)
 	)
 
 
@@ -939,11 +1326,16 @@ func _setup_finance_widgets() -> void:
 	label_pressure_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	label_early_goal = parent.get_node_or_null("LabelEarlyGoal") as Label
-	if label_early_goal:
-		label_early_goal.text = ""
-		label_early_goal.visible = false
+	if label_early_goal == null:
+		label_early_goal = Label.new()
+		label_early_goal.name = "LabelEarlyGoal"
+		parent.add_child(label_early_goal)
+	label_early_goal.add_theme_font_size_override("font_size", 11)
+	label_early_goal.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label_early_goal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	parent.move_child(label_pressure_summary, mini(label_player_info.get_index() + 1, parent.get_child_count() - 1))
+	parent.move_child(label_early_goal, mini(label_player_info.get_index() + 1, parent.get_child_count() - 1))
+	parent.move_child(label_pressure_summary, mini(label_early_goal.get_index() + 1, parent.get_child_count() - 1))
 	parent.move_child(label_pressure_hint, mini(label_pressure_summary.get_index() + 1, parent.get_child_count() - 1))
 
 
@@ -975,8 +1367,10 @@ func _update_finance_widgets() -> void:
 	label_pressure_hint.text = "%s\n%s" % [growth_text, pressure_hint] if pressure_hint != "" else growth_text
 	label_pressure_hint.add_theme_color_override("font_color", pressure.get("hint_color", Color(0.62, 0.66, 0.72)))
 	if label_early_goal:
-		label_early_goal.text = ""
-		label_early_goal.visible = false
+		var story_goal := _get_current_story_goal_text(preview, pressure)
+		label_early_goal.text = story_goal
+		label_early_goal.visible = story_goal != ""
+		label_early_goal.add_theme_color_override("font_color", Color(0.90, 0.78, 0.42))
 
 
 func _format_home_goal_text(text: String) -> String:
@@ -986,6 +1380,28 @@ func _format_home_goal_text(text: String) -> String:
 	if clean == "":
 		return ""
 	return "下一步｜" + clean
+
+
+func _get_current_story_goal_text(preview: Dictionary, pressure: Dictionary) -> String:
+	if GameManager.month <= 1:
+		return "主线｜活过第一张账单\n本周｜%s" % _get_first_month_week_goal(preview)
+	var current_goal := _get_current_goal_hint(preview, pressure)
+	return _format_home_goal_text(str(current_goal.get("text", "")))
+
+
+func _get_first_month_week_goal(preview: Dictionary) -> String:
+	var cash_after := int(preview.get("cash_after_all", 0))
+	if bool(preview.get("game_over_predicted", false)) or bool(preview.get("min_payment_failed", false)) or cash_after < 0:
+		return "账单会压穿现金。先停消费，去支付宝确认缺口，再用加班或低成本行动补救。"
+	match GameManager.week_in_month:
+		1:
+			return "先看支付宝月底预测，再去高德地图做一次低成本行动。"
+		2:
+			return "身体开始报警。精力低就回出租屋或去公园，恢复不是浪费周末。"
+		3:
+			return "别把压力全推给花呗。想变强去图书馆/咖啡馆，缺钱再考虑加班。"
+		_:
+			return "发薪日前夜。先确认账单风险，再决定补现金还是补状态。"
 
 
 func _get_current_goal_hint(preview: Dictionary, _pressure: Dictionary) -> Dictionary:
@@ -1063,7 +1479,7 @@ func _refresh_action_tooltips() -> void:
 	_set_app_tooltip(btn_app_map, "map", "高德地图：周末地点行动。消耗精力，可能触发事件或邂逅。")
 	_set_app_tooltip(btn_app_wechat, "wechat", "微信：查看消息、联系人和上课入口。部分关系会随事件解锁。")
 	_set_app_tooltip(btn_app_alipay, "", "支付宝：查看现金、花呗、分期和月底预计。消费前先看这里。")
-	_set_app_tooltip(btn_app_diary, "", "日记：查看活动流水和数值变化，适合复盘刚才发生了什么。")
+	_set_app_tooltip(btn_app_diary, "diary", "日记：查看活动流水和数值变化，适合复盘刚才发生了什么。")
 	_set_app_tooltip(btn_app_baotao, "baotao", "宝淘：消费提升状态，但会增加花呗或现金压力。先看支付宝。")
 	_set_app_tooltip(btn_app_tuanmei, "tuanmei", "团美：医美消费，高花费高收益，容易压垮月底现金。")
 	_set_app_tooltip(btn_app_zodiac, "zodiac", "星座：查看星座影响和轻量运势。")
@@ -1240,8 +1656,27 @@ func _build_week_confirm_text() -> String:
 	return "\n".join(lines)
 
 
+func _get_month_end_story_summary(preview: Dictionary) -> String:
+	if GameManager.month > 1:
+		return ""
+	var cash_after := int(preview.get("cash_after_all", 0))
+	var total_debt_after := int(preview.get("total_debt_after", 0))
+	var sanity_after := int(preview.get("sanity_after_settlement", GameManager.sanity))
+	if bool(preview.get("game_over_predicted", false)):
+		return "【第一月主线】账单没有给你留体面。不是你不努力，是这个月每一次透支都在这里排队。"
+	if cash_after >= 1200 and sanity_after >= 45 and total_debt_after <= 4000:
+		return "【第一月主线】你没有赢下深圳，但你稳住了第一张账单。下个月可以开始想：只是活着，还是往上走一点。"
+	if cash_after >= 0:
+		return "【第一月主线】账单清掉了，但你知道这不是胜利。压力只是被挪到下个月，身体和花呗都记着账。"
+	return "【第一月主线】你撑到了月底，却被现金缺口卡住。现在最重要的不是体面，是立刻止血。"
+
+
 func _build_month_end_bill_text(preview: Dictionary) -> String:
 	var lines: Array = []
+	var story_summary := _get_month_end_story_summary(preview)
+	if story_summary != "":
+		lines.append(story_summary)
+		lines.append("")
 	lines.append("【本月现金流】")
 	lines.append("当前现金：%d" % int(preview.get("current_cash", 0)))
 	lines.append("本月工资：+%d" % int(preview.get("salary", 0)))
