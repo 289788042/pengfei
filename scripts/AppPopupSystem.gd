@@ -1580,7 +1580,7 @@ func _handle_reunion(npc: Dictionary, location: String) -> void:
 
 func _use_weekend_action(label: String = "weekend") -> bool:
 	if main_node().get("action_service") and main_node().action_service.has_method("spend_weekend_action"):
-		main_node().action_service.spend_weekend_action(label)
+		return main_node().action_service.spend_weekend_action(label)
 	return true
 
 
@@ -1715,23 +1715,8 @@ func _show_location_background(location: String) -> void:
 
 
 ## 检查指定地点是否有NPC邂逅
-func _check_encounter(location: String) -> Dictionary:
-	if GameManager.month <= 1:
-		return {}
-	for npc in GameManager.npc_database:
-		var enc: Dictionary = npc.get("encounter", {})
-		if enc.get("location", "") != location:
-			continue
-		if enc.get("auto_unlock", false):
-			continue
-		var npc_id: String = npc.get("id", "")
-		if GameManager.is_npc_unlocked(npc_id):
-			continue
-		if _encounter_cooldowns.get(npc_id, 0) > GameManager.turn_count:
-			continue
-		if not enc.get("first_visit_only", false):
-			continue
-		return npc
+func _check_encounter(_location: String) -> Dictionary:
+	# 第一阶段先关闭核心男性随机邂逅；关系入口改由主线事件确定触发。
 	return {}
 
 
@@ -1914,6 +1899,10 @@ func _can_start_location(location: String, config: Dictionary) -> bool:
 	if main_node().current_phase != main_node().Phase.WEEKEND:
 		main_node().show_message("现在不是周末，不能安排地点行动。")
 		return false
+	if main_node().get("action_service") and main_node().action_service.has_method("can_use_weekend_action"):
+		if not main_node().action_service.can_use_weekend_action(config.get("name", location)):
+			main_node().show_message("本周周末日程已经排满了。先结束本周，再安排新的地点行动。")
+			return false
 	if bool(config.get("once_per_week", false)) and _park_visited_week == GameManager.turn_count:
 		main_node().show_message("这周已经去过深圳湾了，来回太远，下周再去吧。")
 		return false
@@ -2304,6 +2293,9 @@ func _is_weekend_phase() -> bool:
 func _career_action_lock_reason(energy_cost: int) -> String:
 	if not _is_weekend_phase():
 		return "工作日只能查看，周末再安排"
+	if main_node().get("action_service") and main_node().action_service.has_method("can_use_weekend_action"):
+		if not main_node().action_service.can_use_weekend_action("职业行动"):
+			return "本周周末日程已排满"
 	if GameManager.energy < energy_cost:
 		return "精力不足：需要%d，当前%d" % [energy_cost, GameManager.energy]
 	return ""
@@ -2315,13 +2307,16 @@ func _spend_career_action(label: String, energy_cost: int, sanity_cost: int) -> 
 		main_node().show_message(reason)
 		return false
 	if main_node().get("action_service") and main_node().action_service.has_method("spend_weekend_action"):
-		main_node().action_service.spend_weekend_action(label)
+		return main_node().action_service.spend_weekend_action(label)
 	return true
 
 
 func _media_lock_reason() -> String:
 	if not _is_weekend_phase():
 		return "工作日只能查看，周末才能面试"
+	if main_node().get("action_service") and main_node().action_service.has_method("can_use_weekend_action"):
+		if not main_node().action_service.can_use_weekend_action("新媒体运营面试"):
+			return "本周周末日程已排满"
 	if GameManager.energy < 15:
 		return "精力需15（当前%d）" % GameManager.energy
 	if GameManager.degree < 1:
@@ -2333,6 +2328,9 @@ func _client_lock_reason() -> String:
 	var missing: Array = []
 	if not _is_weekend_phase():
 		missing.append("周末面试")
+	elif main_node().get("action_service") and main_node().action_service.has_method("can_use_weekend_action"):
+		if not main_node().action_service.can_use_weekend_action("大客户经理面试"):
+			missing.append("本周日程已满")
 	if GameManager.energy < 20:
 		missing.append("精力20(当前%d)" % GameManager.energy)
 	if GameManager.job_level < 1:

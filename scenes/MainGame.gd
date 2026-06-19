@@ -867,11 +867,11 @@ func _show_first_week_stats_tutorial() -> void:
 		left_dialog_box.z_index = 220
 	_hide_phone_dim_overlay()
 	galgame.show_galgame_dialog([
-		"加班回来，情绪很不好。点开地图，去海边散散心可能是个不错的选择。",
+		"加班回来，精神紧绷，很疲惫，也有点 emo。",
 		"[color=6BB7FF]（加班会减少情绪值，请注意自己的情绪，数值过低会导致严重的后果。）[/color]",
 		"[color=6BB7FF]（在这个快节奏的城市里，记得好好照顾自己的心理健康。）[/color]",
 		"[color=6BB7FF]（关于自己的所有属性数值，可以在右侧手机的数值面板中看到。手机里正在发光的那个框框就是。）[/color]",
-		"都了解的话，可以出发去海边散心啦。",
+		"别继续硬扛了。打开高德地图，去海边散散心吧。",
 	], func() -> void:
 		_stop_stats_panel_focus_flash()
 		_first_week_app_gate = "map_beach"
@@ -1238,6 +1238,460 @@ func _enter_weekday() -> void:
 	btn_work_overtime.disabled = true
 	_refresh_ui()
 	sync_ui_state()
+	call_deferred("_maybe_trigger_weekday_story_event")
+
+
+func _maybe_trigger_weekday_story_event() -> void:
+	if current_phase != Phase.WEEKDAY or GameManager.game_finished or GameManager.awaiting_month_settle:
+		return
+	if GameManager.month == 1 and GameManager.week_in_month == 2:
+		_trigger_mainline_lin_fan_first_brush()
+	elif GameManager.month == 1 and GameManager.week_in_month == 3:
+		_push_a_qiang_family_hint_01()
+	elif GameManager.month == 2 and GameManager.week_in_month == 1:
+		_trigger_mainline_lin_fan_second_brush()
+	elif GameManager.month == 2 and GameManager.week_in_month == 3:
+		_push_a_qiang_family_hint_02()
+	elif GameManager.month == 2 and GameManager.week_in_month == 4:
+		_unlock_lin_fan_story_contact()
+	elif GameManager.month == 3 and GameManager.week_in_month == 1:
+		_trigger_chen_mo_dinner_notice()
+	elif GameManager.month == 3 and GameManager.week_in_month == 2:
+		_trigger_chen_mo_first_dinner()
+	elif GameManager.month == 3 and GameManager.week_in_month == 3:
+		_unlock_a_qiang_story_contact()
+	elif GameManager.month == 3 and GameManager.week_in_month == 4:
+		_push_chen_mo_light_followup()
+
+
+func _show_mainline_event(flag: String, pages: Array, changes: Dictionary = {}, activity_desc: String = "") -> void:
+	if GameManager.has_mainline_flag(flag):
+		return
+	GameManager.set_mainline_flag(flag)
+	galgame.show_galgame_dialog(pages, func() -> void:
+		var finish := func() -> void:
+			if activity_desc != "":
+				GameManager.add_activity("剧情", activity_desc, changes)
+			_refresh_ui()
+		if changes.is_empty():
+			finish.call()
+		else:
+			show_stat_result(changes, func() -> void:
+				if action_service and action_service.has_method("apply_stat_changes"):
+					action_service.apply_stat_changes(changes)
+				else:
+					for stat_name in changes:
+						GameManager.modify_stat(str(stat_name), int(changes[stat_name]))
+				finish.call()
+			)
+	)
+
+
+func _push_family_mainline_message(flag: String, preview: String, full_text: String, sanity: int = 0, detail_msg: String = "") -> void:
+	if GameManager.has_mainline_flag(flag):
+		return
+	GameManager.set_mainline_flag(flag)
+	if not GameManager.npcs.has("family_group"):
+		return
+	GameManager.npcs["family_group"]["messages"].append({
+		"sender": "npc",
+		"text": preview,
+		"full_text": full_text,
+		"type": "family_chat",
+		"sanity": sanity,
+		"money": 0,
+		"detail_msg": detail_msg,
+	})
+	GameManager.add_unread("family_group")
+	GameManager.add_activity("剧情", "家庭群推进：%s" % preview)
+	show_message("微信家庭群有新消息。", true)
+
+
+func _ensure_story_contact_with_message(flag: String, npc_id: String, display_name: String, relation: String, source_label: String, source_detail: String, message: String, preview_activity: String, affection: int = 0) -> void:
+	if GameManager.has_mainline_flag(flag):
+		return
+	GameManager.set_mainline_flag(flag)
+	GameManager.ensure_story_contact(npc_id, display_name, relation, source_label, source_detail, affection)
+	GameManager.add_story_contact_message(npc_id, "npc", message, "mainline", true)
+	GameManager.add_activity("剧情", preview_activity)
+	if is_instance_valid(wechat):
+		wechat._build_chat_items()
+		wechat._refresh_wechat_ui()
+
+
+func _trigger_mainline_lin_fan_first_brush() -> void:
+	_show_mainline_event("m1w2_lin_fan_first_brush", [
+		"周一早上，你拎着垃圾下楼，电梯门卡在三楼。",
+		"一个男生伸手挡了一下，让你先出去。",
+		"便利店只剩最后一份热饭。你犹豫的时候，他把饭盒往你这边推了推。",
+		"“你拿吧，我不太饿。”",
+		"你说了声谢谢。他点点头，没有继续搭话。",
+		"这个城市里有些好意很小，小到改变不了账单，但会让人没那么想哭。",
+	], {"sanity": 3}, "林凡第一次擦肩")
+
+
+func _trigger_mainline_lin_fan_second_brush() -> void:
+	_show_mainline_event("m2w1_lin_fan_second_brush", [
+		"雨下得很突然。城中村巷口的水坑被电动车压出一串脏水。",
+		"上次便利店那个男生撑着伞回来，看见你站在檐下，把伞往你这边偏了一点。",
+		"“你也住这附近？先过去吧，雨不会马上停。”",
+		"你们一路没说几句话。雨声太大，反而不尴尬。",
+		"到楼下时，他把伞收起来，手背上全是水。",
+		"你忽然记住了他的名字。林凡。",
+	], {"sanity": 5, "energy": 5}, "林凡第二次擦肩")
+
+
+func _push_a_qiang_family_hint_01() -> void:
+	_push_family_mainline_message(
+		"m1w3_a_qiang_family_hint_01",
+		"妈：你姨说有个男孩子...",
+		"妈：你姨说她同事家有个男孩子，也在外面工作，人挺稳。\n爸：不是催你，就是认识认识也没坏处。\n表姐：刚去深圳先顾好自己，别被大城市吓到。\n\n你盯着“认识认识”四个字，感觉老家的手已经伸到了深圳。",
+		-3,
+		"阿强这个名字第一次出现在家庭群里。现在还不用回应，但你知道这条线迟早会回来。"
+	)
+
+
+func _push_a_qiang_family_hint_02() -> void:
+	_push_family_mainline_message(
+		"m2w3_a_qiang_family_hint_02",
+		"妈：上次说那个阿强...",
+		"妈：上次跟你说那个阿强，人家在老家工作挺稳，家里也知根知底。\n表姨：小满一个人在深圳辛苦，认识个靠谱的也好。\n妈：不是马上让你谈，先加个微信，多个朋友也行。\n\n你把手机扣下，又翻回来。你知道他们是关心你，也知道这份关心有重量。",
+		-4,
+		"父母的关心和安排混在一起。它不完全坏，但也不是轻飘飘的好意。"
+	)
+
+
+func _unlock_lin_fan_story_contact() -> void:
+	_ensure_story_contact_with_message(
+		"m2w4_lin_fan_contact",
+		"lin_fan",
+		"林凡",
+		"城中村邻居",
+		"楼下便利店",
+		"你们在便利店和雨天巷口见过几次。他不太会聊天，但每次出现都刚好能帮上一点小忙。",
+		"林凡：你好，我是楼下便利店碰到过几次那个。刚才保安说你门禁卡落在前台了，我顺手帮你放好了。",
+		"林凡进入微信联系人",
+		8
+	)
+
+
+func _trigger_chen_mo_dinner_notice() -> void:
+	_show_mainline_event("m3w1_chen_mo_dinner_notice", [
+		"周一例会快结束时，老板忽然点你的名。",
+		"“下周客户饭局你也去，带上项目资料。别到时候一问三不知。”",
+		"同事们低头收电脑，没人看你。",
+		"你第一次意识到，有些饭局不是吃饭，是把新人推到桌边，看她会不会沉下去。",
+		"周姐散会后压低声音：“别慌。先把数据、报价、时间线理清楚。饭桌上最怕的不是不会说话，是手里没东西。”",
+	], {"sanity": -5, "eq": 1}, "客户饭局预告")
+	if GameManager.npcs.has("zhou_jie"):
+		GameManager.add_story_contact_message("zhou_jie", "npc", "周姐：下周那个客户饭局，别空着手去。至少把项目数据、报价逻辑和时间线理一遍。", "mainline", true)
+
+
+func _has_client_dinner_prep_choice() -> bool:
+	return (
+		GameManager.has_mainline_flag("m3w1_chen_mo_prep_docs")
+		or GameManager.has_mainline_flag("m3w1_chen_mo_prep_zhou")
+		or GameManager.has_mainline_flag("m3w1_chen_mo_prep_none")
+	)
+
+
+func _get_client_dinner_prep_choice() -> String:
+	if GameManager.has_mainline_flag("m3w1_chen_mo_prep_docs"):
+		return "docs"
+	if GameManager.has_mainline_flag("m3w1_chen_mo_prep_zhou"):
+		return "zhou"
+	return "none"
+
+
+func _maybe_show_client_dinner_prep_prompt() -> void:
+	if current_phase != Phase.WEEKEND:
+		return
+	if GameManager.month != 3 or GameManager.week_in_month != 1:
+		return
+	if not GameManager.has_mainline_flag("m3w1_chen_mo_dinner_notice"):
+		return
+	if _has_client_dinner_prep_choice():
+		return
+	if get_node_or_null("ClientDinnerPrepOverlay") != null:
+		return
+	_show_client_dinner_prep_popup()
+
+
+func _show_client_dinner_prep_popup() -> void:
+	var overlay := ColorRect.new()
+	overlay.name = "ClientDinnerPrepOverlay"
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0, 0, 0, 0.58)
+	overlay.z_index = 85
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+	sync_ui_state()
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(620, 0)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.97, 0.96, 0.93, 1)
+	panel_style.set_corner_radius_all(10)
+	panel_style.set_content_margin_all(24)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	center.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 14)
+	panel.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "下周客户饭局"
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(0.08, 0.10, 0.12, 1))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var desc := Label.new()
+	desc.text = "周姐说得没错：饭桌上最怕的不是不会说话，是手里没东西。\n这个周末，你要怎么处理下周那场饭局？"
+	desc.add_theme_font_size_override("font_size", 15)
+	desc.add_theme_color_override("font_color", Color(0.24, 0.27, 0.30, 1))
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(desc)
+
+	var schedule := Label.new()
+	schedule.text = "本周日程｜%s" % GameManager.get_weekend_schedule_text()
+	schedule.add_theme_font_size_override("font_size", 13)
+	schedule.add_theme_color_override("font_color", Color(0.43, 0.47, 0.52, 1))
+	vbox.add_child(schedule)
+
+	_add_client_dinner_prep_button(
+		vbox,
+		"留下来整理资料",
+		"消耗一个周末日程｜精力-30 情绪-12 情商+1 学识+1。饭局上你至少有东西可说。",
+		Color(0.18, 0.43, 0.72, 1),
+		Callable(self, "_choose_client_dinner_prep").bind(overlay, "docs")
+	)
+	_add_client_dinner_prep_button(
+		vbox,
+		"找周姐请教",
+		"消耗一个周末日程｜精力-20 情绪+2 情商+2。你会更懂饭桌上的规则。",
+		Color(0.17, 0.54, 0.42, 1),
+		Callable(self, "_choose_client_dinner_prep").bind(overlay, "zhou")
+	)
+	_add_client_dinner_prep_button(
+		vbox,
+		"先不准备",
+		"不消耗日程。把周末留给自己或别的事，但饭局上会更被动。",
+		Color(0.48, 0.48, 0.50, 1),
+		Callable(self, "_choose_client_dinner_prep").bind(overlay, "none")
+	)
+
+
+func _add_client_dinner_prep_button(parent: VBoxContainer, title: String, desc: String, color: Color, callback: Callable) -> void:
+	var btn := Button.new()
+	btn.text = "%s\n%s" % [title, desc]
+	btn.custom_minimum_size = Vector2(0, 64)
+	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = color
+	normal.set_corner_radius_all(8)
+	normal.set_content_margin_all(12)
+	btn.add_theme_stylebox_override("normal", normal)
+	var hover := StyleBoxFlat.new()
+	hover.bg_color = color.lightened(0.08)
+	hover.set_corner_radius_all(8)
+	hover.set_content_margin_all(12)
+	btn.add_theme_stylebox_override("hover", hover)
+	var pressed := StyleBoxFlat.new()
+	pressed.bg_color = color.darkened(0.10)
+	pressed.set_corner_radius_all(8)
+	pressed.set_content_margin_all(12)
+	btn.add_theme_stylebox_override("pressed", pressed)
+	btn.pressed.connect(callback)
+	parent.add_child(btn)
+
+
+func _choose_client_dinner_prep(overlay: Control, choice: String) -> void:
+	if choice == "docs":
+		if GameManager.energy < 30:
+			show_message("精力不足（需要30），今晚真的熬不动资料了。", true)
+			return
+		if action_service and action_service.has_method("spend_weekend_action"):
+			if not action_service.spend_weekend_action("整理客户饭局资料"):
+				return
+		GameManager.set_mainline_flag("m3w1_chen_mo_prep_docs")
+		_close_client_dinner_prep_overlay(overlay)
+		_show_client_dinner_prep_result([
+			"你把笔记本摊在出租屋的小桌上，屏幕亮得眼睛发酸。",
+			"预算、排期、验收节点、客户可能会问的问题。",
+			"你不确定自己能不能答得漂亮，但至少不会空着手上桌。",
+		], {"energy": -30, "sanity": -12, "eq": 1, "intellect": 1}, "整理客户饭局资料")
+	elif choice == "zhou":
+		if GameManager.energy < 20:
+			show_message("精力不足（需要20），你连请教别人都撑不住了。", true)
+			return
+		if action_service and action_service.has_method("spend_weekend_action"):
+			if not action_service.spend_weekend_action("找周姐请教饭局"):
+				return
+		GameManager.set_mainline_flag("m3w1_chen_mo_prep_zhou")
+		_close_client_dinner_prep_overlay(overlay)
+		_show_client_dinner_prep_result([
+			"你给周姐发了消息，问她饭局上到底该怎么说。",
+			"周姐回得很快：“别抢老板话，也别替老板背锅。客户问到你，就把问题拆成预算、排期、验收。”",
+			"“饭桌上不需要你表现得厉害。你只要让人知道，你不是随便能被推出来挡刀的人。”",
+		], {"energy": -20, "sanity": 2, "eq": 2}, "找周姐请教客户饭局")
+	else:
+		GameManager.set_mainline_flag("m3w1_chen_mo_prep_none")
+		_close_client_dinner_prep_overlay(overlay)
+		galgame.show_galgame_dialog([
+			"你看了一眼资料夹，又看了一眼自己的精力条。",
+			"算了。这个周末你不想再被工作吞掉。",
+			"也许下周会有点狼狈，但至少今晚你还属于自己。",
+		], func() -> void:
+			GameManager.add_activity("剧情", "没有额外准备客户饭局")
+			_refresh_ui()
+		)
+
+
+func _close_client_dinner_prep_overlay(overlay: Control) -> void:
+	if is_instance_valid(overlay):
+		overlay.queue_free()
+	call_deferred("sync_ui_state")
+
+
+func _show_client_dinner_prep_result(pages: Array, changes: Dictionary, activity_desc: String) -> void:
+	galgame.show_galgame_dialog(pages, func() -> void:
+		show_stat_result(changes, func() -> void:
+			if action_service and action_service.has_method("apply_stat_changes"):
+				action_service.apply_stat_changes(changes)
+			else:
+				for stat_name in changes:
+					GameManager.modify_stat(str(stat_name), int(changes[stat_name]))
+			GameManager.add_activity("剧情", activity_desc, changes)
+			_refresh_ui()
+		)
+	)
+
+
+func _build_chen_mo_dinner_outcome(prep_choice: String) -> Dictionary:
+	if prep_choice == "docs":
+		return {
+			"pages": [
+				"客户饭局安排在福田。包间门一开，你先看到一圈白衬衫和深色西装。",
+				"老板讲到成本问题时卡了一下，笑着把话推给你：“这个小满最清楚，让她说。”",
+				"你深吸一口气，把周末整理过的表格打开。",
+				"预算、排期、验收节点。你讲得不算漂亮，但每一句都有落点。",
+				"桌对面有个男人把茶杯放下，补了一句：“她这个拆法是对的。后面只要把验收口径再收紧。”",
+				"老板脸上的笑僵了一下。你第一次觉得，原来准备真的能挡住一部分难堪。",
+				"散场时，周姐小声说：“那位是陈默，客户方真正能拍板的人。今天他是看见你做功课了。”",
+				"陈默经过你身边时停了一下：“资料比你老板讲得清楚。别急着替别人背锅。”",
+			],
+			"changes": {"sanity": -4, "eq": 3, "intellect": 1},
+			"affection": 8,
+			"message": "陈默：今晚辛苦。你那份资料可以继续往下细化，发我一版，我让助理对齐格式。",
+			"activity": "客户饭局遇见陈默（准备资料）",
+		}
+	if prep_choice == "zhou":
+		return {
+			"pages": [
+				"客户饭局安排在福田。包间门一开，你先看到一圈白衬衫和深色西装。",
+				"老板讲到成本问题时卡了一下，笑着把话推给你：“这个小满最清楚，让她说。”",
+				"你脑子空了一秒，忽然想起周姐那句：拆成预算、排期、验收。",
+				"你没有硬撑专业名词，只把问题一块一块拆开，说到不确定的地方就停住。",
+				"桌对面有个男人接住话头：“这个判断比较稳。新人能先分清问题，比乱承诺强。”",
+				"老板笑着打圆场，你却听懂了：他不是在夸你，是在把老板推回该负责的位置。",
+				"散场时，周姐小声说：“那位是陈默，客户方真正能拍板的人。你今天没乱接锅，这就够了。”",
+				"陈默经过你身边时停了一下：“有人教过你？学得挺快。”",
+			],
+			"changes": {"sanity": -6, "eq": 4},
+			"affection": 7,
+			"message": "陈默：今晚辛苦。你处理问题的顺序是对的，后续资料可以先发我。",
+			"activity": "客户饭局遇见陈默（请教周姐）",
+		}
+	return {
+		"pages": [
+			"客户饭局安排在福田。包间门一开，你先看到一圈白衬衫和深色西装。",
+			"老板讲到成本问题时卡了一下，笑着把话推给你：“这个小满最清楚，让她说。”",
+			"你手心发冷。那些资料你没有看完，脑子里只剩几个零散数字。",
+			"你试着开口，越说越乱。老板脸上的笑像一张盖过来的纸。",
+			"桌对面有个男人把茶杯放下，声音不高：“先别急。这个问题应该拆成预算、排期和验收三块。”",
+			"他几句话把场面接住，也把老板推回了该坐的位置。",
+			"散场时，周姐小声说：“那位是陈默，客户方真正能拍板的人。今天他帮你解了围。”",
+			"陈默经过你身边时停了一下：“你不是不会，是没人提前告诉你规则。下次别空着手来。”",
+		],
+		"changes": {"sanity": -15, "eq": 1},
+		"affection": 3,
+		"message": "陈默：今晚辛苦。后续项目资料先补齐，别再让别人临场把锅推给你。",
+		"activity": "客户饭局遇见陈默（没有准备）",
+	}
+
+
+func _trigger_chen_mo_first_dinner() -> void:
+	if GameManager.has_mainline_flag("m3w2_chen_mo_first_dinner"):
+		return
+	GameManager.set_mainline_flag("m3w2_chen_mo_first_dinner")
+	var prep_choice := _get_client_dinner_prep_choice()
+	var outcome := _build_chen_mo_dinner_outcome(prep_choice)
+	var changes: Dictionary = outcome.get("changes", {})
+	galgame.show_galgame_dialog(outcome.get("pages", []), func() -> void:
+		show_stat_result(changes, func() -> void:
+			if action_service and action_service.has_method("apply_stat_changes"):
+				action_service.apply_stat_changes(changes)
+			else:
+				for stat_name in changes:
+					GameManager.modify_stat(str(stat_name), int(changes[stat_name]))
+			GameManager.add_activity("剧情", str(outcome.get("activity", "客户饭局遇见陈默")), changes)
+			GameManager.ensure_story_contact(
+				"chen_mo",
+				"陈默",
+				"客户方负责人",
+				"第3月客户饭局",
+				"老板甩锅时替你把场面接住的人。他先不是恋爱对象，而是你第一次近距离看见的规则和资源。",
+				int(outcome.get("affection", 5))
+			)
+			GameManager.add_story_contact_message("chen_mo", "npc", str(outcome.get("message", "陈默：今晚辛苦。")), "mainline", true)
+			if is_instance_valid(wechat):
+				wechat._build_chat_items()
+				wechat._refresh_wechat_ui()
+		)
+	)
+
+
+func _unlock_a_qiang_story_contact() -> void:
+	_push_family_mainline_message(
+		"m3w3_a_qiang_card_family",
+		"妈：我把阿强微信推你了...",
+		"妈：我把阿强微信推你了，你有空通过一下。\n爸：先当朋友聊聊，不合适就算了。\n表姨：阿强人不花，家里也踏实，女孩子在外面太辛苦，总要有个能商量事的人。\n\n你看着名片弹出来，突然觉得自己被两座城市同时拉住了。",
+		-5,
+		"阿强不是从地图里偶遇的人。他是老家秩序递到你手机里的一个选项。"
+	)
+	_ensure_story_contact_with_message(
+		"m3w3_a_qiang_contact",
+		"a_qiang",
+		"阿强",
+		"老家介绍对象",
+		"家庭群名片",
+		"妈妈和亲戚都说“人挺稳”的老家男生。他代表的不是浪漫偶遇，而是一条退回熟人社会的生活路。",
+		"阿强：你好，我是阿强。阿姨把你微信推给我了，不打扰的话，先认识一下。",
+		"阿强进入微信联系人",
+		3
+	)
+
+
+func _push_chen_mo_light_followup() -> void:
+	if not GameManager.npcs.has("chen_mo"):
+		return
+	if GameManager.has_mainline_flag("m3w4_chen_mo_light_followup"):
+		return
+	GameManager.set_mainline_flag("m3w4_chen_mo_light_followup")
+	GameManager.add_story_contact_message("chen_mo", "npc", "陈默：上次那份资料你整理得比你老板讲得清楚。以后别急着替别人背锅。", "mainline", true)
+	GameManager.add_activity("剧情", "陈默发来轻联系")
+	if is_instance_valid(wechat):
+		wechat._build_chat_items()
+		wechat._refresh_wechat_ui()
+	show_message("陈默发来一条微信。", true)
 
 
 func _enter_weekend() -> void:
@@ -1251,6 +1705,7 @@ func _enter_weekend() -> void:
 	sync_ui_state()
 	btn_next_week.disabled = false
 	_maybe_start_first_week_app_tutorial()
+	call_deferred("_maybe_show_client_dinner_prep_prompt")
 
 
 func _update_weekend_ui() -> void:
@@ -1258,7 +1713,10 @@ func _update_weekend_ui() -> void:
 	btn_next_week.text = "⏭ 结束本周｜月底:%d" % [
 		int(preview.get("cash_after_all", 0)),
 	]
-	btn_next_week.tooltip_text = _build_week_confirm_text()
+	btn_next_week.tooltip_text = "%s\n\n本周日程：%s" % [
+		_build_week_confirm_text(),
+		GameManager.get_weekend_schedule_text(),
+	]
 	_sync_phone_home_apps(true)
 
 
@@ -1386,6 +1844,8 @@ func _refresh_ui() -> void:
 	label_week.text = "%d岁  %d月第%d周" % [GameManager.age, GameManager.month, GameManager.week_in_month]
 	label_money.text = str(GameManager.money)
 	label_psalary.text = str(GameManager.pending_salary)
+	if current_phase == Phase.WEEKEND and is_instance_valid(btn_next_week):
+		_update_weekend_ui()
 	var display_name := GameManager.player_name if GameManager.player_name != "" else "未命名"
 	var zodiac_name := GameManager.player_zodiac if GameManager.player_zodiac != "" else "未定星座"
 	label_player_info.text = "%s · %s" % [display_name, zodiac_name]
@@ -1516,9 +1976,15 @@ func _format_home_goal_text(text: String) -> String:
 
 func _get_current_story_goal_text(preview: Dictionary, pressure: Dictionary) -> String:
 	if GameManager.month <= 1:
-		return "主线｜活过第一张账单\n本周｜%s" % _get_first_month_week_goal(preview)
+		var first_month_goal := "主线｜活过第一张账单\n本周｜%s" % _get_first_month_week_goal(preview)
+		if current_phase == Phase.WEEKEND:
+			first_month_goal += "\n日程｜%s" % GameManager.get_weekend_schedule_text()
+		return first_month_goal
 	var current_goal := _get_current_goal_hint(preview, pressure)
-	return _format_home_goal_text(str(current_goal.get("text", "")))
+	var text := _format_home_goal_text(str(current_goal.get("text", "")))
+	if current_phase == Phase.WEEKEND and text != "":
+		text += "\n日程｜%s" % GameManager.get_weekend_schedule_text()
+	return text
 
 
 func _get_first_month_week_goal(preview: Dictionary) -> String:
@@ -1592,6 +2058,8 @@ func _get_weekend_goal_text(preview: Dictionary) -> String:
 				return "目标：探索成长线。先变强，再谈换工作和关系。"
 			_:
 				return "目标：月底前查支付宝，确认该补现金还是补状态。"
+	if GameManager.month == 3 and GameManager.week_in_month == 1 and not _has_client_dinner_prep_choice():
+		return "目标：下周客户饭局前，决定要整理资料、找周姐请教，还是把周末留给自己。"
 	if GameManager.huabei_debt + GameManager.huabei_installment_debt > 0:
 		return "目标：先看支付宝，决定还款、分期或停止新增消费。"
 	if int(preview.get("cash_after_all", 0)) < 1000:
@@ -1606,7 +2074,7 @@ func _refresh_action_tooltips() -> void:
 	btn_work_normal.tooltip_text = "工作态度：精力-30，情绪-15，待发工资+%d。稳定收入。" % _get_salary("normal")
 	btn_work_slack.tooltip_text = "工作态度：精力-10，情绪+5，待发工资+%d。保状态，但收入低。" % _get_salary("slack")
 	btn_work_overtime.tooltip_text = "工作态度：精力-60，情绪-30，待发工资+%d。短期救现金，连续加班有风险。" % _get_salary("overtime")
-	_set_app_tooltip(btn_app_map, "map", "高德地图：周末地点行动。消耗精力，可能触发事件或邂逅。")
+	_set_app_tooltip(btn_app_map, "map", "高德地图：安排周末地点行动。会占用周六或周日，消耗精力并触发地点事件。")
 	_set_app_tooltip(btn_app_wechat, "wechat", "微信：查看消息、联系人和上课入口。部分关系会随事件解锁。")
 	_set_app_tooltip(btn_app_alipay, "", "支付宝：查看现金、花呗、分期和月底预计。消费前先看这里。")
 	_set_app_tooltip(btn_app_diary, "diary", "日记：查看活动流水和数值变化，适合复盘刚才发生了什么。")

@@ -846,11 +846,12 @@ func _show_chat_action_menu() -> void:
 	_chat_menu_panel.add_child(vbox)
 	if _current_chat_npc == "wang_teacher" and GameManager.night_school_progress < 12:
 		_add_menu_btn(vbox, "上课：尚德夜校 (-50精力, -1000金)", func() -> void: _on_chat_wang_teacher())
+	var is_mainline_stub := bool(npc_data.get("mainline_stub", false))
 	var milestone := _next_available_milestone(_current_chat_npc)
-	if not milestone.is_empty():
+	if not milestone.is_empty() and not is_mainline_stub:
 		var milestone_title := str(milestone.get("title", "重要对话"))
 		_add_menu_btn(vbox, "重要对话：%s" % _truncate_text(milestone_title, 12), func() -> void: _on_milestone_npc(_current_chat_npc), Color(0.08, 0.28, 0.62, 1))
-	if GameManager.is_npc_unlocked(_current_chat_npc):
+	if GameManager.is_npc_unlocked(_current_chat_npc) and not is_mainline_stub:
 		_add_menu_btn(vbox, "日常闲聊 (-10精力)", func() -> void: _on_daily_chat())
 	match _current_chat_npc:
 		"family_group":
@@ -863,7 +864,7 @@ func _show_chat_action_menu() -> void:
 			if npc_data["level"] >= 2:
 				_add_menu_btn(vbox, "约会", func() -> void: _on_date_npc(_current_chat_npc))
 		_:
-			if npc_data["level"] >= 2:
+			if npc_data["level"] >= 2 and not is_mainline_stub:
 				_add_menu_btn(vbox, "约会", func() -> void: _on_date_npc(_current_chat_npc))
 	_add_menu_btn(vbox, "删除好友", func() -> void: _do_delete_friend(), Color(1, 0.2, 0.2, 1))
 	_add_menu_btn(vbox, "取消", func() -> void:
@@ -1817,10 +1818,14 @@ func _on_chat_wang_teacher() -> void:
 		_main.show_message("夜校课程要等周末再安排。")
 		return
 	var service = _action_service()
-	_close_wechat_for_external_payment()
 	if GameManager.energy < 50:
 		_main.show_message("精力不足（需50），没法上课了！")
 		return
+	if service and service.has_method("can_use_weekend_action"):
+		if not service.can_use_weekend_action("夜校课程"):
+			_main.show_message("本周周末日程已经排满了。下周再安排夜校吧。")
+			return
+	_close_wechat_for_external_payment()
 	_main.alipay.request_payment(1000, "夜校报名冲刺班", "提升", func() -> void:
 		var payment_changes: Dictionary = {}
 		if _main.alipay and _main.alipay.has_method("get_last_payment_changes"):

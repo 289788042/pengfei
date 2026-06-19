@@ -11,11 +11,27 @@ func init(main: Node) -> void:
 
 
 func can_use_weekend_action(_label: String = "") -> bool:
-	return true
+	return GameManager.can_spend_weekend_schedule()
 
 
 func spend_weekend_action(label: String = "") -> bool:
-	_record("weekend_action_ignored", {"label": label})
+	var clean_label := label.strip_edges()
+	if clean_label == "":
+		clean_label = "周末行动"
+	var slot_label := GameManager.get_next_free_weekend_slot_label()
+	if not GameManager.spend_weekend_schedule(clean_label):
+		_record("weekend_action_blocked", {
+			"label": clean_label,
+			"schedule": GameManager.get_weekend_schedule_text(),
+		})
+		if is_instance_valid(_main) and _main.has_method("show_message"):
+			_main.show_message("本周周末日程已经排满了。先结束本周，再安排新的周末行动。")
+		return false
+	_record("weekend_action_spent", {
+		"label": clean_label,
+		"slot": slot_label,
+		"schedule": GameManager.get_weekend_schedule_text(),
+	})
 	return true
 
 

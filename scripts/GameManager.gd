@@ -50,6 +50,9 @@ var monthly_food_cost: int = 0
 var weekend_actions: int = 0
 ## 废弃兼容字段：旧版本周末资源上限
 var max_weekend_actions: int = 3
+const WEEKEND_SLOT_LABELS = ["周六", "周日"]
+## 周末日程槽：周六、周日。空字符串表示尚未安排。
+var weekend_schedule: Array = ["", ""]
 
 # ==================== 核心数值变量 ====================
 
@@ -182,6 +185,7 @@ var night_school_progress: int = 0
 var _wang_teacher_last_push_week: int = 0
 var _family_chat_used_indices: Array = []
 var _family_event_used_indices: Array = []
+var mainline_flags: Dictionary = {}
 ## 职场微事件数据
 var workplace_events: Array = []
 ## 近3周触发的微事件ID（防重复）
@@ -279,8 +283,7 @@ func reset_game() -> void:
 	rent_cost = 2000
 	base_rent = 1500
 	monthly_food_cost = 0
-	weekend_actions = 0
-	max_weekend_actions = 3
+	reset_weekend_schedule(false)
 
 	money = 3000
 	pending_salary = 0
@@ -323,6 +326,7 @@ func reset_game() -> void:
 	_wang_teacher_last_push_week = 0
 	_family_chat_used_indices = []
 	_family_event_used_indices = []
+	mainline_flags = {}
 	_recent_work_events = []
 
 	npc_database = []
@@ -406,6 +410,146 @@ func add_finance(amount: int, desc: String, is_huabei: bool, category: String = 
 		"total_debt_after": huabei_debt + huabei_installment_debt,
 	})
 
+
+func reset_weekend_schedule(emit_update: bool = true) -> void:
+	weekend_schedule = ["", ""]
+	weekend_actions = 0
+	max_weekend_actions = weekend_schedule.size()
+	if emit_update:
+		stats_updated.emit()
+
+
+func get_weekend_schedule() -> Array:
+	return weekend_schedule.duplicate()
+
+
+func get_next_free_weekend_slot_index() -> int:
+	for i in range(weekend_schedule.size()):
+		if str(weekend_schedule[i]).strip_edges() == "":
+			return i
+	return -1
+
+
+func get_next_free_weekend_slot_label() -> String:
+	var index := get_next_free_weekend_slot_index()
+	if index < 0:
+		return ""
+	return str(WEEKEND_SLOT_LABELS[index])
+
+
+func can_spend_weekend_schedule() -> bool:
+	return get_next_free_weekend_slot_index() >= 0
+
+
+func spend_weekend_schedule(label: String) -> bool:
+	var index := get_next_free_weekend_slot_index()
+	if index < 0:
+		return false
+	var clean_label := label.strip_edges()
+	if clean_label == "":
+		clean_label = "已安排"
+	weekend_schedule[index] = clean_label
+	weekend_actions = get_used_weekend_schedule_count()
+	stats_updated.emit()
+	return true
+
+
+func get_used_weekend_schedule_count() -> int:
+	var used := 0
+	for item in weekend_schedule:
+		if str(item).strip_edges() != "":
+			used += 1
+	return used
+
+
+func get_weekend_schedule_text() -> String:
+	var parts: Array = []
+	for i in range(weekend_schedule.size()):
+		var label := str(WEEKEND_SLOT_LABELS[i])
+		var value := str(weekend_schedule[i]).strip_edges()
+		parts.append("%s:%s" % [label, value if value != "" else "空闲"])
+	return " | ".join(parts)
+
+
+func has_mainline_flag(flag: String) -> bool:
+	return bool(mainline_flags.get(flag, false))
+
+
+func set_mainline_flag(flag: String, value: bool = true, emit_update: bool = false) -> void:
+	if flag.strip_edges() == "":
+		return
+	mainline_flags[flag] = value
+	if emit_update:
+		stats_updated.emit()
+
+
+func ensure_story_contact(npc_id: String, display_name: String, relation: String, source_label: String, source_detail: String, initial_affection: int = 0) -> void:
+	if npc_id.strip_edges() == "":
+		return
+	var was_new := not npcs.has(npc_id)
+	if not unlocked_npcs.has(npc_id):
+		unlocked_npcs[npc_id] = {
+			"affection": initial_affection,
+			"flags": ["mainline_stub"],
+			"used_daily_chats": [],
+			"used_milestones": [],
+			"used_moments": [],
+			"chat_cooldown": 0,
+		}
+	else:
+		var runtime: Dictionary = unlocked_npcs[npc_id]
+		if not runtime.has("flags"):
+			runtime["flags"] = []
+		if not runtime["flags"].has("mainline_stub"):
+			runtime["flags"].append("mainline_stub")
+	if not npcs.has(npc_id):
+		npcs[npc_id] = {
+			"name": display_name,
+			"affection": initial_affection,
+			"level": 1,
+			"unlocked": true,
+			"warning_msg": "",
+			"blocked": false,
+			"messages": [],
+			"last_seen_week": 0,
+			"unread": 0,
+			"relation": relation,
+			"source_label": source_label,
+			"source_detail": source_detail,
+			"intro_week": turn_count,
+			"mainline_stub": true,
+		}
+	else:
+		npcs[npc_id]["name"] = display_name
+		npcs[npc_id]["unlocked"] = true
+		npcs[npc_id]["blocked"] = false
+		npcs[npc_id]["relation"] = relation
+		npcs[npc_id]["source_label"] = source_label
+		npcs[npc_id]["source_detail"] = source_detail
+		npcs[npc_id]["mainline_stub"] = true
+		if not npcs[npc_id].has("messages"):
+			npcs[npc_id]["messages"] = []
+		if not npcs[npc_id].has("unread"):
+			npcs[npc_id]["unread"] = 0
+	stats_updated.emit()
+	if was_new:
+		npc_unlocked.emit(npc_id, display_name)
+
+
+func add_story_contact_message(npc_id: String, sender: String, text: String, message_type: String = "mainline", mark_unread: bool = true, extra: Dictionary = {}) -> void:
+	if not npcs.has(npc_id):
+		return
+	var msg := extra.duplicate(true)
+	msg["sender"] = sender
+	msg["text"] = text
+	msg["type"] = message_type
+	npcs[npc_id]["messages"].append(msg)
+	if mark_unread:
+		add_unread(npc_id, 1)
+	else:
+		stats_updated.emit()
+
+
 ## 增加NPC好感度（含自动升级逻辑：每50好感升一级）
 func add_npc_affection(npc_id: String, amount: int) -> void:
 	var runtime := get_npc_runtime(npc_id)
@@ -450,6 +594,7 @@ func advance_week() -> void:
 
 	# 正常推进
 	turn_count += 1
+	reset_weekend_schedule(false)
 	week_advanced.emit(turn_count)
 	stats_updated.emit()
 
@@ -585,6 +730,7 @@ func start_new_month() -> void:
 
 	# 继续推进
 	turn_count += 1
+	reset_weekend_schedule(false)
 	week_advanced.emit(turn_count)
 	stats_updated.emit()
 
@@ -622,6 +768,7 @@ func finish_spring_festival(total_sanity_cost: int, money_cost: int) -> void:
 
 	# 继续推进
 	turn_count += 1
+	reset_weekend_schedule(false)
 	week_advanced.emit(turn_count)
 	stats_updated.emit()
 
