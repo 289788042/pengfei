@@ -624,6 +624,14 @@ func _on_close_wechat() -> void:
 		_main.on_wechat_closed()
 
 
+func _should_finish_first_week_wechat_on_back() -> bool:
+	if not is_instance_valid(_main):
+		return false
+	if not _main.has_method("should_finish_first_week_wechat_on_back"):
+		return false
+	return bool(_main.call("should_finish_first_week_wechat_on_back"))
+
+
 # ==================== 微信 Tab 切换 ====================
 
 func _on_wc_tab(tab_idx: int) -> void:
@@ -806,6 +814,8 @@ func _close_chat_view_now() -> void:
 	_set_layer_visible(_main.wc_chat_view, false)
 	_set_main_wechat_panel_visible(true)
 	_current_chat_npc = ""
+	if _should_finish_first_week_wechat_on_back():
+		_on_close_wechat()
 
 func _on_chat_send() -> void:
 	if _current_chat_npc == "":

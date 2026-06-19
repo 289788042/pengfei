@@ -212,14 +212,33 @@ var npcs: Dictionary = {
 	"family_group": {
 		"name": "相亲相爱一家人 (爸妈)", "affection": 50, "level": 1,
 		"unlocked": true, "warning_msg": "你妈昨天又在朋友圈转发了《女孩过了25岁还不结婚有多可怕》",
-		"blocked": false, "messages": [], "last_seen_week": 0,
+		"blocked": false,
+		"messages": [
+			{
+				"sender": "npc",
+				"text": "妈：到深圳了吗？安顿好给家里说一声。",
+				"type": "family_chat",
+				"full_text": "妈：到深圳了吗？安顿好给家里说一声。\n爸：钱不够就别硬撑，先保证吃饭和睡觉。\n表姐：深圳节奏快，刚开始别太焦虑，慢慢来。\n\n你盯着屏幕看了一会儿，突然觉得这座城市没那么冷。",
+				"sanity": 8,
+				"money": 0,
+				"detail_msg": "家里人都在担心你。哪怕他们说得笨拙，也确实在意你。"
+			},
+		],
+		"last_seen_week": 0, "unread": 1,
 		"relation": "家人", "source_label": "手机原有群聊", "source_detail": "爸妈和亲戚都在的家庭群。",
 		"intro_week": 1,
 	},
 	"wang_teacher": {
 		"name": "尚德夜校-王老师", "affection": 0, "level": 1,
 		"unlocked": true, "warning_msg": "不逼自己一把，你永远只能拿底薪！",
-		"blocked": false, "messages": [], "last_seen_week": 0,
+		"blocked": false,
+		"messages": [
+			{
+				"sender": "npc",
+				"text": "同学你好，我是尚德夜校王老师。你之前了解过成人本科课程，我们这边周末班刚好还有名额。深圳机会多，但学历门槛也实在，上满 12 节课就能拿到结业进度，后面找工作会轻松很多。"
+			},
+		],
+		"last_seen_week": 0, "unread": 1,
 		"relation": "夜校招生老师", "source_label": "微信广告", "source_detail": "你点过尚德夜校广告后，对方加了你的微信。",
 		"intro_week": 1,
 	},

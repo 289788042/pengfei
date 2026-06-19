@@ -813,6 +813,7 @@ func _finish_first_week_app_tutorial() -> void:
 	_first_week_app_tutorial_done = true
 	_clear_alipay_tutorial_callouts()
 	_stop_phone_focus_pulse()
+	_stop_stats_panel_focus_flash()
 	_sync_phone_home_apps(true)
 
 
@@ -848,6 +849,10 @@ func on_wechat_closed() -> void:
 	_show_first_week_stats_tutorial()
 
 
+func should_finish_first_week_wechat_on_back() -> bool:
+	return _first_week_app_gate == "wechat" and _is_first_week_app_tutorial_context()
+
+
 func is_first_week_beach_route_unlocked() -> bool:
 	return _is_first_week_app_tutorial_context() and _first_week_beach_unlocked
 
@@ -868,6 +873,7 @@ func _show_first_week_stats_tutorial() -> void:
 		"[color=6BB7FF]（关于自己的所有属性数值，可以在右侧手机的数值面板中看到。手机里正在发光的那个框框就是。）[/color]",
 		"都了解的话，可以出发去海边散心啦。",
 	], func() -> void:
+		_stop_stats_panel_focus_flash()
 		_first_week_app_gate = "map_beach"
 		_sync_phone_home_apps(true)
 		_refresh_first_week_app_focus()
@@ -875,12 +881,7 @@ func _show_first_week_stats_tutorial() -> void:
 
 
 func _start_stats_panel_focus_flash() -> void:
-	if _stats_panel_focus_tween and _stats_panel_focus_tween.is_valid():
-		_stats_panel_focus_tween.kill()
-	_stats_panel_focus_tween = null
-	if is_instance_valid(_stats_panel_focus_halo):
-		_stats_panel_focus_halo.queue_free()
-	_stats_panel_focus_halo = null
+	_stop_stats_panel_focus_flash()
 	var target := find_child("Widget_Profile", true, false) as Control
 	if not is_instance_valid(target):
 		target = find_child("StatsGrid", true, false) as Control
@@ -903,23 +904,26 @@ func _start_stats_panel_focus_flash() -> void:
 	style.shadow_size = 8
 	style.shadow_offset = Vector2.ZERO
 	halo.add_theme_stylebox_override("panel", style)
-	halo.modulate.a = 0.0
+	halo.modulate.a = 0.22
 	phone_screen.add_child(halo)
 	_stats_panel_focus_halo = halo
-	var tween := create_tween().bind_node(halo)
-	for i in range(2):
-		tween.tween_property(halo, "modulate:a", 1.0, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		tween.parallel().tween_property(style, "shadow_size", 22, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		tween.tween_property(halo, "modulate:a", 0.18, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		tween.parallel().tween_property(style, "shadow_size", 8, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(halo, "modulate:a", 0.0, 0.20)
-	tween.tween_callback(func() -> void:
-		if is_instance_valid(halo):
-			halo.queue_free()
-		if _stats_panel_focus_halo == halo:
-			_stats_panel_focus_halo = null
-	)
-	_stats_panel_focus_tween = tween
+	_stats_panel_focus_tween = null
+
+
+func _stop_stats_panel_focus_flash() -> void:
+	if _stats_panel_focus_tween and _stats_panel_focus_tween.is_valid():
+		_stats_panel_focus_tween.kill()
+	_stats_panel_focus_tween = null
+	if is_instance_valid(_stats_panel_focus_halo):
+		_stats_panel_focus_halo.queue_free()
+	_stats_panel_focus_halo = null
+
+
+func _update_stats_panel_focus_breathing() -> void:
+	if not is_instance_valid(_stats_panel_focus_halo):
+		return
+	var pulse := (sin(float(Time.get_ticks_msec()) * 0.006) + 1.0) * 0.5
+	_stats_panel_focus_halo.modulate.a = lerpf(0.22, 1.0, pulse)
 
 
 func _process(_delta: float) -> void:
@@ -927,6 +931,7 @@ func _process(_delta: float) -> void:
 		ui_state.sync_all()
 	_repair_next_week_button_state()
 	_update_phone_focus_breathing()
+	_update_stats_panel_focus_breathing()
 
 
 func _input(event: InputEvent) -> void:
@@ -1022,7 +1027,7 @@ func _close_top_popup() -> void:
 		if wc_chat_view.visible:
 			wechat._on_chat_back()
 			return
-		set_ui_layer_visible(wechat_menu, false)
+		wechat._on_close_wechat()
 		return
 	if location_menu.visible:
 		set_ui_layer_visible(location_menu, false)
