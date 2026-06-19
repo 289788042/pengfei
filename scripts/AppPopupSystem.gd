@@ -447,14 +447,14 @@ func _on_app_map() -> void:
 
 	var title_lbl := Label.new()
 	title_lbl.text = "高德地图"
-	title_lbl.add_theme_font_size_override("font_size", 17)
+	title_lbl.add_theme_font_size_override("font_size", 20)
 	title_lbl.add_theme_color_override("font_color", Color(0.05, 0.18, 0.15, 1))
 	title_box.add_child(title_lbl)
 
 	var status_lbl := Label.new()
 	status_lbl.text = "深圳 · 周末路线"
 	status_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status_lbl.add_theme_font_size_override("font_size", 10)
+	status_lbl.add_theme_font_size_override("font_size", 13)
 	status_lbl.add_theme_color_override("font_color", Color(0.34, 0.48, 0.43, 1))
 	title_box.add_child(status_lbl)
 
@@ -481,13 +481,13 @@ func _on_app_map() -> void:
 	var section_lbl := Label.new()
 	section_lbl.text = "附近地点"
 	section_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	section_lbl.add_theme_font_size_override("font_size", 13)
+	section_lbl.add_theme_font_size_override("font_size", 16)
 	section_lbl.add_theme_color_override("font_color", Color(0.08, 0.20, 0.17, 1))
 	section_row.add_child(section_lbl)
 
 	var count_lbl := Label.new()
 	count_lbl.text = _map_available_count_text()
-	count_lbl.add_theme_font_size_override("font_size", 10)
+	count_lbl.add_theme_font_size_override("font_size", 13)
 	count_lbl.add_theme_color_override("font_color", Color(0.35, 0.48, 0.43, 1))
 	section_row.add_child(count_lbl)
 
@@ -524,6 +524,8 @@ func _map_location_order() -> Array[String]:
 	if GameManager.month <= 1:
 		match GameManager.week_in_month:
 			1:
+				if _is_first_week_beach_route_unlocked():
+					return ["park", "overtime", "home", "market", "library", "cafe", "gym", "bar"]
 				return ["overtime", "park", "home", "market", "library", "cafe", "gym", "bar"]
 			2:
 				return ["park", "home", "market", "overtime", "library", "cafe", "gym", "bar"]
@@ -551,11 +553,11 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 
 	var card := PanelContainer.new()
 	card.name = "MapCard_" + location_id
-	var card_height := 88 if tutorial_locked else 104
+	var card_height := 76 if tutorial_locked else 136
 	if not tutorial_locked and req_text != "无":
-		card_height += 18
+		card_height += 24
 	if not tutorial_locked and repeat_text != "":
-		card_height += 16
+		card_height += 22
 	card.custom_minimum_size = Vector2(0, card_height)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if can_go else Control.CURSOR_ARROW
@@ -575,24 +577,24 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 	)
 
 	var card_margin := MarginContainer.new()
-	card_margin.add_theme_constant_override("margin_left", 8)
-	card_margin.add_theme_constant_override("margin_right", 8)
-	card_margin.add_theme_constant_override("margin_top", 8)
-	card_margin.add_theme_constant_override("margin_bottom", 8)
+	card_margin.add_theme_constant_override("margin_left", 10)
+	card_margin.add_theme_constant_override("margin_right", 10)
+	card_margin.add_theme_constant_override("margin_top", 9)
+	card_margin.add_theme_constant_override("margin_bottom", 9)
 	card.add_child(card_margin)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", 10)
 	card_margin.add_child(row)
 
 	var marker := ColorRect.new()
-	marker.custom_minimum_size = Vector2(6, 0)
+	marker.custom_minimum_size = Vector2(7, 0)
 	marker.color = accent_color if can_go else Color(0.58, 0.62, 0.60, 0.72)
 	row.add_child(marker)
 
 	var body := VBoxContainer.new()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 2)
+	body.add_theme_constant_override("separation", 4)
 	row.add_child(body)
 
 	var top_row := HBoxContainer.new()
@@ -602,7 +604,7 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 	var name_lbl := Label.new()
 	name_lbl.text = str(config.get("name", location_id))
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_lbl.add_theme_font_size_override("font_size", 14)
+	name_lbl.add_theme_font_size_override("font_size", 18 if can_go else 16)
 	name_lbl.add_theme_color_override("font_color", Color(0.06, 0.17, 0.15, 1) if can_go else Color(0.40, 0.45, 0.43, 1))
 	top_row.add_child(name_lbl)
 	if can_go and not guidance.is_empty():
@@ -611,14 +613,15 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 		top_row.add_child(_make_map_tag(str(state.get("text", "锁定")), state.get("bg", Color(0.50, 0.50, 0.50, 1)), state.get("fg", Color.WHITE)))
 
 	var note_lbl := Label.new()
-	note_lbl.text = "%s · %s" % [str(meta.get("role", "地点")), str(meta.get("note", ""))]
-	note_lbl.add_theme_font_size_override("font_size", 10)
+	note_lbl.text = str(meta.get("note", ""))
+	note_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note_lbl.add_theme_font_size_override("font_size", 13)
 	note_lbl.add_theme_color_override("font_color", Color(0.35, 0.45, 0.41, 1) if can_go else Color(0.54, 0.58, 0.56, 1))
 	note_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	body.add_child(note_lbl)
 
 	if tutorial_locked:
-		_add_small_map_line(body, "状态", _map_locked_hint(location_id), Color(0.50, 0.54, 0.52, 1))
+		_add_small_map_line(body, "", _map_locked_hint(location_id), Color(0.50, 0.54, 0.52, 1), 13)
 	else:
 		_add_small_map_line(body, "消耗", _map_cost_summary(location_id, config), Color(0.55, 0.25, 0.18, 1))
 		_add_small_map_line(body, "收益", _map_change_summary(_map_preview_changes(location_id, config), true, location_id), Color(0.08, 0.42, 0.30, 1))
@@ -629,6 +632,8 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 
 
 func _should_pulse_map_location_card(location_id: String, can_go: bool) -> bool:
+	if can_go and _should_pulse_first_week_park_card() and location_id == "park":
+		return true
 	return can_go and GameManager.month == 1 and GameManager.week_in_month == 1 and location_id == "overtime"
 
 
@@ -650,7 +655,7 @@ func _start_map_location_card_pulse(card: PanelContainer, style: StyleBoxFlat) -
 
 func _make_map_route_summary() -> PanelContainer:
 	var route := PanelContainer.new()
-	route.custom_minimum_size = Vector2(0, 48)
+	route.custom_minimum_size = Vector2(0, 54)
 	route.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	route.add_theme_stylebox_override("panel", _make_flat_style(Color(0.86, 0.95, 0.90, 1), Color(0.42, 0.68, 0.55, 0.55), 1, 11))
 
@@ -667,14 +672,14 @@ func _make_map_route_summary() -> PanelContainer:
 
 	var title := Label.new()
 	title.text = _map_route_title()
-	title.add_theme_font_size_override("font_size", 12)
+	title.add_theme_font_size_override("font_size", 15)
 	title.add_theme_color_override("font_color", Color(0.05, 0.24, 0.18, 1))
 	box.add_child(title)
 
 	var sub := Label.new()
 	sub.text = _map_route_hint()
 	sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	sub.add_theme_font_size_override("font_size", 10)
+	sub.add_theme_font_size_override("font_size", 13)
 	sub.add_theme_color_override("font_color", Color(0.28, 0.42, 0.36, 1))
 	box.add_child(sub)
 	return route
@@ -703,6 +708,8 @@ func _map_route_hint() -> String:
 	if GameManager.month <= 1:
 		match GameManager.week_in_month:
 			1:
+				if _is_first_week_beach_route_unlocked():
+					return "加班后情绪很低，先去海边吹吹风，把自己捡回来。"
 				return "先去公司加班，挣一笔应急现金，再决定要不要低成本行动。"
 			2:
 				return "身体开始报警，恢复类地点不是浪费周末。"
@@ -714,6 +721,12 @@ func _map_route_hint() -> String:
 
 
 func _map_locked_hint(location_id: String) -> String:
+	if GameManager.month == 1 and GameManager.week_in_month == 1:
+		if _is_first_week_beach_route_unlocked():
+			if location_id == "overtime":
+				return "先去海边散心"
+		elif location_id == "park":
+			return "加班后开放"
 	match location_id:
 		"home":
 			return "第2周开放"
@@ -740,6 +753,10 @@ func _map_guidance_for(location_id: String) -> Dictionary:
 	if GameManager.month <= 1:
 		match GameManager.week_in_month:
 			1:
+				if _is_first_week_beach_route_unlocked():
+					if location_id == "park":
+						return {"text": "去海边", "bg": Color(0.10, 0.52, 0.74, 1), "fg": Color.WHITE}
+					return {}
 				if location_id == "overtime":
 					return {"text": "先去加班", "bg": Color(0.76, 0.22, 0.18, 1), "fg": Color.WHITE}
 			2:
@@ -764,7 +781,7 @@ func _map_guidance_for(location_id: String) -> Dictionary:
 
 func _make_map_metric_chip(title: String, value: String, accent: Color) -> PanelContainer:
 	var chip := PanelContainer.new()
-	chip.custom_minimum_size = Vector2(0, 42)
+	chip.custom_minimum_size = Vector2(0, 50)
 	chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	chip.add_theme_stylebox_override("panel", _make_flat_style(Color(1, 1, 1, 0.92), accent.lightened(0.32), 1, 9))
 
@@ -782,7 +799,7 @@ func _make_map_metric_chip(title: String, value: String, accent: Color) -> Panel
 	var title_lbl := Label.new()
 	title_lbl.text = title
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_lbl.add_theme_font_size_override("font_size", 9)
+	title_lbl.add_theme_font_size_override("font_size", 12)
 	title_lbl.add_theme_color_override("font_color", Color(0.38, 0.48, 0.44, 1))
 	box.add_child(title_lbl)
 
@@ -790,7 +807,7 @@ func _make_map_metric_chip(title: String, value: String, accent: Color) -> Panel
 	value_lbl.text = value
 	value_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	value_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	value_lbl.add_theme_font_size_override("font_size", 12)
+	value_lbl.add_theme_font_size_override("font_size", 15)
 	value_lbl.add_theme_color_override("font_color", accent.darkened(0.05))
 	box.add_child(value_lbl)
 	return chip
@@ -857,29 +874,31 @@ func _make_map_tag(text: String, bg: Color, fg: Color) -> PanelContainer:
 	tag.add_child(margin)
 	var label := Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", 9)
+	label.add_theme_font_size_override("font_size", 12)
 	label.add_theme_color_override("font_color", fg)
 	margin.add_child(label)
 	return tag
 
 
-func _add_small_map_line(parent: VBoxContainer, label_text: String, value_text: String, color: Color) -> void:
+func _add_small_map_line(parent: VBoxContainer, label_text: String, value_text: String, color: Color, font_size: int = 14) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
 	parent.add_child(row)
 
-	var label := Label.new()
-	label.text = label_text
-	label.custom_minimum_size = Vector2(30, 0)
-	label.add_theme_font_size_override("font_size", 10)
-	label.add_theme_color_override("font_color", color)
-	row.add_child(label)
+	if label_text != "":
+		var label := Label.new()
+		label.text = label_text
+		label.custom_minimum_size = Vector2(42, 0)
+		label.add_theme_font_size_override("font_size", font_size)
+		label.add_theme_color_override("font_color", color)
+		row.add_child(label)
 
 	var value := Label.new()
 	value.text = value_text
 	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	value.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	value.add_theme_font_size_override("font_size", 10)
+	value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	value.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	value.add_theme_font_size_override("font_size", font_size)
 	value.add_theme_color_override("font_color", color)
 	row.add_child(value)
 
@@ -993,6 +1012,8 @@ func _map_location_unlocked(location_id: String) -> bool:
 		return true
 	match GameManager.week_in_month:
 		1:
+			if _is_first_week_beach_route_unlocked():
+				return location_id == "park"
 			return location_id == "overtime"
 		2:
 			return location_id in ["park", "home", "market", "overtime"]
@@ -1001,6 +1022,18 @@ func _map_location_unlocked(location_id: String) -> bool:
 		_:
 			return location_id != "bar"
 	return true
+
+
+func _is_first_week_beach_route_unlocked() -> bool:
+	if not is_instance_valid(_main) or not main_node().has_method("is_first_week_beach_route_unlocked"):
+		return false
+	return bool(main_node().call("is_first_week_beach_route_unlocked"))
+
+
+func _should_pulse_first_week_park_card() -> bool:
+	if not is_instance_valid(_main) or not main_node().has_method("should_pulse_first_week_park_card"):
+		return false
+	return bool(main_node().call("should_pulse_first_week_park_card"))
 
 
 func _make_map_pill(text: String, bg: Color, fg: Color) -> PanelContainer:
@@ -1936,6 +1969,11 @@ func _run_location_after_payment(location: String, config: Dictionary, payment_c
 		_handle_encounter(encounter_npc, location, config, tuned_changes, payment_changes, visit_index)
 		return
 
+	if _should_route_first_week_overtime_tutorial(location):
+		_show_location_result_from_config(location, config, tuned_changes, payment_changes, _first_week_location_finished_callback(location))
+		_record_location_activity(location, config, tuned_changes, payment_changes, visit_index)
+		return
+
 	var roll := randf()
 
 	if location == "overtime" and roll < 0.50:
@@ -1952,6 +1990,22 @@ func _run_location_after_payment(location: String, config: Dictionary, payment_c
 	else:
 		_show_location_result_from_config(location, config, tuned_changes, payment_changes)
 	_record_location_activity(location, config, tuned_changes, payment_changes, visit_index)
+
+
+func _should_route_first_week_overtime_tutorial(location: String) -> bool:
+	if location != "overtime":
+		return false
+	if not is_instance_valid(_main) or not main_node().has_method("on_first_week_location_finished"):
+		return false
+	if GameManager.month != 1 or GameManager.week_in_month != 1 or GameManager.turn_count != 1:
+		return false
+	return not _is_first_week_beach_route_unlocked()
+
+
+func _first_week_location_finished_callback(location: String) -> Callable:
+	if not is_instance_valid(_main) or not main_node().has_method("on_first_week_location_finished"):
+		return Callable()
+	return Callable(main_node(), "on_first_week_location_finished").bind(location)
 
 
 func _show_reunion_result(npc: Dictionary, location: String, base_changes: Dictionary) -> void:

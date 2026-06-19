@@ -184,9 +184,14 @@ var _transition_token: int = 0
 var _first_week_app_gate: String = ""
 var _first_week_app_tutorial_done: bool = false
 var _first_week_alipay_tutorial_shown: bool = false
+var _first_week_overtime_tutorial_done: bool = false
+var _first_week_wechat_tutorial_done: bool = false
+var _first_week_beach_unlocked: bool = false
 var _phone_focus_button: Button = null
 var _phone_focus_tween: Tween = null
 var _phone_focus_halo: Panel = null
+var _stats_panel_focus_halo: Panel = null
+var _stats_panel_focus_tween: Tween = null
 var _alipay_tutorial_overlay: Control = null
 var _tutorial_flash_tweens: Array = []
 var _tutorial_flash_targets: Array = []
@@ -409,6 +414,8 @@ func _dispose_runtime_systems() -> void:
 func _on_app_wechat() -> void:
 	if not _allow_first_week_app_open("wechat"):
 		return
+	if _first_week_app_gate == "wechat":
+		_stop_phone_focus_pulse()
 	if not can_open_phone_app():
 		return
 	_hide_all_popups()
@@ -440,10 +447,15 @@ func _on_app_map_pressed() -> void:
 	if not _allow_first_week_app_open("map"):
 		return
 	var was_first_week_map_gate := _first_week_app_gate == "map"
+	var was_first_week_beach_gate := _first_week_app_gate == "map_beach"
 	app._on_app_map()
 	if was_first_week_map_gate:
 		_finish_first_week_app_tutorial()
 		_show_tutorial_dialog(["先去[color=FFD700]加班[/color]吧，加班费可能会让我挺过这个月。"])
+	elif was_first_week_beach_gate:
+		_first_week_app_gate = ""
+		_stop_phone_focus_pulse()
+		_sync_phone_home_apps(true)
 
 
 func _is_first_week_app_tutorial_context() -> bool:
@@ -465,12 +477,18 @@ func _allow_first_week_app_open(app_id: String) -> bool:
 		return true
 	if not _is_first_week_app_tutorial_context():
 		return true
+	if _first_week_app_gate == "map_beach" and app_id == "map":
+		return true
 	if app_id == _first_week_app_gate:
 		return true
 	if _first_week_app_gate == "alipay":
 		_show_tutorial_dialog(["先打开支服了宝，看看账单吧"])
 	elif _first_week_app_gate == "map":
 		_show_tutorial_dialog(["现在打开高德地图，再决定出门去哪。"])
+	elif _first_week_app_gate == "wechat":
+		_show_tutorial_dialog(["先看看微信吧？别漏掉家人和朋友的信息。"])
+	elif _first_week_app_gate == "map_beach":
+		_show_tutorial_dialog(["先打开高德地图，去海边散散心。"])
 	return false
 
 
@@ -485,6 +503,14 @@ func _refresh_first_week_app_focus() -> void:
 			_keep_tutorial_app_button_normal(btn_app_map)
 			_keep_tutorial_app_button_normal(btn_app_wechat)
 		"map":
+			target = btn_app_map
+			_keep_tutorial_app_button_normal(btn_app_alipay)
+			_keep_tutorial_app_button_normal(btn_app_wechat)
+		"wechat":
+			target = btn_app_wechat
+			_keep_tutorial_app_button_normal(btn_app_alipay)
+			_keep_tutorial_app_button_normal(btn_app_map)
+		"map_beach":
 			target = btn_app_map
 			_keep_tutorial_app_button_normal(btn_app_alipay)
 			_keep_tutorial_app_button_normal(btn_app_wechat)
@@ -788,6 +814,112 @@ func _finish_first_week_app_tutorial() -> void:
 	_clear_alipay_tutorial_callouts()
 	_stop_phone_focus_pulse()
 	_sync_phone_home_apps(true)
+
+
+func on_first_week_location_finished(location: String) -> void:
+	if location != "overtime":
+		return
+	if not _is_first_week_app_tutorial_context():
+		return
+	if _first_week_overtime_tutorial_done:
+		return
+	_first_week_overtime_tutorial_done = true
+	_first_week_app_gate = "wechat"
+	_sync_phone_home_apps(true)
+	_refresh_first_week_app_focus()
+	_show_tutorial_dialog([
+		"加班回来了，钱是多了一点，情绪也是真的掉了。",
+		"先打开[color=6BB7FF]微信[/color]看看吧。家人和朋友的信息，也别完全错过。",
+	])
+
+
+func on_wechat_closed() -> void:
+	if _first_week_app_gate != "wechat":
+		return
+	if not _is_first_week_app_tutorial_context():
+		return
+	if _first_week_wechat_tutorial_done:
+		return
+	_first_week_wechat_tutorial_done = true
+	_first_week_beach_unlocked = true
+	_first_week_app_gate = ""
+	_stop_phone_focus_pulse()
+	_sync_phone_home_apps(true)
+	_show_first_week_stats_tutorial()
+
+
+func is_first_week_beach_route_unlocked() -> bool:
+	return _is_first_week_app_tutorial_context() and _first_week_beach_unlocked
+
+
+func should_pulse_first_week_park_card() -> bool:
+	return is_first_week_beach_route_unlocked() and _first_week_app_gate == "map_beach"
+
+
+func _show_first_week_stats_tutorial() -> void:
+	_start_stats_panel_focus_flash()
+	if is_instance_valid(left_dialog_box):
+		left_dialog_box.z_index = 220
+	_hide_phone_dim_overlay()
+	galgame.show_galgame_dialog([
+		"加班回来，情绪很不好。点开地图，去海边散散心可能是个不错的选择。",
+		"[color=6BB7FF]（加班会减少情绪值，请注意自己的情绪，数值过低会导致严重的后果。）[/color]",
+		"[color=6BB7FF]（在这个快节奏的城市里，记得好好照顾自己的心理健康。）[/color]",
+		"[color=6BB7FF]（关于自己的所有属性数值，可以在右侧手机的数值面板中看到。手机里正在发光的那个框框就是。）[/color]",
+		"都了解的话，可以出发去海边散心啦。",
+	], func() -> void:
+		_first_week_app_gate = "map_beach"
+		_sync_phone_home_apps(true)
+		_refresh_first_week_app_focus()
+	)
+
+
+func _start_stats_panel_focus_flash() -> void:
+	if _stats_panel_focus_tween and _stats_panel_focus_tween.is_valid():
+		_stats_panel_focus_tween.kill()
+	_stats_panel_focus_tween = null
+	if is_instance_valid(_stats_panel_focus_halo):
+		_stats_panel_focus_halo.queue_free()
+	_stats_panel_focus_halo = null
+	var target := find_child("Widget_Profile", true, false) as Control
+	if not is_instance_valid(target):
+		target = find_child("StatsGrid", true, false) as Control
+	var phone_screen := find_child("PhoneScreen", true, false) as Control
+	if not is_instance_valid(target) or not is_instance_valid(phone_screen):
+		return
+	var halo := Panel.new()
+	halo.name = "StatsPanelTutorialHalo"
+	halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	halo.z_index = 210
+	var local_pos := phone_screen.get_global_transform().affine_inverse() * target.get_global_rect().position
+	halo.position = local_pos - Vector2(8, 8)
+	halo.size = target.size + Vector2(16, 16)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.35, 0.55, 0.0)
+	style.border_color = Color(0.42, 0.76, 1.0, 0.92)
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(14)
+	style.shadow_color = Color(0.25, 0.65, 1.0, 0.55)
+	style.shadow_size = 8
+	style.shadow_offset = Vector2.ZERO
+	halo.add_theme_stylebox_override("panel", style)
+	halo.modulate.a = 0.0
+	phone_screen.add_child(halo)
+	_stats_panel_focus_halo = halo
+	var tween := create_tween().bind_node(halo)
+	for i in range(2):
+		tween.tween_property(halo, "modulate:a", 1.0, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.parallel().tween_property(style, "shadow_size", 22, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(halo, "modulate:a", 0.18, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.parallel().tween_property(style, "shadow_size", 8, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(halo, "modulate:a", 0.0, 0.20)
+	tween.tween_callback(func() -> void:
+		if is_instance_valid(halo):
+			halo.queue_free()
+		if _stats_panel_focus_halo == halo:
+			_stats_panel_focus_halo = null
+	)
+	_stats_panel_focus_tween = tween
 
 
 func _process(_delta: float) -> void:

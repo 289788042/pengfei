@@ -620,6 +620,8 @@ func _on_close_wechat() -> void:
 		return
 	_set_main_wechat_panel_visible(true)
 	_set_layer_visible(_main.wechat_menu, false)
+	if is_instance_valid(_main) and _main.has_method("on_wechat_closed"):
+		_main.on_wechat_closed()
 
 
 # ==================== 微信 Tab 切换 ====================
