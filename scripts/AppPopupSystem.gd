@@ -34,15 +34,6 @@ var btn_emo_bag: Button
 var btn_emo_sleep: Button
 
 var _heavy_app_layers: Array = []
-# 深夜失眠：当前抽中的冲动消费选项
-var _pending_impulse: Dictionary = {}
-# 冲动消费选项池
-var _impulse_pool: Array = [
-	{"text": "被直播间洗脑，分期拿下轻奢包包 (花呗+5000, 情绪+40)", "huabei": 5000, "sanity": 40, "charm": 0, "desc": "深夜失眠，被直播间洗脑分期买了轻奢包"},
-	{"text": "深夜emo，疯狂网购一堆无用盲盒 (花呗+800, 情绪+15)", "huabei": 800, "sanity": 15, "charm": 0, "desc": "深夜emo，疯狂网购了一堆无用盲盒"},
-	{"text": "刷到前任秀恩爱，怒点昂贵医美套餐 (花呗+10000, 颜值+10, 情绪+30)", "huabei": 10000, "sanity": 30, "charm": 10, "desc": "深夜刷到前任秀恩爱，怒点昂贵医美套餐"},
-]
-# 滑动交友：随机名字池
 var _dating_names: Array = [
 	"王大壮", "李富贵", "张天宇", "赵子龙", "刘星",
 	"陈浩南", "周杰", "吴彦组", "孙小宝", "马赛克",
@@ -78,6 +69,7 @@ var _location_runner: RefCounted
 var _map_app: RefCounted
 var _career_app: RefCounted
 var _diary_app: RefCounted
+var _consumer_app: RefCounted
 
 
 # ==================== 初始化 ====================
@@ -117,6 +109,7 @@ func init(main: Node) -> void:
 	_location_runner = _new_location_runner()
 	_map_app = _new_map_app()
 	_career_app = _new_career_app()
+	_consumer_app = _new_consumer_app()
 
 
 func _new_action_results() -> RefCounted:
@@ -167,6 +160,12 @@ func _new_diary_app() -> RefCounted:
 	controller.init(_main, self)
 	return controller
 
+
+func _new_consumer_app() -> RefCounted:
+	var script := ResourceLoader.load("res://scripts/ConsumerAppController.gd", "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	var controller := script.new() as RefCounted
+	controller.init(_main, self)
+	return controller
 
 # ==================== 辅助方法 ====================
 
@@ -448,38 +447,12 @@ func _on_app_diary() -> void:
 
 
 func _on_app_baotao() -> void:
-	if not _can_open_phone_app():
-		return
-	if not _ensure_app_unlocked("baotao"):
-		return
-	_close_all_menus()
-	for child in baotao_menu.get_children():
-		child.queue_free()
-	var debt_info := "花呗欠款：%d 元" % (GameManager.huabei_debt + GameManager.huabei_installment_debt)
-	var items := [
-		{"name": "大牌护肤套装", "icon_color": Color(0.95, 0.45, 0.6), "cost": "800 元 | +5颜值 +5情绪", "action": _on_bt_skincare, "close_on_action": false},
-		{"name": "快时尚穿搭", "icon_color": Color(0.3, 0.7, 0.9), "cost": "1500 元 | +8颜值 +10情绪", "action": _on_bt_fashion, "close_on_action": false},
-	]
-	_build_app_overlay(baotao_menu, "宝淘", Color(0.95, 0.35, 0.35, 1), debt_info, items)
-	_set_layer_visible(baotao_menu, true)
-
+	if _consumer_app and _consumer_app.has_method("open_baotao"):
+		_consumer_app.open_baotao()
 
 func _on_app_tuanmei() -> void:
-	if not _can_open_phone_app():
-		return
-	if not _ensure_app_unlocked("tuanmei"):
-		return
-	_close_all_menus()
-	for child in tuanmei_menu.get_children():
-		child.queue_free()
-	var debt_info := "花呗欠款：%d 元" % (GameManager.huabei_debt + GameManager.huabei_installment_debt)
-	var items := [
-		{"name": "水光针+热玛吉", "icon_color": Color(0.8, 0.4, 0.8), "cost": "6000 元 | +15颜值 | 需颜值<30", "action": _on_tm_injection, "close_on_action": false},
-		{"name": "全脸微调手术", "icon_color": Color(0.6, 0.2, 0.8), "cost": "20000 元 | +30颜值 | 需颜值<20", "action": _on_tm_surgery, "close_on_action": false},
-	]
-	_build_app_overlay(tuanmei_menu, "团美医美", Color(0.6, 0.3, 0.8, 1), debt_info, items)
-	_set_layer_visible(tuanmei_menu, true)
-
+	if _consumer_app and _consumer_app.has_method("open_tuanmei"):
+		_consumer_app.open_tuanmei()
 
 func _on_app_zodiac() -> void:
 	if not _can_open_phone_app():
@@ -492,38 +465,8 @@ func _on_app_zodiac() -> void:
 
 
 func _on_app_house() -> void:
-	if not _can_open_phone_app():
-		return
-	if not _ensure_app_unlocked("house"):
-		return
-	_close_all_menus()
-	for child in house_menu.get_children():
-		child.queue_free()
-	var housing_names: Array = ["城中村单间", "精装一居室", "CBD大平层"]
-	var house_name: String = housing_names[GameManager.housing_level]
-	var status := "当前住房：%s (月租 %d) | 押金=2个月房租" % [house_name, GameManager.base_rent]
-	var deposits: Array = [3000, 8000, 24000]
-	var rents: Array = [1500, 4000, 12000]
-	var items := []
-	for i in range(3):
-		var is_current: bool = (GameManager.housing_level == i)
-		var deposit: int = deposits[i]
-		var can_afford: bool = GameManager.money >= deposit
-		var item := {
-			"name": housing_names[i],
-			"icon_color": Color(0.2 + i * 0.3, 0.6, 0.9 - i * 0.3),
-			"cost": "月租 %d | 押金 %d" % [rents[i], deposit],
-			"current": is_current,
-		}
-		if not is_current and not can_afford:
-			item["locked"] = true
-			item["lock_reason"] = "押金不足（需 %d，当前余额 %d）" % [deposit, GameManager.money]
-		elif not is_current:
-			item["action"] = [_on_house_village, _on_house_apartment, _on_house_luxury][i]
-		items.append(item)
-	_build_app_overlay(house_menu, "贝壳找房", Color(0.15, 0.6, 0.7, 1), status, items)
-	_set_layer_visible(house_menu, true)
-
+	if _consumer_app and _consumer_app.has_method("open_house"):
+		_consumer_app.open_house()
 
 func _on_app_dating() -> void:
 	if not _can_open_phone_app():
@@ -1002,38 +945,22 @@ func _unlock_work_buttons() -> void:
 # ==================== 宝淘App（消费陷阱）====================
 
 func _on_bt_skincare() -> void:
-	main_node().alipay.request_payment(800, "大牌护肤套装", "消费", func() -> void:
-		var payment_changes: Dictionary = main_node().alipay.get_last_payment_changes()
-		_show_story_then_apply_changes("大牌护肤套装到货。你对着镜子认真涂完一整套流程，皮肤状态确实亮了一点。", {"charm": 5, "sanity": 5}, payment_changes)
-	)
+	if _consumer_app and _consumer_app.has_method("on_bt_skincare"):
+		_consumer_app.on_bt_skincare()
 
 func _on_bt_fashion() -> void:
-	main_node().alipay.request_payment(1500, "快时尚穿搭", "消费", func() -> void:
-		var payment_changes: Dictionary = main_node().alipay.get_last_payment_changes()
-		_show_story_then_apply_changes("新衣服很快到了。你换上之后拍了几张照，虽然知道它不便宜，但心情确实轻了一点。", {"charm": 8, "sanity": 10}, payment_changes)
-	)
-
+	if _consumer_app and _consumer_app.has_method("on_bt_fashion"):
+		_consumer_app.on_bt_fashion()
 
 # ==================== 团美医美App（消费陷阱）====================
 
 func _on_tm_injection() -> void:
-	if GameManager.charm >= 30:
-		main_node().show_message("你颜值已经>=30了，医生说不需要做这个项目~")
-		return
-	main_node().alipay.request_payment(6000, "水光针热玛吉", "消费", func() -> void:
-		var payment_changes: Dictionary = main_node().alipay.get_last_payment_changes()
-		_show_story_then_apply_changes("项目做完后，你盯着镜子看了很久。变化很明显，账单也很明显。", {"charm": 15, "sanity": 20}, payment_changes)
-	)
+	if _consumer_app and _consumer_app.has_method("on_tm_injection"):
+		_consumer_app.on_tm_injection()
 
 func _on_tm_surgery() -> void:
-	if GameManager.charm >= 20:
-		main_node().show_message("你颜值已经>=20了，做全脸微调太浪费钱了！")
-		return
-	main_node().alipay.request_payment(20000, "全脸微调手术", "消费", func() -> void:
-		var payment_changes: Dictionary = main_node().alipay.get_last_payment_changes()
-		_show_story_then_apply_changes("恢复期比你想象中难熬。拆线那天，你看着镜子里的自己，熟悉又陌生。", {"charm": 30, "eq": -10, "sanity": 30}, payment_changes)
-	)
-
+	if _consumer_app and _consumer_app.has_method("on_tm_surgery"):
+		_consumer_app.on_tm_surgery()
 
 # ==================== 星座App ====================
 
@@ -1044,35 +971,16 @@ func _on_close_zodiac() -> void:
 # ==================== 贝壳找房App ====================
 
 func _on_house_village() -> void:
-	if GameManager.money < 3000:
-		main_node().show_message("余额不足，城中村押金需要 3000 元。")
-		return
-	_show_story_then_apply_changes("你重新签了城中村的小房间。空间不大，但至少账单还算能喘气。下月起房租 1500。", {"money": -3000}, {}, func() -> void:
-		GameManager.base_rent = 1500
-		GameManager.housing_level = 0
-		GameManager.housing_buff_sanity = 0
-	)
+	if _consumer_app and _consumer_app.has_method("on_house_village"):
+		_consumer_app.on_house_village()
 
 func _on_house_apartment() -> void:
-	if GameManager.money < 8000:
-		main_node().show_message("余额不足，精装公寓押金需要 8000 元。")
-		return
-	_show_story_then_apply_changes("精装公寓的灯光很柔和，电梯也不再有怪味。你换上拖鞋，第一次觉得回家像回家。下月起房租 4000。", {"money": -8000, "charm": 5}, {}, func() -> void:
-		GameManager.base_rent = 4000
-		GameManager.housing_level = 1
-		GameManager.housing_buff_sanity = 10
-	)
+	if _consumer_app and _consumer_app.has_method("on_house_apartment"):
+		_consumer_app.on_house_apartment()
 
 func _on_house_luxury() -> void:
-	if GameManager.money < 24000:
-		main_node().show_message("余额不足，CBD大平层押金需要 24000 元。")
-		return
-	_show_story_then_apply_changes("CBD 大平层的落地窗外就是夜景。你站在窗边看了很久，知道自己正在买一种很贵的体面。下月起房租 12000。", {"money": -24000, "charm": 10}, {}, func() -> void:
-		GameManager.base_rent = 12000
-		GameManager.housing_level = 2
-		GameManager.housing_buff_sanity = 25
-	)
-
+	if _consumer_app and _consumer_app.has_method("on_house_luxury"):
+		_consumer_app.on_house_luxury()
 
 # ==================== 滑动交友App ====================
 
@@ -1201,32 +1109,13 @@ func _refresh_diary_ui() -> void:
 
 ## 进入深夜失眠弹窗（随机抽取一种冲动消费作为诱惑）
 func _enter_late_night() -> void:
-	_pending_impulse = _impulse_pool[randi() % _impulse_pool.size()]
-	btn_emo_bag.text = _pending_impulse["text"]
-	btn_emo_sleep.text = "忍住诱惑，强迫自己睡觉 (颜值-2 情绪-10 精力-20)"
-	_set_layer_visible(late_night_popup, true)
+	if _consumer_app and _consumer_app.has_method("enter_late_night"):
+		_consumer_app.enter_late_night()
 
-## 按钮 A：冲动消费换取多巴胺
 func _on_emo_bag() -> void:
-	var imp: Dictionary = _pending_impulse
-	var changes := {"credit_debt": int(imp["huabei"])}
-	if int(imp["sanity"]) > 0:
-		changes["sanity"] = int(imp["sanity"])
-	if int(imp["charm"]) > 0:
-		changes["charm"] = int(imp["charm"])
-	GameManager.add_activity("消费", "深夜失眠，冲动消费换取了短暂的安慰。")
-	_set_layer_visible(late_night_popup, false)
-	_show_story_then_apply_changes("下单了。屏幕上弹出支付成功的提示，短暂的快乐之后，是更深的空虚。", changes, {}, func() -> void:
-		GameManager.add_finance(-imp["huabei"], imp["desc"], true, "消费")
-		main_node()._proceed_next_week()
-	)
+	if _consumer_app and _consumer_app.has_method("on_emo_bag"):
+		_consumer_app.on_emo_bag()
 
-## 按钮 B：硬抗！强行闭眼到天亮
 func _on_emo_sleep() -> void:
-	var changes := {"charm": -2, "sanity": -10, "energy": -20}
-	GameManager.add_activity("日常", "失眠了一整夜，第二天感觉身体被掏空。")
-	_set_layer_visible(late_night_popup, false)
-	if not GameManager.game_finished:
-		_show_story_then_apply_changes("你辗转反侧到天亮。窗外开始发白的时候，整个人像被抽空了一样。", changes, {}, func() -> void:
-			main_node()._proceed_next_week()
-		)
+	if _consumer_app and _consumer_app.has_method("on_emo_sleep"):
+		_consumer_app.on_emo_sleep()

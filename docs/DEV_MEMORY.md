@@ -1014,3 +1014,44 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 测试态设置 `turn_count=5`、周末并写入 3 条活动记录后打开日记：`visible=true`，日志节点数为 3。
 - 切换到“消费”筛选后：日志节点数即时变为 1，包含“通勤衬衫”，不包含“职业复盘”。
 - Godot editor errors 最终为 0。
+
+## 28. 2026-06-20 追加：ConsumerAppController 接管消费类 App
+
+本轮继续执行“先清架构，不再堆小补丁”的路线，把 `AppPopupSystem.gd` 里的宝淘、团美医美、贝壳找房和深夜失眠冲动消费迁出到独立控制器。
+
+新增脚本：
+- `scripts/ConsumerAppController.gd`
+  - 接管宝淘打开、商品列表渲染、护肤/穿搭支付入口。
+  - 接管团美医美打开、医美项目列表渲染、颜值门槛和支付入口。
+  - 接管贝壳找房打开、住房列表渲染、押金门槛、换房结果和房租状态写入。
+  - 接管深夜失眠随机诱惑、冲动消费/忍住睡觉两个选择、活动日志与周推进。
+  - 继续复用 `AppPopupSystem._build_app_overlay()`、`ActionResultController` 的叙事结算入口和 `AlipaySystem.request_payment()`，不重复造 UI/支付/结算链路。
+  - 清理菜单 child 时使用 `remove_child()` 后 `queue_free()`，避免同帧重复打开 App 时旧内容和新内容叠在一起。
+
+兼容边界：
+- `AppPopupSystem.gd` 保留旧入口函数：
+  - `_on_app_baotao()`、`_on_app_tuanmei()`、`_on_app_house()`
+  - `_on_bt_skincare()`、`_on_bt_fashion()`
+  - `_on_tm_injection()`、`_on_tm_surgery()`
+  - `_on_house_village()`、`_on_house_apartment()`、`_on_house_luxury()`
+  - `_enter_late_night()`、`_on_emo_bag()`、`_on_emo_sleep()`
+- 这些旧入口现在只转发到 `ConsumerAppController`，所以 `MainGame.gd` 现有按钮连接、`WeekFlowController` 的深夜入口和旧调试脚本不会断。
+- App 解锁仍走 `GameManager.is_app_unlocked()`；手机教程/阻塞对话仍走 `MainGame.can_open_phone_app()`，拆分不会绕过新手教程门控。
+
+当前边界：
+- 消费类 App 以后归 `ConsumerAppController`。新增消费陷阱、消费欲望、换房、深夜冲动消费，不要再写回 `AppPopupSystem.gd`。
+- `AppPopupSystem.gd` 仍保留通用 App overlay 构建、层级显示、重置视觉状态、通用关闭和兼容入口。
+- 支付宝本体、微信本体仍在各自系统里，消费类 App 只负责调用支付和承接结算，不直接改支付宝 UI。
+
+验证结果：
+- Godot 编译：`AppPopupSystem.gd`、`ConsumerAppController.gd` 均通过。
+- Godot 项目 headless 加载通过，无脚本编译错误。
+- 运行态实例化：`app._consumer_app != null`。
+- 测试态设置 `turn_count=17`、周末、清除阻塞对话后：
+  - 宝淘打开：`visible=true`，`children=1`。
+  - 团美打开：`visible=true`，`children=1`。
+  - 贝壳打开：`visible=true`，`children=1`。
+  - 深夜失眠弹窗打开：`visible=true`，冲动消费按钮文字正常。
+- 连续两次打开宝淘后 `child_count=1`，无叠层。
+- 触发宝淘护肤支付入口后 `payment_popup.visible=true`，旧按钮动作到新控制器再到支付宝的链路未断。
+- MCP 日志里保留了一条早先测试脚本误调用不存在方法和一次截图目录不存在造成的工具噪音；后续脚本编译与运行态验收均正常。
