@@ -1120,3 +1120,32 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 划走：精力从 100 到 95，卡片仍有有效内容。
 - 喜欢：进入叙事/结算链；点掉结算后精力从 100 到 95，卡片刷新且不崩。
 - MCP 日志里留有一条临时验收脚本 parse error 的 debugger warning，项目脚本编译和 headless 加载正常。
+
+## 31. 2026-06-20 追加：PhoneAppOverlayBuilder 接管通用手机列表覆盖层
+
+本轮继续瘦身 `AppPopupSystem.gd`。在消费类 App 和职业 App 已经拆出去之后，它们仍然共同依赖 `_build_app_overlay()` 生成手机里的列表型覆盖层；如果继续把 UI 构建代码留在 `AppPopupSystem`，后续每个 App 都会把这个大文件重新拖胖。因此本轮把通用列表覆盖层单独拆成构建器。
+
+新增脚本：
+- `scripts/PhoneAppOverlayBuilder.gd`
+  - 接管通用手机列表弹层的绘制：背景遮罩、外层圆角面板、顶栏、关闭按钮、副标题、滚动区、列表行、当前/锁定/可点击状态。
+  - 接管列表行点击绑定；保留 `close_on_action` 兼容逻辑，默认点击后关闭当前 App 层再执行 action。
+  - 通过 `AppPopupSystem` 提供的 `_setup_phone_layer()`、`_set_layer_visible()` 做层级初始化和关闭，不自己管理全局 App 层。
+
+兼容边界：
+- `AppPopupSystem.gd` 新增 `_overlay_builder`，初始化时加载 `PhoneAppOverlayBuilder.gd`。
+- `AppPopupSystem._build_app_overlay()` 保留为兼容薄壳，只转发到新构建器。
+- `ConsumerAppController.gd`、`CareerAppController.gd` 继续调用旧 API，不需要跟着改名，因此宝淘、团美、租房、BOSS 直聘这些旧入口不被打断。
+
+当前边界：
+- `PhoneAppOverlayBuilder` 只负责“列表型手机覆盖层”的共用 UI，不负责具体 App 业务、不负责支付、不负责数值结算。
+- 支付宝、微信、日记这种已经是大屏或重系统的 App，不走这个通用列表构建器。
+- 后续如果要统一所有手机 App 的开关、压暗、焦点、返回键层级，应该继续从 `AppPopupSystem` 中拆出 `PhoneLayerController` 或类似模块，而不是把业务逻辑写进 Overlay Builder。
+
+验证结果：
+- Godot 编译：`PhoneAppOverlayBuilder.gd`、`AppPopupSystem.gd`、`ConsumerAppController.gd`、`CareerAppController.gd` 均通过。
+- Godot headless 项目加载通过，无脚本编译错误。
+- 运行态确认 `_overlay_builder != null`。
+- 打开宝淘：`baotao_menu.visible=true`，列表面板 child 数为 1。
+- 打开团美：`tuanmei_menu.visible=true`，列表面板 child 数为 1。
+- 打开贝壳租房：`house_menu.visible=true`，列表面板 child 数为 1。
+- 打开 BOSS 直聘：`job_menu.visible=true`，列表面板 child 数为 1。
