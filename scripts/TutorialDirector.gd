@@ -16,6 +16,7 @@ var _beach_end_hint_done: bool = false
 var _stats_page_flash_started: bool = false
 var _second_week_map_hint_shown: bool = false
 var _second_week_map_hint_active: bool = false
+var _early_map_hint_shown_weeks: Dictionary = {}
 
 
 func init(main: Node) -> void:
@@ -237,21 +238,29 @@ func on_galgame_page_started(text: String) -> void:
 
 
 func maybe_show_second_week_map_hint() -> void:
-	if _second_week_map_hint_shown:
+	var key := "%d:%d" % [GameManager.month, GameManager.week_in_month]
+	if _early_map_hint_shown_weeks.has(key):
 		return
 	if _main.get("current_phase") != _main.Phase.WEEKEND:
 		return
-	if GameManager.month != 1 or GameManager.week_in_month != 2:
+	if GameManager.month != 1 or not [2, 3].has(GameManager.week_in_month):
 		return
 	if _main.call("has_blocking_dialog") or _main.call("_has_active_blocking_layer"):
 		_main.call_deferred("_maybe_show_second_week_map_hint")
 		return
+	_early_map_hint_shown_weeks[key] = true
 	_second_week_map_hint_shown = true
 	_second_week_map_hint_active = true
 	_main.call("_sync_phone_home_apps", true)
 	var map_btn := _main.get("btn_app_map") as Button
 	if is_instance_valid(map_btn):
 		_main.call("_start_phone_focus_pulse", map_btn)
+	if GameManager.week_in_month == 3:
+		_main.call("_show_tutorial_dialog", [
+			"又到周末了。",
+			"地图里开放了图书馆、咖啡厅和健身房。它们不会立刻让账单消失，但会慢慢改变你能去哪里、能遇见谁。",
+		])
+		return
 	_main.call("_show_tutorial_dialog", [
 		"新的周末到了。",
 		"高德地图里有新地点解锁了，可以打开看看。这个周末不一定只剩加班，也可以去更日常的地方喘口气。",

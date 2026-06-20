@@ -185,6 +185,8 @@ var label_early_goal: Label
 var _skip_week_confirm: bool = false
 var _weekday_panel_waiting_for_story: bool = false
 var _weekday_panel_clear_frames: int = 0
+var _pending_deferred_result_dialogs: int = 0
+var _pending_app_unlock_messages: Array[String] = []
 var _phone_dim: ColorRect = null
 var _runtime_disposed: bool = false
 var _transition_token: int = 0
@@ -1020,6 +1022,7 @@ func sync_ui_state() -> void:
 
 
 func _force_clear_dialog_overlay() -> void:
+	_pending_deferred_result_dialogs = 0
 	if ui_focus and ui_focus.has_method("force_clear_dialog_overlay"):
 		ui_focus.force_clear_dialog_overlay()
 		return
@@ -1030,6 +1033,8 @@ func _force_clear_dialog_overlay() -> void:
 
 
 func has_blocking_dialog() -> bool:
+	if _pending_deferred_result_dialogs > 0:
+		return true
 	if galgame and galgame.has_method("is_visible") and galgame.is_visible():
 		return true
 	if is_instance_valid(left_dialog_box) and left_dialog_box.visible and left_dialog_box.modulate.a > 0.05:
@@ -1171,7 +1176,12 @@ func show_result_text(text: String, on_complete: Callable = Callable()) -> void:
 		if on_complete.is_valid():
 			on_complete.call()
 		return
-	galgame.call_deferred("show_galgame_dialog", [clean_text], on_complete)
+	_pending_deferred_result_dialogs += 1
+	var wrapped_complete := func() -> void:
+		_pending_deferred_result_dialogs = maxi(_pending_deferred_result_dialogs - 1, 0)
+		if on_complete.is_valid():
+			on_complete.call()
+	galgame.call_deferred("show_galgame_dialog", [clean_text], wrapped_complete)
 
 
 func show_stat_result(changes: Dictionary, on_complete: Callable = Callable(), title: String = "【结算】") -> void:
@@ -1655,12 +1665,33 @@ func _maybe_show_second_week_map_hint() -> void:
 
 
 func _enable_app_grid() -> void:
+	_queue_new_app_unlock_messages()
 	_sync_phone_home_apps(true)
 	_refresh_action_tooltips()
-	# 检查新解锁的APP并通知
+	call_deferred("_maybe_show_pending_app_unlock_message")
+
+
+func _queue_new_app_unlock_messages() -> void:
 	var new_unlocks := GameManager.get_new_unlocks()
-	if new_unlocks.size() > 0:
-		galgame.show_message("手机上新装了一个APP...\n" + new_unlocks[0], true)
+	for message in new_unlocks:
+		_pending_app_unlock_messages.append(str(message))
+
+
+func _maybe_show_pending_app_unlock_message() -> void:
+	if _pending_app_unlock_messages.is_empty():
+		return
+	if current_phase != Phase.WEEKEND:
+		return
+	if has_blocking_dialog() or _has_active_blocking_layer():
+		call_deferred("_maybe_show_pending_app_unlock_message")
+		return
+	var unlock_text: String = str(_pending_app_unlock_messages.pop_front())
+	show_galgame_dialog([
+		"手机里多了一个新入口。",
+		unlock_text,
+	], func() -> void:
+		call_deferred("_maybe_show_pending_app_unlock_message")
+	)
 
 
 func _sync_phone_home_apps(interactable: bool) -> void:
@@ -1684,7 +1715,8 @@ func _set_phone_app_state(button: Button, app_id: String, interactable: bool) ->
 	if not button.has_meta("phone_app_base_text"):
 		button.set_meta("phone_app_base_text", button.text)
 	var unlocked := app_id == "" or GameManager.is_app_unlocked(app_id)
-	if not unlocked:
+	var announced := app_id == "" or GameManager.has_announced_app_unlock(app_id)
+	if not unlocked or not announced:
 		button.visible = false
 		button.disabled = true
 		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2201,62 +2233,54 @@ func _get_month_end_story_summary(preview: Dictionary) -> String:
 
 func _build_month_end_bill_text(preview: Dictionary) -> String:
 	var lines: Array = []
-	var story_summary := _get_month_end_story_summary(preview)
-	if story_summary != "":
-		lines.append(story_summary)
-		lines.append("")
-	lines.append("【本月现金流】")
-	lines.append("当前现金：%d" % int(preview.get("current_cash", 0)))
-	lines.append("本月工资：+%d" % int(preview.get("salary", 0)))
-	lines.append("")
-	lines.append("【固定扣款】")
-	lines.append("房租：-%d" % int(preview.get("rent", 0)))
 	var food_cost: int = int(preview.get("food", 0))
-	lines.append("餐饮账单：-%d" % food_cost if food_cost > 0 else "餐饮账单：0")
-	if int(preview.get("installment_due", 0)) > 0:
-		lines.append("花呗分期：-%d（当前剩余 %d 期）" % [
-			int(preview.get("installment_due", 0)),
-			int(preview.get("installment_months_left", 0)),
-		])
-	if int(preview.get("huabei_min", 0)) > 0:
-		if int(preview.get("huabei_paid", 0)) < int(preview.get("huabei_min", 0)):
-			var huabei_paid: int = int(preview.get("huabei_paid", 0))
-			var huabei_paid_text: String = "-%d" % huabei_paid if huabei_paid > 0 else "0"
-			lines.append("花呗最低应还：-%d（预计实还：%s）" % [
-				int(preview.get("huabei_min", 0)),
-				huabei_paid_text,
-			])
+	var installment_due: int = int(preview.get("installment_due", 0))
+	var huabei_min: int = int(preview.get("huabei_min", 0))
+	var huabei_paid: int = int(preview.get("huabei_paid", 0))
+	var fixed_parts: Array = [
+		"房租 %d" % int(preview.get("rent", 0)),
+		"餐饮 %d" % food_cost,
+	]
+	if installment_due > 0:
+		fixed_parts.append("分期 %d" % installment_due)
+	if huabei_min > 0:
+		if huabei_paid < huabei_min:
+			fixed_parts.append("花呗最低 %d（只能还 %d）" % [huabei_min, huabei_paid])
 		else:
-			lines.append("花呗最低还款：-%d" % int(preview.get("huabei_min", 0)))
-	lines.append("")
-	lines.append("【结算预估】")
-	lines.append("应付账单合计：-%d" % int(preview.get("mandatory_cost", 0)))
-	lines.append("预计实际扣款：-%d" % int(preview.get("actual_cash_cost", 0)))
-	lines.append("结算后现金：%d" % int(preview.get("cash_after_all", 0)))
+			fixed_parts.append("花呗最低 %d" % huabei_min)
+
+	lines.append("现金 %d + 工资 %d" % [
+		int(preview.get("current_cash", 0)),
+		int(preview.get("salary", 0)),
+	])
+	lines.append("本月扣款：%s" % " / ".join(fixed_parts))
+	lines.append("实际扣款 %d，结算后现金 %d，结算后总债 %d。" % [
+		int(preview.get("actual_cash_cost", 0)),
+		int(preview.get("cash_after_all", 0)),
+		int(preview.get("total_debt_after", 0)),
+	])
 	if int(preview.get("huabei_interest", 0)) > 0:
-		lines.append("未还花呗滚入利息：+%d" % int(preview.get("huabei_interest", 0)))
-	lines.append("结算后总债务：%d" % int(preview.get("total_debt_after", 0)))
+		lines.append("未还花呗会滚入利息：+%d。" % int(preview.get("huabei_interest", 0)))
 	if GameManager.invest_safe + GameManager.invest_risk > 0:
-		lines.append("理财资产不自动变现：%d" % (GameManager.invest_safe + GameManager.invest_risk))
+		lines.append("理财资产 %d 不会自动变现。" % (GameManager.invest_safe + GameManager.invest_risk))
+
 	var sanity_penalty: int = int(preview.get("min_payment_penalty", 0)) + int(preview.get("negative_cash_penalty", 0))
 	if sanity_penalty > 0:
-		lines.append("")
-		lines.append("【情绪压力】")
+		var sanity_lines: Array = []
 		if int(preview.get("min_payment_penalty", 0)) > 0:
-			lines.append("最低还款失败：情绪-%d" % int(preview.get("min_payment_penalty", 0)))
+			sanity_lines.append("最低还款失败")
 		if int(preview.get("negative_cash_penalty", 0)) > 0:
-			lines.append("现金为负：情绪-%d" % int(preview.get("negative_cash_penalty", 0)))
-		lines.append("预计情绪：%d -> %d" % [
+			sanity_lines.append("现金为负")
+		lines.append("情绪压力：%s，情绪 %d -> %d。" % [
+			"、".join(sanity_lines),
 			int(preview.get("sanity_before_settlement", GameManager.sanity)),
 			int(preview.get("sanity_after_settlement", GameManager.sanity)),
 		])
 		if bool(preview.get("game_over_predicted", false)):
-			lines.append("警告：确认结算后会直接进入 Game Over。")
-			lines.append("原因：%s" % str(preview.get("game_over_reason", "情绪归零")))
+			lines.append("确认后会直接进入 Game Over：%s。" % str(preview.get("game_over_reason", "情绪归零")))
 
 	var pressure := _get_pressure_state(preview)
-	lines.append("")
-	lines.append("【风险提示】%s：%s" % [str(pressure.get("name", "未知")), str(pressure.get("hint", ""))])
+	lines.append("%s：%s" % [str(pressure.get("name", "未知")), str(pressure.get("hint", ""))])
 	if bool(preview.get("min_payment_failed", false)):
 		lines.append("注意：当前现金不足以覆盖花呗最低还款。")
 	elif int(preview.get("cash_after_all", 0)) < 0:
@@ -2264,12 +2288,180 @@ func _build_month_end_bill_text(preview: Dictionary) -> String:
 	return "\n".join(lines)
 
 
+func _get_month_end_verdict(preview: Dictionary) -> Dictionary:
+	var cash_after := int(preview.get("cash_after_all", 0))
+	var total_debt_after := int(preview.get("total_debt_after", 0))
+	var sanity_after := int(preview.get("sanity_after_settlement", GameManager.sanity))
+	if bool(preview.get("game_over_predicted", false)):
+		return {
+			"title": "这个月撑不住了",
+			"subtitle": "确认结算后会直接进入崩溃判定。你不是输在某一笔钱，是所有透支一起到了。",
+			"color": Color(1.0, 0.24, 0.22, 1),
+		}
+	if bool(preview.get("min_payment_failed", false)):
+		return {
+			"title": "花呗最低还款没够",
+			"subtitle": "账单已经压到情绪上了。下个月第一目标不是体面，是先把现金流救回来。",
+			"color": Color(1.0, 0.43, 0.28, 1),
+		}
+	if cash_after < 0:
+		return {
+			"title": "现金断了",
+			"subtitle": "工资到账也没填平这个月的坑。接下来要优先补现金，否则风险会继续滚大。",
+			"color": Color(1.0, 0.48, 0.28, 1),
+		}
+	if cash_after < 800 or sanity_after < 45:
+		return {
+			"title": "勉强撑过这个月",
+			"subtitle": "你还在深圳，但缓冲很薄。下一月要少透支一点，给自己留口气。",
+			"color": Color(1.0, 0.73, 0.24, 1),
+		}
+	if total_debt_after > 0:
+		return {
+			"title": "第一张账单稳住了",
+			"subtitle": "现金没断，但债还在身后。下个月可以开始做一点长期选择。",
+			"color": Color(0.52, 0.86, 0.48, 1),
+		}
+	return {
+		"title": "这个月很稳",
+		"subtitle": "你给自己留出了余地。城市没有变温柔，但你开始摸到节奏了。",
+		"color": Color(0.42, 0.94, 0.62, 1),
+	}
+
+
+func _format_month_end_money(value: int, show_plus: bool = false) -> String:
+	if show_plus and value > 0:
+		return "+%d" % value
+	return "%d" % value
+
+
+func _clear_month_end_dynamic_nodes(vbox: VBoxContainer) -> void:
+	for child in vbox.get_children():
+		if str(child.name).begins_with("MEDynamic"):
+			vbox.remove_child(child)
+			child.queue_free()
+
+
+func _make_month_end_card(bg_color: Color, border_color: Color, min_height: float = 0.0, margin: float = 14.0) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.name = "MEDynamicCard"
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if min_height > 0.0:
+		card.custom_minimum_size = Vector2(0, min_height)
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(margin)
+	style.set_border_width_all(1)
+	style.border_color = border_color
+	card.add_theme_stylebox_override("panel", style)
+	return card
+
+
+func _make_month_end_label(text: String, font_size: int, font_color: Color, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.horizontal_alignment = align
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", font_color)
+	return label
+
+
+func _make_month_end_stat_card(title: String, value: String, note: String, value_color: Color) -> PanelContainer:
+	var card := _make_month_end_card(Color(0.08, 0.09, 0.12, 0.96), Color(0.25, 0.29, 0.34, 0.9), 104.0, 12.0)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 4)
+	card.add_child(box)
+	box.add_child(_make_month_end_label(title, 15, Color(0.68, 0.72, 0.78, 1), HORIZONTAL_ALIGNMENT_CENTER))
+	box.add_child(_make_month_end_label(value, 30, value_color, HORIZONTAL_ALIGNMENT_CENTER))
+	box.add_child(_make_month_end_label(note, 13, Color(0.64, 0.68, 0.74, 1), HORIZONTAL_ALIGNMENT_CENTER))
+	return card
+
+
+func _style_month_end_confirm_button() -> void:
+	if not is_instance_valid(btn_pay_rent):
+		return
+	btn_pay_rent.add_theme_font_size_override("font_size", 18)
+	btn_pay_rent.add_theme_color_override("font_color", Color(0.08, 0.09, 0.10, 1))
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.96, 0.78, 0.28, 1)
+	normal.set_corner_radius_all(8)
+	normal.set_content_margin_all(12)
+	btn_pay_rent.add_theme_stylebox_override("normal", normal)
+	var hover := StyleBoxFlat.new()
+	hover.bg_color = Color(1.0, 0.86, 0.36, 1)
+	hover.set_corner_radius_all(8)
+	hover.set_content_margin_all(12)
+	btn_pay_rent.add_theme_stylebox_override("hover", hover)
+	var pressed := StyleBoxFlat.new()
+	pressed.bg_color = Color(0.82, 0.62, 0.20, 1)
+	pressed.set_corner_radius_all(8)
+	pressed.set_content_margin_all(12)
+	btn_pay_rent.add_theme_stylebox_override("pressed", pressed)
+
+
+func _render_month_end_bill(preview: Dictionary) -> void:
+	var vbox := month_end_popup.find_child("MEVBox", true, false) as VBoxContainer
+	if not vbox:
+		return
+	_clear_month_end_dynamic_nodes(vbox)
+
+	var title_label := month_end_popup.find_child("LabelMETitle", true, false) as Label
+	if title_label:
+		title_label.text = "月底账单"
+		title_label.add_theme_font_size_override("font_size", 30)
+		title_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.42, 1))
+
+	var verdict := _get_month_end_verdict(preview)
+	var verdict_color: Color = verdict.get("color", Color(1, 1, 1, 1))
+	var story_summary := _get_month_end_story_summary(preview)
+	var summary_text := str(verdict.get("subtitle", ""))
+	if story_summary != "":
+		summary_text = story_summary.replace("【第一月主线】", "")
+
+	var summary_card := _make_month_end_card(Color(0.10, 0.12, 0.16, 0.98), verdict_color, 126.0, 16.0)
+	summary_card.name = "MEDynamicSummary"
+	var summary_box := VBoxContainer.new()
+	summary_box.add_theme_constant_override("separation", 7)
+	summary_card.add_child(summary_box)
+	summary_box.add_child(_make_month_end_label(str(verdict.get("title", "")), 26, verdict_color, HORIZONTAL_ALIGNMENT_CENTER))
+	summary_box.add_child(_make_month_end_label(summary_text, 17, Color(0.88, 0.90, 0.92, 1), HORIZONTAL_ALIGNMENT_CENTER))
+	vbox.add_child(summary_card)
+	vbox.move_child(summary_card, 1)
+
+	var cash_after := int(preview.get("cash_after_all", 0))
+	var debt_after := int(preview.get("total_debt_after", 0))
+	var actual_cost := int(preview.get("actual_cash_cost", 0))
+	var cash_color := Color(1.0, 0.38, 0.30, 1) if cash_after < 0 else (Color(1.0, 0.74, 0.26, 1) if cash_after < 800 else Color(0.55, 0.96, 0.56, 1))
+	var debt_color := Color(1.0, 0.45, 0.34, 1) if debt_after > 3000 else (Color(1.0, 0.72, 0.30, 1) if debt_after > 0 else Color(0.55, 0.96, 0.56, 1))
+
+	var stat_row := HBoxContainer.new()
+	stat_row.name = "MEDynamicStats"
+	stat_row.add_theme_constant_override("separation", 10)
+	stat_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stat_row.add_child(_make_month_end_stat_card("结算后现金", _format_month_end_money(cash_after), "下月开局安全垫", cash_color))
+	stat_row.add_child(_make_month_end_stat_card("本月扣款", "-%d" % actual_cost, "房租/餐饮/花呗", Color(0.92, 0.94, 0.98, 1)))
+	stat_row.add_child(_make_month_end_stat_card("结算后债务", _format_month_end_money(debt_after), "未还花呗和分期", debt_color))
+	vbox.add_child(stat_row)
+	vbox.move_child(stat_row, 2)
+
+	var bill_text := _build_month_end_bill_text(preview)
+	label_me_content.visible = true
+	label_me_content.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	label_me_content.add_theme_color_override("font_color", Color(0.86, 0.89, 0.92, 1))
+	label_me_content.add_theme_font_size_override("font_size", 18)
+	label_me_content.text = "账单明细\n%s" % bill_text
+	_layout_month_end_bill(bill_text)
+	_style_month_end_confirm_button()
+
+
 func _layout_month_end_bill(text: String) -> void:
 	var line_count: int = text.split("\n").size()
-	var content_height: float = clamp(float(line_count * 17 + 8), 220.0, 430.0)
-	var panel_height: float = clamp(content_height + 210.0, 470.0, 660.0)
-	var panel_width: float = 700.0
-	var content_width: float = 620.0
+	var content_height: float = clamp(float(line_count * 25 + 42), 170.0, 230.0)
+	var panel_height: float = 680.0
+	var panel_width: float = 780.0
+	var content_width: float = 700.0
 	var panel_bg := month_end_popup.find_child("MonthEndPanelBG", true, false) as ColorRect
 	if panel_bg:
 		panel_bg.offset_left = -panel_width * 0.5
@@ -2278,16 +2470,17 @@ func _layout_month_end_bill(text: String) -> void:
 		panel_bg.offset_bottom = panel_height * 0.5
 	var vbox := month_end_popup.find_child("MEVBox", true, false) as VBoxContainer
 	if vbox:
-		var vbox_height: float = panel_height - 70.0
+		var vbox_height: float = panel_height - 58.0
 		vbox.offset_left = -content_width * 0.5
 		vbox.offset_right = content_width * 0.5
 		vbox.offset_top = -vbox_height * 0.5
 		vbox.offset_bottom = vbox_height * 0.5
+		vbox.add_theme_constant_override("separation", 10)
 	if is_instance_valid(label_me_content):
 		label_me_content.custom_minimum_size = Vector2(content_width, content_height)
 		label_me_content.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	if is_instance_valid(btn_pay_rent):
-		btn_pay_rent.custom_minimum_size = Vector2(360, 44)
+		btn_pay_rent.custom_minimum_size = Vector2(440, 54)
 		btn_pay_rent.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 
@@ -2882,12 +3075,9 @@ func _on_month_ended(salary: int, rent: int, debt: int, food: int) -> void:
 	_disable_app_grid()
 
 	var preview := _get_month_end_preview(salary, rent, food)
-	var bill_text := _build_month_end_bill_text(preview)
-	label_me_content.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	label_me_content.add_theme_color_override("font_color", Color(0.92, 0.92, 0.92))
-	label_me_content.text = bill_text
-	_layout_month_end_bill(bill_text)
+	_render_month_end_bill(preview)
 	btn_pay_rent.text = "确认结算，进入下个月"
+	btn_pay_rent.add_theme_font_size_override("font_size", 18)
 	month_end_popup.mouse_filter = Control.MOUSE_FILTER_STOP
 	set_ui_layer_visible(month_end_popup, true)
 

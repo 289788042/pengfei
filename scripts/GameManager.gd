@@ -158,6 +158,14 @@ func get_app_unlock_hint(app_id: String) -> String:
 	]
 
 ## 获取本次新解锁的APP通知（首次触发时返回文案列表）
+func has_announced_app_unlock(app_id: String) -> bool:
+	if app_id == "":
+		return true
+	if not _app_unlock_turn.has(app_id):
+		return true
+	return _announced_unlocks.has(app_id)
+
+
 func get_new_unlocks() -> Array:
 	var result: Array = []
 	for app_id in _app_unlock_turn:

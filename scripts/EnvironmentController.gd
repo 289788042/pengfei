@@ -135,15 +135,15 @@ func _home_color() -> Color:
 func _location_color(context: String) -> Color:
 	match context:
 		"bar":
-			return Color(0.105, 0.045, 0.115, 1.0)
+			return Color(0.24, 0.11, 0.30, 1.0)
 		"cafe":
-			return Color(0.135, 0.095, 0.060, 1.0)
+			return Color(0.34, 0.22, 0.13, 1.0)
 		"park":
-			return Color(0.045, 0.110, 0.075, 1.0)
+			return Color(0.08, 0.20, 0.13, 1.0)
 		"market":
-			return Color(0.130, 0.075, 0.040, 1.0)
+			return Color(0.34, 0.17, 0.07, 1.0)
 		"home":
 			return _home_color()
 		"overtime":
-			return Color(0.070, 0.080, 0.100, 1.0)
-	return Color(0.080, 0.085, 0.105, 1.0)
+			return Color(0.16, 0.18, 0.23, 1.0)
+	return Color(0.14, 0.15, 0.19, 1.0)

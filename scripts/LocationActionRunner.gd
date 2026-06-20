@@ -402,6 +402,7 @@ func _get_background_path(location: String) -> String:
 		]
 		return gym_bgs[randi() % gym_bgs.size()]
 	var bg_map: Dictionary = {
+		"home": "res://Assets/title_bg2.png",
 		"library": "res://Assets/Backgrounds/library/Bookshop_bg_day1.png",
 		"park": "res://Assets/Backgrounds/park/beach.jpg",
 	}
