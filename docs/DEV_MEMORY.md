@@ -749,3 +749,18 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 记忆文档提交：例如 `Document project memory and recent flow decisions`
 
 如果用户要求先看效果，可以先不提交文档；但如果代码已经提交，文档也应尽快提交，否则下次上下文丢失会再次回到靠聊天记忆。
+
+## 19. 2026-06-20 追加：第一周微信必读家人群
+
+发现问题：玩家在第一周加班后打开微信，如果直接点返回，会跳过“相亲相爱一家人”关心消息和情绪 +8，直接解锁海边。这不符合用户明确要求的“家人群事件必须出现，也是新手教程必须有的东西”。
+
+修复口径：
+- 初始家人群关心消息增加 `mainline_flag = "first_week_family_support_seen"`。
+- `WeChatSystem._show_family_chat_display()` 在玩家点“知道了”并完成结算后写入该主线 flag。
+- `TutorialDirector.on_wechat_closed()` 只有检测到该 flag 后，才允许进入蓝色数值教程和海边解锁。
+- 若玩家没读家人群就关闭微信，微信保持教程 gate，继续高亮微信，并提示“先看看‘相亲相爱一家人’的消息吧。家里人都在等你报平安。”
+- `should_finish_first_week_wechat_on_back()` 也必须等待该 flag，避免玩家从其他聊天页返回时自动关闭微信并跳过家人群。
+
+验证结果：
+- 逃课路径：打开微信后直接关闭，`gate=wechat`，`beach_unlocked=false`，`first_week_family_support_seen=false`。
+- 正常路径：读家人群并确认结算后，flag 写入；再关闭微信才进入数值教程并解锁海边。

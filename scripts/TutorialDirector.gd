@@ -2,6 +2,8 @@
 ## Owns early tutorial state and step transitions. MainGame keeps only UI effects.
 extends RefCounted
 
+const FIRST_WEEK_FAMILY_SUPPORT_FLAG := "first_week_family_support_seen"
+
 var _main: Node
 
 var _app_gate: String = ""
@@ -161,6 +163,12 @@ func on_wechat_closed() -> void:
 		return
 	if _wechat_done:
 		return
+	if not GameManager.has_mainline_flag(FIRST_WEEK_FAMILY_SUPPORT_FLAG):
+		_app_gate = "wechat"
+		_main.call("_sync_phone_home_apps", true)
+		refresh_first_week_app_focus()
+		_main.call("_show_tutorial_dialog", ["先看看“相亲相爱一家人”的消息吧。家里人都在等你报平安。"])
+		return
 	_wechat_done = true
 	_beach_unlocked = true
 	_app_gate = ""
@@ -170,7 +178,9 @@ func on_wechat_closed() -> void:
 
 
 func should_finish_first_week_wechat_on_back() -> bool:
-	return _app_gate == "wechat" and is_first_week_context()
+	if _app_gate != "wechat" or not is_first_week_context():
+		return false
+	return GameManager.has_mainline_flag(FIRST_WEEK_FAMILY_SUPPORT_FLAG)
 
 
 func is_first_week_beach_route_unlocked() -> bool:

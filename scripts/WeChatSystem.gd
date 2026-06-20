@@ -1563,6 +1563,7 @@ func _show_family_chat_display(msg: Dictionary) -> void:
 	var sanity_effect: int = msg.get("sanity", 0)
 	var money_effect: int = msg.get("money", 0)
 	var detail_msg: String = msg.get("detail_msg", "")
+	var mainline_flag := str(msg.get("mainline_flag", ""))
 	var result_changes := {"sanity": sanity_effect, "money": money_effect}
 	## 全屏遮罩
 	var overlay := ColorRect.new()
@@ -1624,6 +1625,8 @@ func _show_family_chat_display(msg: Dictionary) -> void:
 		if ov: ov.queue_free()
 		_show_stat_result(result_changes, func() -> void:
 			_apply_wechat_changes(result_changes)
+			if mainline_flag != "":
+				GameManager.set_mainline_flag(mainline_flag)
 		)
 	)
 	vbox.add_child(btn)

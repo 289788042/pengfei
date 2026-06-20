@@ -225,6 +225,7 @@ var npcs: Dictionary = {
 				"full_text": "妈：到深圳了吗？安顿好给家里说一声。\n爸：钱不够就别硬撑，先保证吃饭和睡觉。\n表姐：深圳节奏快，刚开始别太焦虑，慢慢来。\n\n你盯着屏幕看了一会儿，突然觉得这座城市没那么冷。",
 				"sanity": 8,
 				"money": 0,
+				"mainline_flag": "first_week_family_support_seen",
 				"detail_msg": "家里人都在担心你。哪怕他们说得笨拙，也确实在意你。"
 			},
 		],
