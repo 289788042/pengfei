@@ -188,7 +188,9 @@ func _apply_repeat_decay(changes: Dictionary, visit_index: int) -> Dictionary:
 
 
 func _park_visited_this_week() -> bool:
-	return int(_app.get("_park_visited_week")) == GameManager.turn_count
+	if _app.has_method("_is_once_per_week_location_visited"):
+		return bool(_app._is_once_per_week_location_visited())
+	return false
 
 
 func _location_order() -> Array[String]:

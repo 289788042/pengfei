@@ -831,3 +831,36 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 调用 `MapAppController.start_location("overtime")`：地图关闭，日程写入 `周六:公司加班 | 周日:空闲`，地点 hold=1，阻塞对话出现。
 - 旧入口 `AppPopupSystem._on_app_map()`：仍能打开地图，`visible=true`，`children=1`，`cards=8`，说明 `MainGame` 旧调用链未断。
 - Godot editor errors 最终为 0。
+
+## 23. 2026-06-20 追加：LocationActionRunner 接管地点行动生命周期
+
+本轮继续执行“架构优先，不再堆小补丁”。上一轮地图 UI 已归 `MapAppController`，这一轮把地点行动的主要生命周期从 `AppPopupSystem.gd` 迁到 `LocationActionRunner.gd`。
+
+迁移内容：
+- `scripts/LocationActionRunner.gd`
+  - 接管地点配置 `location_config()`：图书馆、健身房、酒吧、宅家、公园、咖啡厅、夜市、公司加班。
+  - 接管地点开始 `start_location()`、可前往判断 `can_start_location()`、支付后继续 `run_location_after_payment()`。
+  - 接管地点背景/环境音切换、地点 hold/release、结束后回到周末。
+  - 接管每周地点访问计数、重复行动收益衰减、深圳湾每周一次限制。
+  - 接管地点结果文本、地点活动日志记录、第一周加班/海边教程回调路由。
+  - 保持对 `AppPopupSystem` 的委托：城市碎片展示、碎片选项 UI、NPC 邂逅/重逢具体演出、数值应用仍暂时由旧系统处理。
+- `scripts/AppPopupSystem.gd`
+  - `_start_location()`、`_run_location_after_payment()`、`_can_start_location()`、`_location_config()` 等变成兼容薄壳，转发到 `LocationActionRunner`。
+  - `_finish_location_event_after()` 优先使用 `LocationActionRunner.finish_after()`，避免 hold/release 收尾双写。
+  - 删除旧的地点配置大块、地点开始/支付后继续大块、每周访问状态大块。
+- `scripts/MapAppController.gd`
+  - “本周是否已去深圳湾”不再读 `AppPopupSystem._park_visited_week` 旧变量，改为通过 `AppPopupSystem._is_once_per_week_location_visited()` 间接查询 runner。
+
+当前边界：
+- 地点“编排/生命周期”归 `LocationActionRunner`。
+- 城市碎片、碎片选项、NPC 邂逅/重逢演出仍在 `AppPopupSystem`，这是下一轮继续拆的重点。
+- `AppPopupSystem` 仍保留地点相关兼容薄壳，因为旧 UI 按钮、MapAppController、碎片/NPC 逻辑还会调用这些旧入口。
+
+验证结果：
+- Godot 编译：`LocationActionRunner.gd`、`AppPopupSystem.gd`、`MapAppController.gd`、`MainGame.gd`、`WeekFlowController.gd` 均通过。
+- 运行态确认：`app=true`，`runner=true`，runner 具备 `start_location()` 和 `location_config()`，初始 hold=0。
+- 直接调用 `runner.start_location("overtime")`：日程写入 `周六:公司加班 | 周日:空闲`，`hold_runner=1`，`hold_app=1`，阻塞地点对话出现。
+- 点掉地点叙事和结算后：`hold_runner=0`，`hold_app=0`，`money` 增加，`energy=60`，`sanity=65`。
+- 第一周加班后的教程链仍正确：`gate=wechat`。
+- 地图渲染仍正确：`visible=true`，`children=1`，`cards=8`，`modulate=(1,1,1,1)`。
+- Godot 项目脚本无编译错误。MCP 曾因临时 `await process_frame` 验收脚本产生两条 debugger warning，属于工具脚本噪音，不是项目脚本错误。
