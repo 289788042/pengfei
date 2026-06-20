@@ -1697,16 +1697,6 @@ func _update_weekend_ui() -> void:
 		GameManager.get_weekend_schedule_text(),
 	]
 	_sync_phone_home_apps(true)
-	return
-	var preview := _get_month_end_preview()
-	btn_next_week.text = "⏭ 结束本周｜月底:%d" % [
-		int(preview.get("cash_after_all", 0)),
-	]
-	btn_next_week.tooltip_text = "%s\n\n本周日程：%s" % [
-		_build_week_confirm_text(),
-		GameManager.get_weekend_schedule_text(),
-	]
-	_sync_phone_home_apps(true)
 
 
 func _maybe_show_second_week_map_hint() -> void:

@@ -203,13 +203,15 @@ func show_first_week_stats_tutorial() -> void:
 
 
 func on_galgame_page_started(text: String) -> void:
-	if _stats_page_flash_started:
-		return
 	if not _wechat_done or not _beach_unlocked:
 		return
 	var mentions_glow := text.find("发光") >= 0 or text.find("鍙戝厜") >= 0
 	var mentions_stats_panel := text.find("数值面板") >= 0 or text.find("手机") >= 0 or text.find("鏁板€奸潰鏉?") >= 0 or text.find("鎵嬫満") >= 0
 	if not mentions_glow or not mentions_stats_panel:
+		_main.call("_stop_stats_panel_focus_flash")
+		_stats_page_flash_started = false
+		return
+	if _stats_page_flash_started:
 		return
 	_stats_page_flash_started = true
 	_main.call("_start_stats_panel_focus_flash")
