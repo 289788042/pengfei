@@ -7,6 +7,7 @@ var _main: Node
 
 func init(main: Node) -> void:
 	_main = main
+	setup_phone_app_layers()
 
 
 func open_alipay() -> bool:
@@ -39,10 +40,7 @@ func open_wechat() -> bool:
 func close_all_apps() -> void:
 	if not is_instance_valid(_main):
 		return
-	if _main.has_method("set_dialog_focus_active"):
-		_main.set_dialog_focus_active(false)
-	if _main.has_method("_hide_phone_dim_overlay"):
-		_main.call("_hide_phone_dim_overlay")
+	clear_focus_overlays()
 	if _main.has_method("_clear_alipay_tutorial_callouts"):
 		_main.call("_clear_alipay_tutorial_callouts")
 	var wechat_system: Variant = _main.get("wechat")
@@ -56,6 +54,59 @@ func close_all_apps() -> void:
 
 func hide_layer(layer: Control) -> void:
 	_hide_layer(layer)
+
+
+func set_layer_visible(layer: Control, visible: bool, exclusive: bool = true, prepare_phone_layer: bool = true) -> void:
+	if not is_instance_valid(layer):
+		return
+	reset_layer_visual_state(layer)
+	if visible and prepare_phone_layer:
+		setup_phone_layer(layer)
+	if _main.has_method("set_ui_layer_visible"):
+		_main.set_ui_layer_visible(layer, visible, exclusive)
+	else:
+		layer.visible = visible
+
+
+func setup_phone_app_layers() -> void:
+	for layer in _phone_setup_layers():
+		setup_phone_layer(layer)
+
+
+func setup_phone_layer(layer: Control, z: int = 50) -> void:
+	if not is_instance_valid(layer):
+		return
+	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.offset_left = 0
+	layer.offset_top = 0
+	layer.offset_right = 0
+	layer.offset_bottom = 0
+	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.z_index = z
+	if layer is ColorRect and layer.color.a < 0.45:
+		layer.color = Color(0, 0, 0, 0.58)
+
+
+func restore_layer_to_phone_screen(layer: Control, z: int = 55) -> void:
+	if not is_instance_valid(layer) or not is_instance_valid(_main):
+		return
+	var phone_screen := _main.find_child("PhoneScreen", true, false) as Control
+	if is_instance_valid(phone_screen) and layer.get_parent() != phone_screen:
+		var old_parent := layer.get_parent()
+		if old_parent:
+			old_parent.remove_child(layer)
+		phone_screen.add_child(layer)
+	setup_phone_layer(layer, z)
+	reset_layer_visual_state(layer)
+
+
+func clear_focus_overlays() -> void:
+	if not is_instance_valid(_main):
+		return
+	if _main.has_method("set_dialog_focus_active"):
+		_main.set_dialog_focus_active(false)
+	if _main.has_method("_hide_phone_dim_overlay"):
+		_main.call("_hide_phone_dim_overlay")
 
 
 func reset_layer_visual_state(layer: CanvasItem) -> void:
@@ -78,21 +129,13 @@ func _can_open_phone_app() -> bool:
 func _show_layer(layer: Control, visible: bool, exclusive: bool = true) -> void:
 	if not is_instance_valid(layer):
 		return
-	reset_layer_visual_state(layer)
-	if _main.has_method("set_ui_layer_visible"):
-		_main.set_ui_layer_visible(layer, visible, exclusive)
-	else:
-		layer.visible = visible
+	set_layer_visible(layer, visible, exclusive, false)
 
 
 func _hide_layer(layer: Control) -> void:
 	if not is_instance_valid(layer):
 		return
-	reset_layer_visual_state(layer)
-	if _main.has_method("set_ui_layer_visible"):
-		_main.set_ui_layer_visible(layer, false)
-	else:
-		layer.visible = false
+	set_layer_visible(layer, false, true, false)
 
 
 func _phone_app_layers() -> Array[Control]:
@@ -112,6 +155,24 @@ func _phone_app_layers() -> Array[Control]:
 		"JobPopup",
 		"LateNightPopup",
 		"PaymentPopup",
+	]:
+		var layer := _main.find_child(layer_name, true, false) as Control
+		if is_instance_valid(layer) and not layers.has(layer):
+			layers.append(layer)
+	return layers
+
+
+func _phone_setup_layers() -> Array[Control]:
+	var layers: Array[Control] = []
+	for layer_name in [
+		"LocationMenu",
+		"BaoTaoMenu",
+		"TuanMeiMenu",
+		"ZodiacPopup",
+		"HouseMenu",
+		"DatingPopup",
+		"JobMenu",
+		"LateNightPopup",
 	]:
 		var layer := _main.find_child(layer_name, true, false) as Control
 		if is_instance_valid(layer) and not layers.has(layer):

@@ -157,11 +157,19 @@ func main_node() -> Node:
 
 
 func _setup_phone_app_layers() -> void:
+	var phone_apps: Variant = main_node().get("phone_apps") if is_instance_valid(_main) else null
+	if phone_apps and phone_apps.has_method("setup_phone_app_layers"):
+		phone_apps.setup_phone_app_layers()
+		return
 	for layer in [location_menu, baotao_menu, tuanmei_menu, zodiac_popup, house_menu, dating_popup, job_menu, late_night_popup]:
 		_setup_phone_layer(layer)
 
 
 func _setup_phone_layer(layer: Control, z: int = 50) -> void:
+	var phone_apps: Variant = main_node().get("phone_apps") if is_instance_valid(_main) else null
+	if phone_apps and phone_apps.has_method("setup_phone_layer"):
+		phone_apps.setup_phone_layer(layer, z)
+		return
 	if not is_instance_valid(layer):
 		return
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -218,12 +226,18 @@ func _set_layer_visible(layer: Control, is_visible: bool) -> void:
 		return
 	if not is_visible:
 		_reset_layer_visual_state(layer)
+	var prepare_phone_layer := true
 	if is_visible:
 		if _is_heavy_app_layer(layer):
 			var panel_size := Vector2(1040, 720) if layer == location_menu else Vector2(960, 760)
 			_setup_heavy_app_layer(layer, 80, panel_size)
+			prepare_phone_layer = false
 		else:
 			_setup_phone_layer(layer)
+	var phone_apps: Variant = main_node().get("phone_apps") if is_instance_valid(_main) else null
+	if phone_apps and phone_apps.has_method("set_layer_visible"):
+		phone_apps.set_layer_visible(layer, is_visible, true, prepare_phone_layer)
+		return
 	if is_instance_valid(_main) and _main.has_method("set_ui_layer_visible"):
 		_main.set_ui_layer_visible(layer, is_visible)
 	else:
@@ -376,6 +390,10 @@ func _render_map_menu() -> void:
 func _restore_map_to_phone_layer() -> void:
 	if _heavy_app_layers.has(location_menu):
 		_heavy_app_layers.erase(location_menu)
+	var phone_apps: Variant = main_node().get("phone_apps") if is_instance_valid(_main) else null
+	if phone_apps and phone_apps.has_method("restore_layer_to_phone_screen"):
+		phone_apps.restore_layer_to_phone_screen(location_menu, 55)
+		return
 	var phone_screen := main_node().find_child("PhoneScreen", true, false) as Control
 	if is_instance_valid(phone_screen) and location_menu.get_parent() != phone_screen:
 		var old_parent := location_menu.get_parent()
@@ -387,6 +405,10 @@ func _restore_map_to_phone_layer() -> void:
 
 
 func _clear_phone_focus_overlays() -> void:
+	var phone_apps: Variant = main_node().get("phone_apps") if is_instance_valid(_main) else null
+	if phone_apps and phone_apps.has_method("clear_focus_overlays"):
+		phone_apps.clear_focus_overlays()
+		return
 	if not is_instance_valid(_main):
 		return
 	if main_node().has_method("set_dialog_focus_active"):
@@ -396,6 +418,10 @@ func _clear_phone_focus_overlays() -> void:
 
 
 func _reset_layer_visual_state(layer: CanvasItem) -> void:
+	var phone_apps: Variant = main_node().get("phone_apps") if is_instance_valid(_main) else null
+	if phone_apps and phone_apps.has_method("reset_layer_visual_state"):
+		phone_apps.reset_layer_visual_state(layer)
+		return
 	if not is_instance_valid(layer):
 		return
 	layer.modulate = Color(1, 1, 1, 1)

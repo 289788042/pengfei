@@ -1149,3 +1149,37 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 打开团美：`tuanmei_menu.visible=true`，列表面板 child 数为 1。
 - 打开贝壳租房：`house_menu.visible=true`，列表面板 child 数为 1。
 - 打开 BOSS 直聘：`job_menu.visible=true`，列表面板 child 数为 1。
+
+## 32. 2026-06-20 追加：PhoneAppController 接管手机层级工具
+
+本轮继续执行“清架构，不再堆小补丁”。上轮 `PhoneAppOverlayBuilder` 只负责列表型 App 的 UI 生成，但 `AppPopupSystem.gd` 里仍然残留一组手机层级工具：设置小屏 full rect、显示/隐藏层、清理手机焦点遮罩、把高德地图从大屏恢复到手机小屏、重置透明度等。这些逻辑不属于具体玩法，应该归到手机 App 门面。
+
+调整内容：
+- `scripts/PhoneAppController.gd`
+  - 新增 `setup_phone_app_layers()`，只初始化旧轻量手机层：高德地图、宝淘、团美、星座、贝壳、滑动交友、BOSS、深夜弹窗。
+  - 新增 `setup_phone_layer(layer, z)`，统一设置手机小屏层的 anchors、offset、mouse_filter、z_index 和默认遮罩透明度。
+  - 新增 `set_layer_visible(layer, visible, exclusive, prepare_phone_layer)`，统一重置透明度并转发到 `MainGame.set_ui_layer_visible()`。
+  - 新增 `restore_layer_to_phone_screen(layer, z)`，用于高德地图从大屏/重层恢复回手机小屏。
+  - 新增 `clear_focus_overlays()`，统一关闭对话焦点压暗和手机 dim overlay。
+  - `close_all_apps()` 复用 `clear_focus_overlays()`，继续负责关闭微信、支付宝教程提示和所有手机 App 层。
+- `scripts/AppPopupSystem.gd`
+  - `_setup_phone_layer()`、`_set_layer_visible()`、`_clear_phone_focus_overlays()`、`_reset_layer_visual_state()`、`_restore_map_to_phone_layer()` 现在优先转发给 `PhoneAppController`。
+  - 保留兼容薄壳，避免 `MapAppController`、`ConsumerAppController`、`DiaryAppController`、`CareerAppController` 等旧调用方大面积改名。
+  - 重型 App 的 panel 尺寸和 `_heavy_app_layers` 判断仍留在 `AppPopupSystem`，因为这部分和 `HeavyAppUI`、大屏层级有关，后续如果要继续拆，应单独收成 HeavyApp/Layer 模块。
+
+重要边界：
+- `PhoneAppController.setup_phone_app_layers()` 不能盲目初始化支付宝、微信、支付弹窗、日记大屏，否则可能改坏它们各自的布局。关闭时可以扫全部手机层，但“设置为手机小屏 full rect”只作用于旧轻量层。
+- 以后遇到“App 透明残留、压暗残留、地图回手机小屏、App 互相叠层、关闭所有 App”这类问题，优先看 `PhoneAppController` 和 `UIStateManager`，不要再直接往 `AppPopupSystem` 里塞判断。
+
+验证结果：
+- Godot 编译：`PhoneAppController.gd`、`AppPopupSystem.gd`、`MapAppController.gd`、`PhoneAppOverlayBuilder.gd` 均通过。
+- Godot headless 项目加载通过，无脚本编译错误。
+- 运行态确认：`phone_apps` 存在，并且有 `setup_phone_layer()` 与 `set_layer_visible()`。
+- 支付宝打开：`alipay_popup.visible=true`，透明度为 1。
+- 微信打开会关闭支付宝：`wechat_menu.visible=true`，`alipay_popup.visible=false`。
+- `phone_apps.close_all_apps()` 后微信、支付宝、宝淘均关闭。
+- 高德地图打开：`location_menu.visible=true`，child 数为 1，父节点为 `PhoneScreen`，透明度为 1。
+- 宝淘打开会关闭地图：`baotao_menu.visible=true`，child 数为 1，`location_menu.visible=false`。
+- 右键关闭宝淘后：`baotao_menu.visible=false`。
+- 回归链路：连续打开支付宝两次，再打开微信，再打开高德地图，地图仍然 child 数为 1、父节点为 `PhoneScreen`，微信/支付宝均关闭，没有复现地图 UI 叠乱。
+- 日记大屏打开和右键关闭正常，说明本轮没有把重型 App 的布局误改成手机小屏。
