@@ -346,6 +346,8 @@ func _ensure_weekly_location_state() -> void:
 func _has_city_fragments(location: String) -> bool:
 	if not is_instance_valid(_app):
 		return false
+	if _app.has_method("_has_city_fragments"):
+		return bool(_app._has_city_fragments(location))
 	var raw: Variant = _app.get("_city_fragments")
 	if not (raw is Dictionary):
 		return false

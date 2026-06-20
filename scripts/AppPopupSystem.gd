@@ -74,31 +74,11 @@ var _dating_bios: Array = [
 var _city_fragments: Dictionary = {}
 # NPC邂逅冷却（替代永久失败的 encounter_failed_ids）
 var _encounter_cooldowns: Dictionary = {}  # npc_id -> turn_count 可重试
-var _frag_choice_container: VBoxContainer = null
-var _pending_fragment_base_changes: Dictionary = {}
-var _pending_fragment_applied_changes: Dictionary = {}
 var _location_event_hold_count: int = 0
+var _city_events: RefCounted
+var _encounters: RefCounted
 var _location_runner: RefCounted
 var _map_app: RefCounted
-# NPC重逢台词模板
-var _reunion_lines: Array = [
-	"在{loc}又遇到了{name}，ta冲你笑了笑。你们聊了几句。",
-	"{name}看到你，主动走了过来打招呼。",
-	"远远看到{name}在做自己的事，你过去打了个招呼。",
-	"和{name}撞了个正着，两个人都笑了。",
-	"{name}递给你一瓶水，说看你气色不太好。",
-	"你帮{name}捡起了掉在地上的东西，ta说了声谢谢。",
-	"和{name}聊起了最近的工作，ta给了你一些建议。",
-	"今天在{loc}和{name}待了会儿，感觉心情好了不少。",
-	"{name}请你喝了一杯东西，你们聊得很开心。",
-	"碰巧和{name}坐在了一起，度过了愉快的一段时光。",
-	"{name}给你看了看ta手机上的照片，最近去了不少地方。",
-	"你和{name}交换了对某个话题的看法，聊得很投机。",
-	"{name}看起来心情不错，说最近发生了点好事。",
-	"你们聊起了深圳的生活，{name}说已经习惯了。",
-	"和{name}告别的时候，ta说下次再约。",
-	"{name}夸你今天看起来气色不错，你心里美滋滋的。",
-]
 
 
 # ==================== 初始化 ====================
@@ -129,16 +109,26 @@ func init(main: Node) -> void:
 	btn_emo_sleep = main.btn_emo_sleep
 	_setup_phone_app_layers()
 	_setup_diary_heavy_ui()
+	_city_events = _new_city_events()
+	if _city_events and _city_events.has_method("fragments"):
+		_city_fragments = _city_events.fragments()
+	_encounters = _new_encounters()
 	_location_runner = _new_location_runner()
 	_map_app = _new_map_app()
 
-	# 加载城市碎片事件
-	var frag_file = FileAccess.open("res://Data/city_fragments.json", FileAccess.READ)
-	if frag_file:
-		var json = JSON.new()
-		if json.parse(frag_file.get_as_text()) == OK:
-			_city_fragments = json.data
-		frag_file.close()
+
+func _new_city_events() -> RefCounted:
+	var script := ResourceLoader.load("res://scripts/CityEventController.gd", "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	var controller := script.new() as RefCounted
+	controller.init(_main, self)
+	return controller
+
+
+func _new_encounters() -> RefCounted:
+	var script := ResourceLoader.load("res://scripts/EncounterController.gd", "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	var controller := script.new() as RefCounted
+	controller.init(_main, self, _encounter_cooldowns)
+	return controller
 
 
 func _new_location_runner() -> RefCounted:
@@ -746,171 +736,26 @@ func _build_app_overlay(parent: ColorRect, title: String, top_color: Color, subt
 
 # ==================== 城市碎片 & 重逢系统 ====================
 
-## 从指定地点的碎片池中随机抽取一条并触发
+func _has_city_fragments(location: String) -> bool:
+	if _city_events and _city_events.has_method("has_fragments"):
+		return bool(_city_events.has_fragments(location))
+	return _city_fragments.get(location, []).size() > 0
+
+
 func _trigger_city_fragment(location: String, base_changes: Dictionary = {}, already_applied_changes: Dictionary = {}) -> void:
-	var pool: Array = _city_fragments.get(location, [])
-	if pool.size() == 0:
-		return
-	var filtered: Array = []
-	for f in pool:
-		if f.get("min_turn", 0) <= GameManager.turn_count:
-			filtered.append(f)
-	if filtered.size() == 0:
-		filtered = pool
-	var frag: Dictionary = filtered[randi() % filtered.size()]
-	var text: String = frag.get("text", "")
-	text = _strip_embedded_result_lines(text)
-	# 检查是否带选项
-	var choices: Array = frag.get("choices", [])
-	if choices.size() > 0:
-		var pages: Array = [text]
-		main_node().galgame.show_galgame_dialog(pages, func() -> void:
-			_show_fragment_choices(choices, base_changes, already_applied_changes)
-		)
-		return
-	var effects: Dictionary = frag.get("effect", {})
-	var pending_changes := _merge_change_dicts(base_changes, effects)
-	_show_story_then_apply_changes(text, pending_changes, already_applied_changes, _finish_location_event_after())
+	if _city_events and _city_events.has_method("trigger_fragment"):
+		_city_events.trigger_fragment(location, base_changes, already_applied_changes)
 
 
-## 显示碎片选项按钮
-func _show_fragment_choices(choices: Array, base_changes: Dictionary = {}, already_applied_changes: Dictionary = {}) -> void:
-	var gal: RefCounted = main_node().galgame
-	var box: Panel = gal.left_dialog_box
-	box.visible = true
-	box.modulate.a = 1.0
-	_pending_fragment_base_changes = base_changes.duplicate()
-	_pending_fragment_applied_changes = already_applied_changes.duplicate()
-	gal.left_dialog_text.text = ""
-	gal.left_dialog_text.visible = false
-	# 禁用下一周按钮防止跳过
-	_set_next_week_locked(true)
-	if is_instance_valid(_frag_choice_container):
-		_frag_choice_container.queue_free()
-	_frag_choice_container = VBoxContainer.new()
-	_frag_choice_container.name = "FragChoiceContainer"
-	_frag_choice_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_frag_choice_container.offset_left = 20
-	_frag_choice_container.offset_top = 12
-	_frag_choice_container.offset_right = -16
-	_frag_choice_container.offset_bottom = -12
-	_frag_choice_container.add_theme_constant_override("separation", 8)
-	box.add_child(_frag_choice_container)
-	for choice in choices:
-		var btn := Button.new()
-		btn.text = choice.get("text", "...")
-		btn.add_theme_font_size_override("font_size", 20)
-		btn.custom_minimum_size.y = 48
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0.15, 0.15, 0.2, 0.85)
-		style.set_corner_radius_all(10.0)
-		style.set_content_margin_all(12)
-		style.border_color = Color(0.5, 0.5, 0.6, 0.6)
-		style.set_border_width_all(1)
-		btn.add_theme_stylebox_override("normal", style)
-		var hover_style := StyleBoxFlat.new()
-		hover_style.bg_color = Color(0.25, 0.28, 0.38, 0.92)
-		hover_style.set_corner_radius_all(10.0)
-		hover_style.set_content_margin_all(12)
-		hover_style.border_color = Color(0.7, 0.75, 0.9, 0.8)
-		hover_style.set_border_width_all(1)
-		btn.add_theme_stylebox_override("hover", hover_style)
-		var pressed_style := StyleBoxFlat.new()
-		pressed_style.bg_color = Color(0.3, 0.35, 0.5, 0.95)
-		pressed_style.set_corner_radius_all(10.0)
-		pressed_style.set_content_margin_all(12)
-		btn.add_theme_stylebox_override("pressed", pressed_style)
-		var cost: Dictionary = choice.get("cost", {})
-		var cost_money: int = int(cost.get("money", 0))
-		if cost_money > 0 and GameManager.money < cost_money:
-			btn.disabled = true
-			btn.add_theme_color_override("font_color", Color(0.45, 0.45, 0.45, 0.7))
-			var dis_style := StyleBoxFlat.new()
-			dis_style.bg_color = Color(0.1, 0.1, 0.12, 0.5)
-			dis_style.set_corner_radius_all(10.0)
-			dis_style.set_content_margin_all(12)
-			btn.add_theme_stylebox_override("disabled", dis_style)
-		else:
-			btn.add_theme_color_override("font_color", Color(0.9, 0.92, 0.95, 1))
-		var captured_choice: Dictionary = choice
-		btn.pressed.connect(func() -> void: _on_fragment_choice(captured_choice))
-		_frag_choice_container.add_child(btn)
-
-
-## 碎片选项回调：应用花费和效果，显示结果
-func _on_fragment_choice(choice: Dictionary) -> void:
-	var result_changes: Dictionary = {}
-	var cost: Dictionary = choice.get("cost", {})
-	for stat_name in cost:
-		var val: int = int(cost[stat_name])
-		if val != 0:
-			result_changes[stat_name] = int(result_changes.get(stat_name, 0)) - val
-	var effects: Dictionary = choice.get("effect", {})
-	for stat_name in effects:
-		var val: int = int(effects[stat_name])
-		if val == 0:
-			continue
-		result_changes[stat_name] = int(result_changes.get(stat_name, 0)) + val
-	var pending_changes := _merge_change_dicts(_pending_fragment_base_changes, result_changes)
-	var already_applied_changes := _pending_fragment_applied_changes.duplicate()
-	# 清理选项按钮
-	if is_instance_valid(_frag_choice_container):
-		_frag_choice_container.visible = false
-		_frag_choice_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_frag_choice_container.queue_free()
-		_frag_choice_container = null
-	# 显示结果
-	var result: String = choice.get("result", "")
-	_pending_fragment_base_changes.clear()
-	_pending_fragment_applied_changes.clear()
-	call_deferred("_show_fragment_choice_result", result, pending_changes, already_applied_changes)
-
-
-func _show_fragment_choice_result(result: String, pending_changes: Dictionary, already_applied_changes: Dictionary) -> void:
-	var gal: RefCounted = main_node().galgame
-	gal.left_dialog_text.visible = true
-	var after_result := func() -> void:
-		_set_next_week_locked(false)
-		_end_location_event()
-	_show_story_then_apply_changes(result, pending_changes, already_applied_changes, after_result)
-
-
-func _set_next_week_locked(locked: bool) -> void:
-	var skip_btn: Button = main_node().get_node_or_null("HBoxContainer/RightMargin/RightSystemArea/Btn_NextWeek")
-	if skip_btn:
-		skip_btn.disabled = locked
-	if not locked and main_node().has_method("sync_ui_state"):
-		main_node().sync_ui_state()
-
-## 检查是否有已解锁的NPC可以在该地点重逢
 func _check_reunion(location: String) -> Dictionary:
-	var candidates: Array = []
-	for npc in GameManager.npc_database:
-		var enc: Dictionary = npc.get("encounter", {})
-		if enc.get("location", "") != location:
-			continue
-		if enc.get("auto_unlock", false):
-			continue
-		var npc_id: String = npc.get("id", "")
-		if not GameManager.is_npc_unlocked(npc_id):
-			continue
-		if _has_seen_weekly_reunion(npc_id):
-			continue
-		candidates.append(npc)
-	if candidates.size() == 0:
-		return {}
-	return candidates[randi() % candidates.size()]
+	if _encounters and _encounters.has_method("check_reunion"):
+		return _encounters.check_reunion(location)
+	return {}
 
-## 处理NPC重逢（简短互动）
+
 func _handle_reunion(npc: Dictionary, location: String) -> void:
-	var npc_id: String = npc.get("id", "")
-	var npc_name: String = npc.get("name", "")
-	var loc_cn: String = {"gym": "健身房", "library": "图书馆", "bar": "酒吧", "home": "家里", "park": "公园", "cafe": "咖啡厅", "market": "夜市"}.get(location, location)
-	var template: String = _reunion_lines[randi() % _reunion_lines.size()]
-	var text: String = template.replace("{name}", npc_name).replace("{loc}", loc_cn)
-	var changes := {"affection": 3, "sanity": 3, "eq": 1}
-	GameManager.add_activity("社交", "在%s遇到了%s，聊了几句" % [loc_cn, npc_name], changes)
-	_show_story_then_apply_npc_changes(text, {}, {}, npc_name, _finish_location_event_after(), "【结算】", npc_id, changes)
+	if _encounters and _encounters.has_method("handle_reunion"):
+		_encounters.handle_reunion(npc, location)
 
 
 # ==================== 废弃周末资源兼容接口 ====================
@@ -938,36 +783,22 @@ func _show_location_background(location: String) -> void:
 
 
 ## 检查指定地点是否有NPC邂逅
-func _check_encounter(_location: String) -> Dictionary:
-	# 第一阶段先关闭核心男性随机邂逅；关系入口改由主线事件确定触发。
+func _check_encounter(location: String) -> Dictionary:
+	if _encounters and _encounters.has_method("check_encounter"):
+		return _encounters.check_encounter(location)
 	return {}
 
 
 func _meets_encounter_requirements(enc: Dictionary) -> bool:
-	var req: Dictionary = enc.get("req_stats", {})
-	for stat_name in req:
-		var needed: int = int(req[stat_name])
-		var current: int = GameManager.get(stat_name) if stat_name != "money" else GameManager.money
-		if current < needed:
-			return false
-	return true
+	if _encounters and _encounters.has_method("meets_encounter_requirements"):
+		return bool(_encounters.meets_encounter_requirements(enc))
+	return false
 
 
 func _format_encounter_requirement_hint(enc: Dictionary) -> String:
-	var req: Dictionary = enc.get("req_stats", {})
-	if req.is_empty():
-		return ""
-	var parts: Array = []
-	for stat_name in req:
-		var needed: int = int(req[stat_name])
-		var current: int = GameManager.get(stat_name) if stat_name != "money" else GameManager.money
-		if current >= needed:
-			continue
-		var cn: String = GameManager.stat_names.get(stat_name, stat_name)
-		parts.append("%s需要%d，当前%d" % [cn, needed, current])
-	if parts.is_empty():
-		return ""
-	return "（邂逅条件不足：%s。）" % "；".join(parts)
+	if _encounters and _encounters.has_method("format_encounter_requirement_hint"):
+		return str(_encounters.format_encounter_requirement_hint(enc))
+	return ""
 
 
 func _ensure_weekly_location_state() -> void:
@@ -1127,61 +958,14 @@ func _run_location_after_payment(location: String, config: Dictionary, payment_c
 		_location_event_hold_count = int(_location_runner.hold_count())
 
 func _show_reunion_result(npc: Dictionary, location: String, base_changes: Dictionary) -> void:
-	var npc_id: String = npc.get("id", "")
-	var npc_name: String = npc.get("name", "")
-	_record_weekly_reunion(npc_id)
-	var loc_cn: String = {"gym": "健身房", "library": "图书馆", "bar": "酒吧", "home": "家里", "park": "公园", "cafe": "咖啡厅", "market": "夜市"}.get(location, location)
-	var template: String = _reunion_lines[randi() % _reunion_lines.size()]
-	var text: String = template.replace("{name}", npc_name).replace("{loc}", loc_cn)
-	var bonus := {"affection": 3, "sanity": 3, "eq": 1}
-	_show_story_then_apply_npc_changes(text, base_changes, {}, npc_name, _finish_location_event_after(), "【结算】", npc_id, bonus)
-	GameManager.add_activity("社交", "在%s遇到了%s，聊了几句" % [loc_cn, npc_name], _merge_change_dicts(base_changes, bonus))
+	if _encounters and _encounters.has_method("show_reunion_result"):
+		_encounters.show_reunion_result(npc, location, base_changes)
 
 
 ## 处理邂逅场景（通用版）
 func _handle_encounter(npc: Dictionary, location: String, config: Dictionary, pending_changes: Dictionary, already_applied_changes: Dictionary = {}, visit_index: int = 0) -> void:
-	var enc: Dictionary = npc.get("encounter", {})
-	var npc_id: String = npc.get("id", "")
-	var npc_name: String = npc.get("name", "")
-	_encounter_cooldowns[npc_id] = GameManager.turn_count + 99
-	if _meets_encounter_requirements(enc):
-		var pass_changes: Dictionary = enc.get("pass_stat_changes", {})
-		var display_changes := already_applied_changes.duplicate()
-		var pages: Array = []
-		for line in enc.get("scene_lines", []):
-			pages.append(line)
-		for line in enc.get("dialogue_lines", []):
-			pages.append(npc_name + "：" + line)
-
-		var wechat_req: Dictionary = enc.get("wechat_request", {})
-		if wechat_req.size() > 0:
-			main_node().galgame._gal_encounter_data = enc
-			main_node().galgame._gal_npc_id = npc_id
-			main_node().galgame.show_galgame_dialog(pages, func() -> void:
-				_show_story_then_apply_npc_changes("", pending_changes, display_changes, npc_name, main_node().galgame.start_wechat_request_phase, "【结算】", npc_id, pass_changes)
-			)
-		else:
-			main_node().galgame.show_galgame_dialog(pages, func() -> void:
-				_show_story_then_apply_npc_changes("", pending_changes, display_changes, npc_name, _finish_location_event_after(), "【结算】", npc_id, pass_changes)
-			)
-		var encounter_changes := _merge_change_dicts(_merge_change_dicts(already_applied_changes, pending_changes), pass_changes)
-		GameManager.add_activity("社交", "在%s邂逅了%s" % [str(config.get("name", location)), npc_name], encounter_changes)
-	else:
-		var fail_pages: Array = []
-		for line in enc.get("scene_lines", []):
-			fail_pages.append(line)
-		for line in enc.get("dialogue_lines", []):
-			fail_pages.append(npc_name + "：" + line)
-		var requirement_hint := _format_encounter_requirement_hint(enc)
-		if requirement_hint != "":
-			fail_pages.append(requirement_hint)
-		else:
-			fail_pages.append("（你的属性不满足邂逅条件，擦肩而过...）")
-		_encounter_cooldowns[npc_id] = GameManager.turn_count + 4
-		main_node().galgame.show_galgame_dialog(fail_pages, func() -> void:
-				_record_location_activity(location, config, pending_changes, already_applied_changes, visit_index)
-				_show_location_result_from_config(location, config, pending_changes, already_applied_changes)
-		)
+	if _encounters and _encounters.has_method("handle_encounter"):
+		_encounters.handle_encounter(npc, location, config, pending_changes, already_applied_changes, visit_index)
 
 
 func _on_loc_library() -> void:

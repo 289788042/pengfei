@@ -864,3 +864,40 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 第一周加班后的教程链仍正确：`gate=wechat`。
 - 地图渲染仍正确：`visible=true`，`children=1`，`cards=8`，`modulate=(1,1,1,1)`。
 - Godot 项目脚本无编译错误。MCP 曾因临时 `await process_frame` 验收脚本产生两条 debugger warning，属于工具脚本噪音，不是项目脚本错误。
+
+## 24. 2026-06-20 追加：CityEventController / EncounterController 拆分
+
+本轮继续执行用户要求的“架构优先，别一直小补丁”。上一轮地点生命周期已归 `LocationActionRunner`，这一轮把地点行动后半段的城市碎片和 NPC 邂逅/重逢从 `AppPopupSystem.gd` 拆出去。
+
+新增脚本：
+- `scripts/CityEventController.gd`
+  - 接管 `Data/city_fragments.json` 加载。
+  - 接管城市碎片随机筛选、`min_turn` 过滤、带选项碎片 UI、选项花费/收益合并、碎片结果展示。
+  - 碎片选项期间仍锁住“结束本周”，结束后释放，保持旧体验。
+- `scripts/EncounterController.gd`
+  - 接管 NPC 邂逅条件判断、条件不足提示、邂逅冷却写入、微信请求阶段衔接。
+  - 接管 NPC 重逢候选检查、重逢演出、重逢结算。
+  - 继续保持当前口径：第一阶段核心男性随机邂逅关闭，关系入口以后由主线/半主线事件确定触发。
+
+兼容边界：
+- `AppPopupSystem.gd` 继续保留 `_city_fragments`，作为城市碎片池镜像，避免旧调试/临时脚本读取断掉。
+- `AppPopupSystem.gd` 继续保留 `_encounter_cooldowns`，因为 `GalgameSystem.gd` 和 `DebugPanel.gd` 仍会直接读写这个字段。
+- `AppPopupSystem.gd` 里的 `_trigger_city_fragment()`、`_check_encounter()`、`_handle_encounter()`、`_check_reunion()`、`_handle_reunion()`、`_show_reunion_result()` 都改成薄壳，转发到新控制器。
+- `LocationActionRunner.gd` 查询城市碎片时，优先走 `AppPopupSystem._has_city_fragments()`，不再直接依赖 App 内部字典。
+
+当前边界：
+- 地图 App：`MapAppController`。
+- 地点生命周期：`LocationActionRunner`。
+- 城市碎片：`CityEventController`。
+- NPC 邂逅/重逢演出：`EncounterController`。
+- `AppPopupSystem` 仍然负责大量手机 App、通用弹窗、数值结算展示和旧入口兼容。下一轮清理重点应转向支付宝/微信/职业 App 或通用结算展示服务，而不是继续往 App 文件里塞新玩法。
+
+验证结果：
+- Godot 编译：`CityEventController.gd`、`EncounterController.gd`、`AppPopupSystem.gd`、`LocationActionRunner.gd` 均通过。
+- 运行态实例化：`app=true`，`_city_events=true`，`_encounters=true`。
+- 城市碎片池读取成功：keys 为 `gym/library/bar/home/park/cafe/market`。
+- 连续两次打开地图：`map_visible=true`，`location_menu.children=1`，没有地图 UI 叠层。
+- `AppPopupSystem._has_city_fragments("park") == true`。
+- `AppPopupSystem._check_encounter("park")` 返回空，符合当前“随机核心男性邂逅关闭”的设计口径。
+- 直接触发 `AppPopupSystem._trigger_city_fragment("park")`：Galgame 对话出现，地点 hold 计数为 1，说明城市碎片展示链路已由新控制器接管。
+- Godot editor errors 最终为 0。
