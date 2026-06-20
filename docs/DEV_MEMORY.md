@@ -803,3 +803,31 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 地点卡启动：点击公司加班卡后地图关闭、进入加班地点剧情、日程写入 `周六:公司加班 | 周日:空闲`。
 - 地点结算：点掉结算后 `money` 增加、`energy=60`、`sanity=65`、教程 gate 切到 `wechat`，地点 hold 释放为 0。
 - 周推进：调用 `_proceed_next_week()` 后进入第 2 周工作日，`phase=WEEKDAY`，`month=1`，`week=2`，`turn=2`。
+
+## 22. 2026-06-20 追加：MapAppController 接管地图 UI 渲染
+
+本轮继续执行用户要求的“别一直打小补丁，先把架构收干净”。在上一轮 `MapAppController` 只接管地图打开入口和地点点击入口之后，这一轮把高德地图小屏 UI 的专属渲染逻辑也迁出 `AppPopupSystem.gd`。
+
+迁移内容：
+- `scripts/MapAppController.gd`
+  - 接管 `render_map_menu()`，负责高德地图小屏整体 UI 构建。
+  - 接管地点排序、路线摘要、状态指标 chip、地点卡片构建、地点锁定/可去状态、教程高亮地点卡呼吸、收益/消耗/条件文案、第一月地点开放节奏。
+  - 保留地点执行委托：点击地点卡后仍调用 `AppPopupSystem._start_location()`，地点生命周期、支付、碎片事件、NPC 重逢、背景 hold/release 仍暂时归旧地点系统。
+  - 渲染前清理旧 child 时改为 `remove_child()` 后 `queue_free()`，修掉同一帧重复打开地图时旧 child 还没释放导致的地图叠层风险。
+- `scripts/AppPopupSystem.gd`
+  - 删除原先 700 行左右地图 UI 专属 helper。
+  - `_render_map_menu()` 只保留兼容薄壳，转发给 `MapAppController.render_map_menu()`。
+  - 保留 `_restore_map_to_phone_layer()`、`_clear_phone_focus_overlays()`、`_reset_layer_visual_state()`、`_close_all_menus()` 等跨 App 层级工具。
+  - 地点执行中第一周加班/海边教程路由改为调用 `MainGame.is_first_week_beach_route_unlocked()`，不再依赖已移走的地图 helper。
+
+当前边界：
+- 地图 App 现在归 `MapAppController`，以后改地图 UI、地点卡、地点开放节奏，优先改这个文件。
+- 地点行动生命周期仍在 `AppPopupSystem.gd`，下一步如果继续重构，应考虑把地点配置、地点执行、支付后结算、碎片事件、NPC 重逢进一步拆成 `LocationActionController` 或继续增强 `LocationActionRunner`。
+
+验证结果：
+- Godot 编译：`MapAppController.gd`、`AppPopupSystem.gd`、`MainGame.gd`、`WeekFlowController.gd` 均通过。
+- 直接调用 `MapAppController.render_map_menu()`：`visible=true`，`children=1`，`cards=8`，`modulate=(1,1,1,1)`。
+- 连续两次调用 `MapAppController.open_map()`：`first=true`、`second=true`，仍保持 `children=1`、`cards=8`，无地图叠层。
+- 调用 `MapAppController.start_location("overtime")`：地图关闭，日程写入 `周六:公司加班 | 周日:空闲`，地点 hold=1，阻塞对话出现。
+- 旧入口 `AppPopupSystem._on_app_map()`：仍能打开地图，`visible=true`，`children=1`，`cards=8`，说明 `MainGame` 旧调用链未断。
+- Godot editor errors 最终为 0。
