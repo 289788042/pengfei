@@ -587,8 +587,10 @@ func _on_wechat_gui_input(event: InputEvent) -> void:
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		if _main.wc_chat_view.visible:
 			_on_chat_back()
+			_main.get_viewport().set_input_as_handled()
 			return
 		_on_close_wechat()
+		_main.get_viewport().set_input_as_handled()
 
 
 func handle_chat_mouse_shortcut(global_position: Vector2) -> bool:
@@ -812,6 +814,7 @@ func _close_chat_view_now() -> void:
 	if old_bg != null:
 		old_bg.queue_free()
 	_set_layer_visible(_main.wc_chat_view, false)
+	_set_layer_visible(_main.wechat_menu, true, false)
 	_set_main_wechat_panel_visible(true)
 	_current_chat_npc = ""
 	if _should_finish_first_week_wechat_on_back():

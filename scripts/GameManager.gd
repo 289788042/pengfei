@@ -108,7 +108,7 @@ var awaiting_month_settle: bool = false
 
 ## APP渐进解锁：app_id -> 所需最小turn_count
 var _app_unlock_turn: Dictionary = {
-	"map": 1, "wechat": 1, "diary": 5, "job": 5,
+	"map": 1, "wechat": 1, "diary": 5, "job": 8,
 	"baotao": 6, "dating": 7, "tuanmei": 9, "zodiac": 13, "house": 17,
 }
 ## APP显示名：用于锁定占位和提示

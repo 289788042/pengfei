@@ -67,6 +67,17 @@ func hide_all() -> void:
 	sync_all()
 
 
+func clear_stored_disabled(root: Node = null) -> void:
+	if root == null:
+		_stored_disabled.clear()
+		return
+	var buttons: Array[BaseButton] = []
+	_collect_buttons(root, buttons)
+	for button in buttons:
+		if is_instance_valid(button):
+			_stored_disabled.erase(button.get_instance_id())
+
+
 func register_layer(layer: Control, blocks_background: bool = true) -> void:
 	if not is_instance_valid(layer):
 		return
@@ -81,6 +92,7 @@ func _collect_layers() -> void:
 	_blocking_layers.clear()
 	var names := [
 		"LocationMenu",
+		"WeekdayPanel",
 		"WeChatMenu",
 		"WCChatView",
 		"AlipayPopup",

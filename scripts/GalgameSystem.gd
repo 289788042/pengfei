@@ -43,6 +43,12 @@ var _beep_pitch_base: float = 1.0
 ## 环境音播放器（雨声等）
 var _ambient_player: AudioStreamPlayer = null
 var _ambient_tween: Tween = null
+var _ambient_loop_enabled: bool = false
+
+const AMBIENT_SILENT_DB := -40.0
+const AMBIENT_FADE_IN_SECONDS := 1.25
+const AMBIENT_FADE_OUT_SECONDS := 0.85
+const AMBIENT_DEFAULT_VOLUME_DB := -10.0
 
 
 func init(main: Node) -> void:
@@ -54,7 +60,8 @@ func init(main: Node) -> void:
 	if DisplayServer.get_name() != "headless":
 		_beep_player.stream = _generate_beep()
 	_ambient_player = AudioStreamPlayer.new()
-	_ambient_player.volume_db = -40.0
+	_ambient_player.volume_db = AMBIENT_SILENT_DB
+	_ambient_player.finished.connect(_on_ambient_finished)
 	main.add_child(_ambient_player)
 	left_dialog_box = main.left_dialog_box
 	left_dialog_box.z_index = 220
@@ -130,6 +137,9 @@ func show_message(text: String, galgame: bool = false) -> void:
 		_gal_tween.kill()
 		_gal_typing = false
 	_clear_external_choice_containers()
+	_set_dialog_focus_active(true)
+	left_dialog_box.z_index = 1000
+	left_dialog_box.z_as_relative = false
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	left_dialog_text.visible = true
@@ -149,7 +159,7 @@ func _msg_type_char() -> void:
 		dialog_tween = main_node().create_tween()
 		dialog_tween.tween_interval(3.0)
 		dialog_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.5)
-		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; _maybe_clear_location_bg())
+		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; _set_dialog_focus_active(false); _maybe_clear_location_bg())
 		return
 	_gal_char_idx = _skip_bbcode(_gal_full_text, _gal_char_idx)
 	_gal_char_idx += 1
@@ -183,7 +193,7 @@ func _skip_typing() -> void:
 		dialog_tween = main_node().create_tween()
 		dialog_tween.tween_interval(3.0)
 		dialog_tween.tween_property(left_dialog_box, "modulate:a", 0.0, 0.5)
-		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; _maybe_clear_location_bg())
+		dialog_tween.tween_callback(func(): left_dialog_box.visible = false; _set_dialog_focus_active(false); _maybe_clear_location_bg())
 	else:
 		_start_arrow_anim()
 
@@ -201,6 +211,7 @@ func dismiss_dialog() -> void:
 	left_dialog_text.text = _gal_full_text
 	left_dialog_box.modulate.a = 0.0
 	left_dialog_box.visible = false
+	_set_dialog_focus_active(false)
 	_hide_phone_dim()
 	var cb: Callable = _gal_on_complete
 	_gal_on_complete = Callable()
@@ -241,6 +252,7 @@ func force_clear_dialog() -> void:
 	if is_instance_valid(left_dialog_box):
 		left_dialog_box.modulate.a = 0.0
 		left_dialog_box.visible = false
+	_set_dialog_focus_active(false)
 	if main_node():
 		var dim: ColorRect = main_node().get("_phone_dim") as ColorRect
 		if dim:
@@ -264,7 +276,9 @@ func show_galgame_dialog(pages: Array, on_complete: Callable = Callable()) -> vo
 	_gal_fading_out = false
 	_gal_pending_end_callback = Callable()
 	_gal_pending_has_encounter = false
-	left_dialog_box.z_index = 220
+	_set_dialog_focus_active(true)
+	left_dialog_box.z_index = 1000
+	left_dialog_box.z_as_relative = false
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
 	# 暗化手机区域
@@ -290,6 +304,8 @@ func _clear_external_choice_containers() -> void:
 ## 开始打字当前页
 func _gal_start_page() -> void:
 	_gal_full_text = _gal_pages[_gal_page_idx]
+	if main_node().has_method("_on_galgame_page_started"):
+		main_node().call("_on_galgame_page_started", _gal_full_text)
 	_apply_page_color(_gal_full_text)
 	_stop_arrow_anim()
 	_gal_char_idx = 0
@@ -409,6 +425,7 @@ func _gal_end(immediate: bool = false) -> void:
 			_gal_fading_out = false
 			left_dialog_box.modulate.a = 0.0
 			left_dialog_box.visible = false
+			_set_dialog_focus_active(false)
 			_maybe_clear_location_bg()
 			var pending_cb: Callable = _gal_pending_end_callback
 			var pending_has_encounter: bool = _gal_pending_has_encounter
@@ -431,6 +448,7 @@ func _gal_end(immediate: bool = false) -> void:
 		_gal_fading_out = false
 		left_dialog_box.modulate.a = 0.0
 		left_dialog_box.visible = false
+		_set_dialog_focus_active(false)
 		_maybe_clear_location_bg()
 		_gal_pending_end_callback = Callable()
 		_gal_pending_has_encounter = false
@@ -442,6 +460,7 @@ func _gal_end(immediate: bool = false) -> void:
 	_gal_tween.tween_callback(func() -> void:
 		_gal_fading_out = false
 		left_dialog_box.visible = false
+		_set_dialog_focus_active(false)
 		_maybe_clear_location_bg()
 		var pending_cb: Callable = _gal_pending_end_callback
 		var pending_has_encounter: bool = _gal_pending_has_encounter
@@ -468,6 +487,7 @@ func start_wechat_request_phase() -> void:
 	if wc_data.size() == 0:
 		left_dialog_box.modulate.a = 0.0
 		left_dialog_box.visible = false
+		_set_dialog_focus_active(false)
 		return
 	var pages: Array = []
 	var _npc_name: String = GameManager.get_npc_name(_gal_npc_id) if _gal_npc_id != "" else "陌生男子"
@@ -483,6 +503,7 @@ func _show_wechat_choices_phase() -> void:
 	if options.size() == 0:
 		left_dialog_box.modulate.a = 0.0
 		left_dialog_box.visible = false
+		_set_dialog_focus_active(false)
 		return
 	_gal_pages.clear()
 	_gal_page_idx = 0
@@ -490,6 +511,7 @@ func _show_wechat_choices_phase() -> void:
 	_stop_arrow_anim()
 	left_dialog_box.visible = true
 	left_dialog_box.modulate.a = 1.0
+	_set_dialog_focus_active(true)
 	_show_phone_dim()
 	left_dialog_text.visible = false
 	if is_instance_valid(_gal_choice_container):
@@ -682,7 +704,6 @@ func clear_location_bg() -> void:
 	if _gal_pages.size() > 0 or is_instance_valid(_gal_choice_container):
 		return
 	if main_node().has_method("return_to_home_environment"):
-		_stop_ambient()
 		main_node().return_to_home_environment("dialog_clear")
 		return
 	if not bg_texture or not bg_texture.visible:
@@ -698,45 +719,170 @@ func clear_location_bg() -> void:
 		scene_bg.visible = true
 	)
 
+func play_ambient_for_location(location: String) -> void:
+	_play_ambient_config(_ambient_config_for_location(location))
+
+
 func _play_ambient_for_bg(texture_path: String) -> void:
-	var ambients: Dictionary = {
-		# Add entries here when ambient audio assets are available.
-	}
-	var matched_key: String = ""
-	for key in ambients:
-		if key.to_lower() in texture_path.to_lower():
-			matched_key = key
-			break
-	if matched_key == "":
+	_play_ambient_config(_ambient_config_for_bg(texture_path))
+
+
+func _ambient_config_for_bg(texture_path: String) -> Dictionary:
+	var lower_path := texture_path.to_lower()
+	if "gym_bg_rain_night" in lower_path:
+		return {
+			"paths": ["res://Assets/Audio/Ambient/Rain/Rain_thunder.wav"],
+			"volume_db": -14.0,
+		}
+	if "gym_bg_rain_morning" in lower_path:
+		return {
+			"paths": ["res://Assets/Audio/Ambient/Rain/Rain_on_Window.wav"],
+			"volume_db": -15.0,
+		}
+	if "/gym/" in lower_path and "rain" in lower_path:
+		return {
+			"paths": ["res://Assets/Audio/Ambient/Rain/Rain.wav"],
+			"volume_db": -15.0,
+		}
+	if "beach" in lower_path or "/park/" in lower_path:
+		return {
+			"paths": [
+				"res://Assets/Audio/Ambient/Beach/beach1.wav",
+				"res://Assets/Audio/Ambient/Beach/beach2.wav",
+			],
+			"volume_db": -12.0,
+		}
+	return {}
+
+
+func _ambient_config_for_location(location: String) -> Dictionary:
+	match location:
+		"home":
+			return {
+				"paths": ["res://Assets/Audio/Ambient/Rain/Rain_on_Window.wav"],
+				"volume_db": -16.0,
+			}
+		"market":
+			return {
+				"paths": ["res://Assets/Audio/Ambient/Restaurant/dapaidang.wav"],
+				"volume_db": -12.0,
+			}
+		"overtime":
+			return {
+				"paths": [
+					"res://Assets/Audio/Ambient/Office/office1.wav",
+					"res://Assets/Audio/Ambient/Office/office2.wav",
+				],
+				"volume_db": -14.0,
+			}
+		"park":
+			return {
+				"paths": [
+					"res://Assets/Audio/Ambient/Beach/beach1.wav",
+					"res://Assets/Audio/Ambient/Beach/beach2.wav",
+				],
+				"volume_db": -12.0,
+			}
+	return {}
+
+
+func _play_ambient_config(config: Dictionary) -> void:
+	if not is_instance_valid(_ambient_player):
+		return
+	if config.is_empty():
 		_stop_ambient()
 		return
-	var audio_path: String = ambients[matched_key]
-	if not ResourceLoader.exists(audio_path):
+	var audio_path := _pick_ambient_path(config.get("paths", []))
+	if audio_path == "":
+		_stop_ambient()
+		return
+	if not ResourceLoader.exists(audio_path) and not FileAccess.file_exists(audio_path):
+		return
+	var target_db := float(config.get("volume_db", AMBIENT_DEFAULT_VOLUME_DB))
+	if str(_ambient_player.get_meta("ambient_path", "")) == audio_path and _ambient_player.playing:
+		_ambient_loop_enabled = true
+		_fade_current_ambient_to(target_db)
 		return
 	var stream := load(audio_path) as AudioStream
 	if not stream:
 		return
-	if _ambient_player.stream == stream and _ambient_player.playing:
-		return
-	_ambient_player.stream = stream
-	_ambient_player.volume_db = -40.0
-	_ambient_player.play()
+	_prepare_ambient_stream(stream)
+	_start_ambient_stream(stream, audio_path, target_db)
+
+
+func _pick_ambient_path(paths: Array) -> String:
+	var available: Array = []
+	for item in paths:
+		var path := str(item)
+		if ResourceLoader.exists(path) or FileAccess.file_exists(path):
+			available.append(path)
+	if available.is_empty():
+		return ""
+	return str(available[randi() % available.size()])
+
+
+func _prepare_ambient_stream(stream: AudioStream) -> void:
+	if stream is AudioStreamWAV:
+		var wav := stream as AudioStreamWAV
+		wav.loop_mode = 0
+		wav.loop_begin = 0
+		wav.loop_end = 0
+
+
+func _fade_current_ambient_to(target_db: float) -> void:
 	if _ambient_tween and _ambient_tween.is_valid():
 		_ambient_tween.kill()
 	_ambient_tween = main_node().create_tween()
-	_ambient_tween.tween_property(_ambient_player, "volume_db", -8.0, 1.5)
+	_ambient_tween.tween_property(_ambient_player, "volume_db", target_db, 0.35)
+
+
+func _start_ambient_stream(stream: AudioStream, audio_path: String, target_db: float) -> void:
+	if _ambient_tween and _ambient_tween.is_valid():
+		_ambient_tween.kill()
+	var fade_in := func():
+		if not is_instance_valid(_ambient_player):
+			return
+		_ambient_player.stream = stream
+		_ambient_player.set_meta("ambient_path", audio_path)
+		_ambient_player.volume_db = AMBIENT_SILENT_DB
+		_ambient_loop_enabled = true
+		_ambient_player.play()
+		_ambient_tween = main_node().create_tween()
+		_ambient_tween.tween_property(_ambient_player, "volume_db", target_db, AMBIENT_FADE_IN_SECONDS)
+	if _ambient_player.playing:
+		_ambient_tween = main_node().create_tween()
+		_ambient_tween.tween_property(_ambient_player, "volume_db", AMBIENT_SILENT_DB, AMBIENT_FADE_OUT_SECONDS)
+		_ambient_tween.tween_callback(fade_in)
+		return
+	fade_in.call()
 
 func _stop_ambient() -> void:
-	if not _ambient_player or not _ambient_player.playing:
+	if not is_instance_valid(_ambient_player):
+		return
+	_ambient_loop_enabled = false
+	if not _ambient_player.playing:
+		_ambient_player.stream = null
+		_ambient_player.set_meta("ambient_path", "")
 		return
 	if _ambient_tween and _ambient_tween.is_valid():
 		_ambient_tween.kill()
 	_ambient_tween = main_node().create_tween()
-	_ambient_tween.tween_property(_ambient_player, "volume_db", -40.0, 1.0)
+	_ambient_tween.tween_property(_ambient_player, "volume_db", AMBIENT_SILENT_DB, AMBIENT_FADE_OUT_SECONDS)
 	_ambient_tween.tween_callback(func():
+		if not is_instance_valid(_ambient_player):
+			return
 		_ambient_player.stop()
 		_ambient_player.stream = null
+		_ambient_player.set_meta("ambient_path", "")
 	)
+
+
+func _on_ambient_finished() -> void:
+	if not _ambient_loop_enabled:
+		return
+	if not is_instance_valid(_ambient_player) or not _ambient_player.stream:
+		return
+	_ambient_player.play()
 
 # ==================== 公共访问 ====================
 
@@ -751,6 +897,11 @@ func main_node() -> Node:
 func _sync_main_ui_state() -> void:
 	if main_node().has_method("sync_ui_state"):
 		main_node().sync_ui_state()
+
+
+func _set_dialog_focus_active(active: bool) -> void:
+	if main_node().has_method("set_dialog_focus_active"):
+		main_node().set_dialog_focus_active(active)
 
 
 func _show_phone_dim() -> void:

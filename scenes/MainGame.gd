@@ -161,6 +161,9 @@ var _debug_panel: Control  ## DebugPanel (F1 toggle)
 var ui_state: RefCounted
 var action_service: RefCounted
 var environment: RefCounted
+var phone_apps: RefCounted
+var tutorial: RefCounted
+var ui_focus: RefCounted
 
 ## 属性进度条（金钱不用进度条）
 var progress_energy: ProgressBar
@@ -178,15 +181,11 @@ var label_pressure_summary: Label
 var label_pressure_hint: Label
 var label_early_goal: Label
 var _skip_week_confirm: bool = false
+var _weekday_panel_waiting_for_story: bool = false
+var _weekday_panel_clear_frames: int = 0
 var _phone_dim: ColorRect = null
 var _runtime_disposed: bool = false
 var _transition_token: int = 0
-var _first_week_app_gate: String = ""
-var _first_week_app_tutorial_done: bool = false
-var _first_week_alipay_tutorial_shown: bool = false
-var _first_week_overtime_tutorial_done: bool = false
-var _first_week_wechat_tutorial_done: bool = false
-var _first_week_beach_unlocked: bool = false
 var _phone_focus_button: Button = null
 var _phone_focus_tween: Tween = null
 var _phone_focus_halo: Panel = null
@@ -326,6 +325,7 @@ func _ready() -> void:
 	_refresh_action_tooltips()
 	left_bg = find_child("BgImage", true, false) as ColorRect
 	_setup_foundation_services()
+	_play_home_ambient()
 	pass
 	_refresh_ui()
 	pass
@@ -414,31 +414,22 @@ func _dispose_runtime_systems() -> void:
 func _on_app_wechat() -> void:
 	if not _allow_first_week_app_open("wechat"):
 		return
-	if _first_week_app_gate == "wechat":
+	if tutorial and tutorial.has_method("is_gate") and tutorial.is_gate("wechat"):
 		_stop_phone_focus_pulse()
-	if not can_open_phone_app():
+	if not phone_apps or not phone_apps.has_method("open_wechat"):
 		return
-	_hide_all_popups()
-	wechat._build_chat_items()
-	wechat._on_wc_tab(0)
-	wechat_menu.mouse_filter = Control.MOUSE_FILTER_STOP
-	wc_panel_container.mouse_filter = Control.MOUSE_FILTER_STOP
-	if not wechat_menu.gui_input.is_connected(wechat._on_wechat_gui_input):
-		wechat_menu.gui_input.connect(wechat._on_wechat_gui_input)
-	set_ui_layer_visible(wechat_menu, true)
+	phone_apps.open_wechat()
 
 
 func _on_app_alipay() -> void:
 	if not _allow_first_week_app_open("alipay"):
 		return
-	if _first_week_app_gate == "alipay":
+	if tutorial and tutorial.has_method("is_gate") and tutorial.is_gate("alipay"):
 		_force_clear_dialog_overlay()
-	if not can_open_phone_app():
+	if not phone_apps or not phone_apps.has_method("open_alipay"):
 		return
-	_hide_all_popups()
-	alipay._refresh_alipay_ui()
-	set_ui_layer_visible(alipay_popup, true)
-	if _first_week_app_gate == "alipay":
+	var opened: bool = phone_apps.open_alipay()
+	if opened and tutorial and tutorial.has_method("is_gate") and tutorial.is_gate("alipay"):
 		_stop_phone_focus_pulse()
 		_show_first_week_alipay_tutorial()
 
@@ -446,78 +437,37 @@ func _on_app_alipay() -> void:
 func _on_app_map_pressed() -> void:
 	if not _allow_first_week_app_open("map"):
 		return
-	var was_first_week_map_gate := _first_week_app_gate == "map"
-	var was_first_week_beach_gate := _first_week_app_gate == "map_beach"
+	if tutorial and tutorial.has_method("is_second_week_map_hint_active") and tutorial.is_second_week_map_hint_active():
+		tutorial.clear_second_week_map_hint()
+	var gate := ""
+	if tutorial and tutorial.has_method("current_gate"):
+		gate = tutorial.current_gate()
 	app._on_app_map()
-	if was_first_week_map_gate:
+	if gate == "map":
 		_finish_first_week_app_tutorial()
 		_show_tutorial_dialog(["先去[color=FFD700]加班[/color]吧，加班费可能会让我挺过这个月。"])
-	elif was_first_week_beach_gate:
-		_first_week_app_gate = ""
-		_stop_phone_focus_pulse()
-		_sync_phone_home_apps(true)
+	elif gate == "map_beach" and tutorial and tutorial.has_method("on_map_beach_opened"):
+		tutorial.on_map_beach_opened()
 
 
 func _is_first_week_app_tutorial_context() -> bool:
-	return GameManager.month == 1 and GameManager.week_in_month == 1 and GameManager.turn_count == 1
+	return tutorial != null and tutorial.has_method("is_first_week_context") and tutorial.is_first_week_context()
 
 
 func _maybe_start_first_week_app_tutorial() -> void:
-	if _first_week_app_tutorial_done or _first_week_app_gate != "":
-		return
-	if not _is_first_week_app_tutorial_context():
-		return
-	_first_week_app_gate = "alipay"
-	_hide_phone_dim_overlay()
-	_refresh_first_week_app_focus()
+	if tutorial and tutorial.has_method("maybe_start_first_week_app_tutorial"):
+		tutorial.maybe_start_first_week_app_tutorial()
 
 
 func _allow_first_week_app_open(app_id: String) -> bool:
-	if _first_week_app_gate == "":
-		return true
-	if not _is_first_week_app_tutorial_context():
-		return true
-	if _first_week_app_gate == "map_beach" and app_id == "map":
-		return true
-	if app_id == _first_week_app_gate:
-		return true
-	if _first_week_app_gate == "alipay":
-		_show_tutorial_dialog(["先打开支服了宝，看看账单吧"])
-	elif _first_week_app_gate == "map":
-		_show_tutorial_dialog(["现在打开高德地图，再决定出门去哪。"])
-	elif _first_week_app_gate == "wechat":
-		_show_tutorial_dialog(["先看看微信吧？别漏掉家人和朋友的信息。"])
-	elif _first_week_app_gate == "map_beach":
-		_show_tutorial_dialog(["先打开高德地图，去海边散散心。"])
-	return false
+	if tutorial and tutorial.has_method("allow_app_open"):
+		return tutorial.allow_app_open(app_id)
+	return true
 
 
 func _refresh_first_week_app_focus() -> void:
-	if _first_week_app_gate == "":
-		_stop_phone_focus_pulse()
-		return
-	var target: Button = null
-	match _first_week_app_gate:
-		"alipay":
-			target = btn_app_alipay
-			_keep_tutorial_app_button_normal(btn_app_map)
-			_keep_tutorial_app_button_normal(btn_app_wechat)
-		"map":
-			target = btn_app_map
-			_keep_tutorial_app_button_normal(btn_app_alipay)
-			_keep_tutorial_app_button_normal(btn_app_wechat)
-		"wechat":
-			target = btn_app_wechat
-			_keep_tutorial_app_button_normal(btn_app_alipay)
-			_keep_tutorial_app_button_normal(btn_app_map)
-		"map_beach":
-			target = btn_app_map
-			_keep_tutorial_app_button_normal(btn_app_alipay)
-			_keep_tutorial_app_button_normal(btn_app_wechat)
-	if is_instance_valid(target):
-		target.disabled = false
-		target.mouse_filter = Control.MOUSE_FILTER_STOP
-		_start_phone_focus_pulse(target)
+	if tutorial and tutorial.has_method("refresh_first_week_app_focus"):
+		tutorial.refresh_first_week_app_focus()
 
 
 func _keep_tutorial_app_button_normal(button: Button) -> void:
@@ -594,9 +544,10 @@ func _stop_phone_focus_pulse(restore: bool = true) -> void:
 
 
 func _show_first_week_alipay_tutorial() -> void:
-	if _first_week_alipay_tutorial_shown:
+	if not tutorial or not tutorial.has_method("consume_alipay_tutorial_request"):
 		return
-	_first_week_alipay_tutorial_shown = true
+	if not tutorial.consume_alipay_tutorial_request():
+		return
 	_stop_tutorial_flash()
 	_force_clear_dialog_overlay()
 	call_deferred("_show_alipay_tutorial_callouts")
@@ -765,8 +716,9 @@ func _show_tutorial_dialog(pages: Array) -> void:
 
 
 func _hide_phone_dim_overlay() -> void:
-	if galgame and galgame.has_method("_hide_phone_dim"):
-		galgame.call("_hide_phone_dim")
+	if ui_focus and ui_focus.has_method("hide_phone_dim_overlay"):
+		ui_focus.hide_phone_dim_overlay()
+		return
 	if is_instance_valid(_phone_dim):
 		_phone_dim.visible = false
 		_phone_dim.modulate.a = 1.0
@@ -801,83 +753,51 @@ func _stop_tutorial_flash(restore: bool = true) -> void:
 func on_alipay_closed() -> void:
 	_clear_alipay_tutorial_callouts()
 	_stop_tutorial_flash()
-	if _first_week_app_gate != "alipay":
-		return
-	_first_week_app_gate = "map"
-	_sync_phone_home_apps(true)
-	_refresh_first_week_app_focus()
+	if tutorial and tutorial.has_method("on_alipay_closed"):
+		tutorial.on_alipay_closed()
 
 
 func _finish_first_week_app_tutorial() -> void:
-	_first_week_app_gate = ""
-	_first_week_app_tutorial_done = true
-	_clear_alipay_tutorial_callouts()
-	_stop_phone_focus_pulse()
-	_stop_stats_panel_focus_flash()
-	_sync_phone_home_apps(true)
+	if tutorial and tutorial.has_method("finish_first_week_app_tutorial"):
+		tutorial.finish_first_week_app_tutorial()
 
 
 func on_first_week_location_finished(location: String) -> void:
-	if location != "overtime":
-		return
-	if not _is_first_week_app_tutorial_context():
-		return
-	if _first_week_overtime_tutorial_done:
-		return
-	_first_week_overtime_tutorial_done = true
-	_first_week_app_gate = "wechat"
-	_sync_phone_home_apps(true)
-	_refresh_first_week_app_focus()
-	_show_tutorial_dialog([
-		"加班回来了，钱是多了一点，情绪也是真的掉了。",
-		"先打开[color=6BB7FF]微信[/color]看看吧。家人和朋友的信息，也别完全错过。",
-	])
+	if tutorial and tutorial.has_method("on_first_week_location_finished"):
+		tutorial.on_first_week_location_finished(location)
 
 
 func on_wechat_closed() -> void:
-	if _first_week_app_gate != "wechat":
-		return
-	if not _is_first_week_app_tutorial_context():
-		return
-	if _first_week_wechat_tutorial_done:
-		return
-	_first_week_wechat_tutorial_done = true
-	_first_week_beach_unlocked = true
-	_first_week_app_gate = ""
-	_stop_phone_focus_pulse()
-	_sync_phone_home_apps(true)
-	_show_first_week_stats_tutorial()
+	if tutorial and tutorial.has_method("on_wechat_closed"):
+		tutorial.on_wechat_closed()
 
 
 func should_finish_first_week_wechat_on_back() -> bool:
-	return _first_week_app_gate == "wechat" and _is_first_week_app_tutorial_context()
+	if tutorial and tutorial.has_method("should_finish_first_week_wechat_on_back"):
+		return tutorial.should_finish_first_week_wechat_on_back()
+	return false
 
 
 func is_first_week_beach_route_unlocked() -> bool:
-	return _is_first_week_app_tutorial_context() and _first_week_beach_unlocked
+	if tutorial and tutorial.has_method("is_first_week_beach_route_unlocked"):
+		return tutorial.is_first_week_beach_route_unlocked()
+	return false
 
 
 func should_pulse_first_week_park_card() -> bool:
-	return is_first_week_beach_route_unlocked() and _first_week_app_gate == "map_beach"
+	if tutorial and tutorial.has_method("should_pulse_first_week_park_card"):
+		return tutorial.should_pulse_first_week_park_card()
+	return false
 
 
 func _show_first_week_stats_tutorial() -> void:
-	_start_stats_panel_focus_flash()
-	if is_instance_valid(left_dialog_box):
-		left_dialog_box.z_index = 220
-	_hide_phone_dim_overlay()
-	galgame.show_galgame_dialog([
-		"加班回来，精神紧绷，很疲惫，也有点 emo。",
-		"[color=6BB7FF]（加班会减少情绪值，请注意自己的情绪，数值过低会导致严重的后果。）[/color]",
-		"[color=6BB7FF]（在这个快节奏的城市里，记得好好照顾自己的心理健康。）[/color]",
-		"[color=6BB7FF]（关于自己的所有属性数值，可以在右侧手机的数值面板中看到。手机里正在发光的那个框框就是。）[/color]",
-		"别继续硬扛了。打开高德地图，去海边散散心吧。",
-	], func() -> void:
-		_stop_stats_panel_focus_flash()
-		_first_week_app_gate = "map_beach"
-		_sync_phone_home_apps(true)
-		_refresh_first_week_app_focus()
-	)
+	if tutorial and tutorial.has_method("show_first_week_stats_tutorial"):
+		tutorial.show_first_week_stats_tutorial()
+
+
+func _on_galgame_page_started(text: String) -> void:
+	if tutorial and tutorial.has_method("on_galgame_page_started"):
+		tutorial.on_galgame_page_started(text)
 
 
 func _start_stats_panel_focus_flash() -> void:
@@ -929,6 +849,18 @@ func _update_stats_panel_focus_breathing() -> void:
 func _process(_delta: float) -> void:
 	if ui_state and ui_state.has_method("sync_all"):
 		ui_state.sync_all()
+	if _weekday_panel_waiting_for_story:
+		if current_phase != Phase.WEEKDAY:
+			_weekday_panel_waiting_for_story = false
+			_weekday_panel_clear_frames = 0
+		elif has_blocking_dialog() or _has_active_blocking_layer():
+			_weekday_panel_clear_frames = 0
+		else:
+			_weekday_panel_clear_frames += 1
+			if _weekday_panel_clear_frames >= 3:
+				_weekday_panel_waiting_for_story = false
+				_weekday_panel_clear_frames = 0
+				_show_weekday_planning_panel()
 	_repair_next_week_button_state()
 	_update_phone_focus_breathing()
 	_update_stats_panel_focus_breathing()
@@ -1044,6 +976,12 @@ func _setup_foundation_services() -> void:
 	action_service.init(self)
 	ui_state = _new_refcounted_script("res://scripts/UIStateManager.gd")
 	ui_state.init(self)
+	ui_focus = _new_refcounted_script("res://scripts/UIFocusManager.gd")
+	ui_focus.init(self)
+	phone_apps = _new_refcounted_script("res://scripts/PhoneAppController.gd")
+	phone_apps.init(self)
+	tutorial = _new_refcounted_script("res://scripts/TutorialDirector.gd")
+	tutorial.init(self)
 
 
 func set_ui_layer_visible(layer: Control, value: bool, exclusive: bool = true) -> void:
@@ -1064,18 +1002,12 @@ func sync_ui_state() -> void:
 
 
 func _force_clear_dialog_overlay() -> void:
-	if galgame and galgame.has_method("force_clear_dialog"):
-		galgame.force_clear_dialog()
-	if is_instance_valid(left_dialog_text):
-		left_dialog_text.text = ""
-		left_dialog_text.visible = true
+	if ui_focus and ui_focus.has_method("force_clear_dialog_overlay"):
+		ui_focus.force_clear_dialog_overlay()
+		return
 	if is_instance_valid(left_dialog_box):
 		left_dialog_box.modulate.a = 0.0
 		left_dialog_box.visible = false
-	if is_instance_valid(_phone_dim):
-		_phone_dim.visible = false
-		_phone_dim.modulate.a = 1.0
-		_phone_dim.color.a = 0.0
 	sync_ui_state()
 
 
@@ -1085,6 +1017,13 @@ func has_blocking_dialog() -> bool:
 	if is_instance_valid(left_dialog_box) and left_dialog_box.visible and left_dialog_box.modulate.a > 0.05:
 		return true
 	return false
+
+
+func set_dialog_focus_active(active: bool) -> void:
+	if ui_focus and ui_focus.has_method("set_dialog_focus_active"):
+		ui_focus.set_dialog_focus_active(active)
+	elif ui_state and ui_state.has_method("sync_all"):
+		ui_state.sync_all()
 
 
 func can_open_phone_app() -> bool:
@@ -1145,6 +1084,12 @@ func show_location_bg(texture_path: String, context: String = "location") -> voi
 func return_to_home_environment(reason: String = "") -> void:
 	if environment and environment.has_method("clear_to_home"):
 		environment.clear_to_home(reason)
+	_play_home_ambient()
+
+
+func _play_home_ambient() -> void:
+	if galgame and galgame.has_method("play_ambient_for_location"):
+		galgame.play_ambient_for_location("home")
 
 
 
@@ -1229,39 +1174,75 @@ func _enter_weekday() -> void:
 	btn_work_normal.text = "正常打卡 (精力-30, 情绪-15, 待发工资+%d)" % _get_salary("normal")
 	btn_work_slack.text = "摸鱼混日子 (精力-10, 情绪+5, 待发工资+%d)" % _get_salary("slack")
 	btn_work_overtime.text = "疯狂自愿加班 (精力-60, 情绪-30, 待发工资+%d)" % _get_salary("overtime")
+	weekday_panel.visible = false
+	_reset_weekday_choice_buttons()
+	_refresh_ui()
+	sync_ui_state()
+	call_deferred("_begin_weekday_flow")
+
+
+func _begin_weekday_flow() -> void:
+	if current_phase != Phase.WEEKDAY:
+		return
+	if _maybe_trigger_weekday_story_event():
+		_weekday_panel_waiting_for_story = true
+		_weekday_panel_clear_frames = 0
+		sync_ui_state()
+		return
+	_show_weekday_planning_panel()
+
+
+func _show_weekday_planning_panel() -> void:
+	if current_phase != Phase.WEEKDAY or GameManager.game_finished or GameManager.awaiting_month_settle:
+		return
+	_weekday_panel_clear_frames = 0
+	_reset_weekday_choice_buttons()
 	weekday_panel.visible = true
+	sync_ui_state()
+
+
+func _reset_weekday_choice_buttons() -> void:
 	btn_food_low.disabled = false
 	btn_food_mid.disabled = false
 	btn_food_high.disabled = false
 	btn_work_normal.disabled = true
 	btn_work_slack.disabled = true
 	btn_work_overtime.disabled = true
-	_refresh_ui()
-	sync_ui_state()
-	call_deferred("_maybe_trigger_weekday_story_event")
+	if ui_state and ui_state.has_method("clear_stored_disabled"):
+		ui_state.clear_stored_disabled(weekday_panel)
 
 
-func _maybe_trigger_weekday_story_event() -> void:
+func _maybe_trigger_weekday_story_event() -> bool:
 	if current_phase != Phase.WEEKDAY or GameManager.game_finished or GameManager.awaiting_month_settle:
-		return
+		return false
 	if GameManager.month == 1 and GameManager.week_in_month == 2:
 		_trigger_mainline_lin_fan_first_brush()
+		return true
 	elif GameManager.month == 1 and GameManager.week_in_month == 3:
 		_push_a_qiang_family_hint_01()
+		return true
 	elif GameManager.month == 2 and GameManager.week_in_month == 1:
 		_trigger_mainline_lin_fan_second_brush()
+		return true
 	elif GameManager.month == 2 and GameManager.week_in_month == 3:
 		_push_a_qiang_family_hint_02()
+		return true
 	elif GameManager.month == 2 and GameManager.week_in_month == 4:
 		_unlock_lin_fan_story_contact()
+		return true
 	elif GameManager.month == 3 and GameManager.week_in_month == 1:
 		_trigger_chen_mo_dinner_notice()
+		return true
 	elif GameManager.month == 3 and GameManager.week_in_month == 2:
 		_trigger_chen_mo_first_dinner()
+		return true
 	elif GameManager.month == 3 and GameManager.week_in_month == 3:
 		_unlock_a_qiang_story_contact()
+		return true
 	elif GameManager.month == 3 and GameManager.week_in_month == 4:
 		_push_chen_mo_light_followup()
+		return true
+	return false
 
 
 func _show_mainline_event(flag: String, pages: Array, changes: Dictionary = {}, activity_desc: String = "") -> void:
@@ -1705,10 +1686,18 @@ func _enter_weekend() -> void:
 	sync_ui_state()
 	btn_next_week.disabled = false
 	_maybe_start_first_week_app_tutorial()
+	call_deferred("_maybe_show_second_week_map_hint")
 	call_deferred("_maybe_show_client_dinner_prep_prompt")
 
 
 func _update_weekend_ui() -> void:
+	btn_next_week.text = "⏭ 结束本周"
+	btn_next_week.tooltip_text = "%s\n\n本周日程：%s" % [
+		_build_week_confirm_text(),
+		GameManager.get_weekend_schedule_text(),
+	]
+	_sync_phone_home_apps(true)
+	return
 	var preview := _get_month_end_preview()
 	btn_next_week.text = "⏭ 结束本周｜月底:%d" % [
 		int(preview.get("cash_after_all", 0)),
@@ -1718,6 +1707,11 @@ func _update_weekend_ui() -> void:
 		GameManager.get_weekend_schedule_text(),
 	]
 	_sync_phone_home_apps(true)
+
+
+func _maybe_show_second_week_map_hint() -> void:
+	if tutorial and tutorial.has_method("maybe_show_second_week_map_hint"):
+		tutorial.maybe_show_second_week_map_hint()
 
 
 func _enable_app_grid() -> void:
@@ -1797,18 +1791,14 @@ func _disable_app_grid() -> void:
 
 
 func _hide_all_popups() -> void:
+	if phone_apps and phone_apps.has_method("close_all_apps"):
+		phone_apps.close_all_apps()
+		return
 	_clear_alipay_tutorial_callouts()
-	set_ui_layer_visible(baotao_menu, false)
-	set_ui_layer_visible(tuanmei_menu, false)
-	set_ui_layer_visible(zodiac_popup, false)
-	set_ui_layer_visible(location_menu, false)
-	set_ui_layer_visible(house_menu, false)
-	set_ui_layer_visible(dating_popup, false)
-	wechat.force_close()
-	set_ui_layer_visible(alipay_popup, false)
-	set_ui_layer_visible(diary_popup, false)
-	set_ui_layer_visible(job_menu, false)
-	set_ui_layer_visible(payment_popup, false)
+	for layer in [baotao_menu, tuanmei_menu, zodiac_popup, location_menu, house_menu, dating_popup, alipay_popup, diary_popup, job_menu, payment_popup]:
+		set_ui_layer_visible(layer, false)
+	if wechat:
+		wechat.force_close()
 	sync_ui_state()
 
 
@@ -3011,6 +3001,8 @@ func _on_pay_rent() -> void:
 # ==================== 周末按钮 ====================
 
 func _on_btn_next_week() -> void:
+	if _phone_focus_button == btn_next_week:
+		_stop_phone_focus_pulse()
 	if _skip_week_confirm:
 		_proceed_next_week()
 		return

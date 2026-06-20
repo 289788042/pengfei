@@ -79,6 +79,7 @@ var _frag_choice_container: VBoxContainer = null
 var _pending_fragment_base_changes: Dictionary = {}
 var _pending_fragment_applied_changes: Dictionary = {}
 var _location_event_hold_count: int = 0
+var _location_runner: RefCounted
 # NPC重逢台词模板
 var _reunion_lines: Array = [
 	"在{loc}又遇到了{name}，ta冲你笑了笑。你们聊了几句。",
@@ -128,6 +129,7 @@ func init(main: Node) -> void:
 	btn_emo_sleep = main.btn_emo_sleep
 	_setup_phone_app_layers()
 	_setup_diary_heavy_ui()
+	_location_runner = _new_location_runner()
 
 	# 加载城市碎片事件
 	var frag_file = FileAccess.open("res://Data/city_fragments.json", FileAccess.READ)
@@ -136,6 +138,13 @@ func init(main: Node) -> void:
 		if json.parse(frag_file.get_as_text()) == OK:
 			_city_fragments = json.data
 		frag_file.close()
+
+
+func _new_location_runner() -> RefCounted:
+	var script := ResourceLoader.load("res://scripts/LocationActionRunner.gd", "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	var runner := script.new() as RefCounted
+	runner.init(_main, self)
+	return runner
 
 
 # ==================== 辅助方法 ====================
@@ -204,6 +213,8 @@ func _ensure_app_unlocked(app_id: String) -> bool:
 func _set_layer_visible(layer: Control, is_visible: bool) -> void:
 	if not is_instance_valid(layer):
 		return
+	if not is_visible:
+		_reset_layer_visual_state(layer)
 	if is_visible:
 		if _is_heavy_app_layer(layer):
 			var panel_size := Vector2(1040, 720) if layer == location_menu else Vector2(960, 760)
@@ -283,21 +294,20 @@ func _show_result(result_text: String, after: Callable = Callable()) -> void:
 
 
 func _begin_location_event() -> void:
+	if _location_runner and _location_runner.has_method("begin_location_event"):
+		_location_runner.begin_location_event()
+		_location_event_hold_count = int(_location_runner.hold_count())
+		return
 	_location_event_hold_count += 1
-	var gal: RefCounted = main_node().galgame
-	if gal and gal.has_method("hold_location_bg"):
-		gal.hold_location_bg()
 
 
 func _end_location_event() -> void:
-	if _location_event_hold_count <= 0:
+	if _location_runner and _location_runner.has_method("end_location_event"):
+		_location_runner.end_location_event()
+		_location_event_hold_count = int(_location_runner.hold_count())
 		return
-	_location_event_hold_count -= 1
-	var gal: RefCounted = main_node().galgame
-	if gal and gal.has_method("release_location_bg"):
-		gal.release_location_bg()
-	elif main_node().has_method("return_to_home_environment"):
-		main_node().return_to_home_environment("location_event_end")
+	if _location_event_hold_count > 0:
+		_location_event_hold_count -= 1
 
 
 func _finish_location_event_after(after: Callable = Callable()) -> Callable:
@@ -393,8 +403,10 @@ func _on_app_map() -> void:
 		return
 	if not _ensure_app_unlocked("map"):
 		return
+	_clear_phone_focus_overlays()
 	_close_all_menus()
 	_restore_map_to_phone_layer()
+	_reset_layer_visual_state(location_menu)
 	for child in location_menu.get_children():
 		child.queue_free()
 
@@ -506,6 +518,7 @@ func _on_app_map() -> void:
 		_add_small_map_location_button(loc_list, location_id)
 
 	_set_layer_visible(location_menu, true)
+	_reset_layer_visual_state(location_menu)
 
 
 func _restore_map_to_phone_layer() -> void:
@@ -518,6 +531,23 @@ func _restore_map_to_phone_layer() -> void:
 			old_parent.remove_child(location_menu)
 		phone_screen.add_child(location_menu)
 	_setup_phone_layer(location_menu, 55)
+	_reset_layer_visual_state(location_menu)
+
+
+func _clear_phone_focus_overlays() -> void:
+	if not is_instance_valid(_main):
+		return
+	if main_node().has_method("set_dialog_focus_active"):
+		main_node().set_dialog_focus_active(false)
+	if main_node().has_method("_hide_phone_dim_overlay"):
+		main_node().call("_hide_phone_dim_overlay")
+
+
+func _reset_layer_visual_state(layer: CanvasItem) -> void:
+	if not is_instance_valid(layer):
+		return
+	layer.modulate = Color(1, 1, 1, 1)
+	layer.self_modulate = Color(1, 1, 1, 1)
 
 
 func _map_location_order() -> Array[String]:
@@ -1138,7 +1168,23 @@ func _add_map_location_card(parent: VBoxContainer, loc: Dictionary) -> void:
 
 
 func _close_all_menus() -> void:
-	for m in [location_menu, baotao_menu, tuanmei_menu, zodiac_popup, house_menu, dating_popup, job_menu, diary_popup, late_night_popup]:
+	if is_instance_valid(_main):
+		var phone_apps: Variant = main_node().get("phone_apps")
+		if phone_apps and phone_apps.has_method("close_all_apps"):
+			phone_apps.close_all_apps()
+			return
+	if is_instance_valid(_main):
+		if main_node().has_method("_clear_alipay_tutorial_callouts"):
+			main_node().call("_clear_alipay_tutorial_callouts")
+		var wechat_system: Variant = main_node().get("wechat")
+		if wechat_system and wechat_system.has_method("force_close"):
+			wechat_system.force_close()
+	var menus: Array[Control] = [location_menu, baotao_menu, tuanmei_menu, zodiac_popup, house_menu, dating_popup, job_menu, diary_popup, late_night_popup]
+	for layer_name in ["WeChatMenu", "WCChatView", "AlipayPopup", "PaymentPopup"]:
+		var layer := main_node().find_child(layer_name, true, false) as Control if is_instance_valid(_main) else null
+		if is_instance_valid(layer) and not menus.has(layer):
+			menus.append(layer)
+	for m in menus:
 		if is_instance_valid(m):
 			_set_layer_visible(m, false)
 
@@ -1508,7 +1554,6 @@ func _show_fragment_choices(choices: Array, base_changes: Dictionary = {}, alrea
 
 ## 碎片选项回调：应用花费和效果，显示结果
 func _on_fragment_choice(choice: Dictionary) -> void:
-	var gal: RefCounted = main_node().galgame
 	var result_changes: Dictionary = {}
 	var cost: Dictionary = choice.get("cost", {})
 	for stat_name in cost:
@@ -1525,13 +1570,20 @@ func _on_fragment_choice(choice: Dictionary) -> void:
 	var already_applied_changes := _pending_fragment_applied_changes.duplicate()
 	# 清理选项按钮
 	if is_instance_valid(_frag_choice_container):
+		_frag_choice_container.visible = false
+		_frag_choice_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_frag_choice_container.queue_free()
 		_frag_choice_container = null
-	gal.left_dialog_text.visible = true
 	# 显示结果
 	var result: String = choice.get("result", "")
 	_pending_fragment_base_changes.clear()
 	_pending_fragment_applied_changes.clear()
+	call_deferred("_show_fragment_choice_result", result, pending_changes, already_applied_changes)
+
+
+func _show_fragment_choice_result(result: String, pending_changes: Dictionary, already_applied_changes: Dictionary) -> void:
+	var gal: RefCounted = main_node().galgame
+	gal.left_dialog_text.visible = true
 	var after_result := func() -> void:
 		_set_next_week_locked(false)
 		_end_location_event()
@@ -1586,8 +1638,6 @@ func _use_weekend_action(label: String = "weekend") -> bool:
 
 # ==================== 地点逻辑 ====================
 
-## 每个地点的访问次数（用于首次判断）
-var _loc_visit_count: Dictionary = {}
 var _weekly_location_turn: int = -999
 var _weekly_location_visits: Dictionary = {}
 var _weekly_reunion_seen: Dictionary = {}
@@ -1680,38 +1730,13 @@ func _location_config(location: String) -> Dictionary:
 	return {}
 
 
-## 获取地点邂逅背景图路径
-func _get_encounter_bg(location: String) -> String:
-	if location == "gym":
-		_loc_visit_count["gym"] = _loc_visit_count.get("gym", 0) + 1
-		if _loc_visit_count["gym"] == 1:
-			return "res://Assets/Backgrounds/gym/Gym_bg_rain_morning.jpg"
-		var gym_bgs: Array = [
-			"res://Assets/Backgrounds/gym/Gym_bg_rain_morning.jpg",
-			"res://Assets/Backgrounds/gym/Gym_bg_rain_night.jpg",
-			"res://Assets/Backgrounds/gym/Gym_bg_sunny_morning.jpg",
-			"res://Assets/Backgrounds/gym/Gym_bg_sunny_noon.jpg",
-			"res://Assets/Backgrounds/gym/Gym_bg_sunny_evening.jpg",
-			"res://Assets/Backgrounds/gym/Gym_bg_hazy_afternoon.jpg",
-		]
-		return gym_bgs[randi() % gym_bgs.size()]
-	var bg_map: Dictionary = {
-		"library": "res://Assets/Backgrounds/library/Bookshop_bg_day1.png",
-		"park": "res://Assets/Backgrounds/park/beach.jpg",
-	}
-	return bg_map.get(location, "")
-
-
 func _show_location_background(location: String) -> void:
-	var bg_path := _get_encounter_bg(location)
-	if bg_path != "":
-		main_node().galgame.show_location_bg(bg_path)
-	else:
-		var env = main_node().get("environment")
-		if env and env.has_method("show_location_color"):
-			env.show_location_color(location)
-		elif main_node().has_method("return_to_home_environment"):
-			main_node().return_to_home_environment("location_without_bg")
+	if _location_runner and _location_runner.has_method("show_location_background"):
+		_location_runner.show_location_background(location)
+		return
+	var gal = main_node().get("galgame")
+	if gal and gal.has_method("play_ambient_for_location"):
+		gal.play_ambient_for_location(location)
 
 
 ## 检查指定地点是否有NPC邂逅
@@ -1963,6 +1988,11 @@ func _run_location_after_payment(location: String, config: Dictionary, payment_c
 		_record_location_activity(location, config, tuned_changes, payment_changes, visit_index)
 		return
 
+	if _should_route_first_week_beach_tutorial(location):
+		_show_location_result_from_config(location, config, tuned_changes, payment_changes, _first_week_location_finished_callback(location))
+		_record_location_activity(location, config, tuned_changes, payment_changes, visit_index)
+		return
+
 	var roll := randf()
 
 	if location == "overtime" and roll < 0.50:
@@ -1989,6 +2019,16 @@ func _should_route_first_week_overtime_tutorial(location: String) -> bool:
 	if GameManager.month != 1 or GameManager.week_in_month != 1 or GameManager.turn_count != 1:
 		return false
 	return not _is_first_week_beach_route_unlocked()
+
+
+func _should_route_first_week_beach_tutorial(location: String) -> bool:
+	if location != "park":
+		return false
+	if not is_instance_valid(_main) or not main_node().has_method("on_first_week_location_finished"):
+		return false
+	if GameManager.month != 1 or GameManager.week_in_month != 1 or GameManager.turn_count != 1:
+		return false
+	return _is_first_week_beach_route_unlocked()
 
 
 func _first_week_location_finished_callback(location: String) -> Callable:
