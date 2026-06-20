@@ -75,6 +75,7 @@ var _city_fragments: Dictionary = {}
 # NPC邂逅冷却（替代永久失败的 encounter_failed_ids）
 var _encounter_cooldowns: Dictionary = {}  # npc_id -> turn_count 可重试
 var _location_event_hold_count: int = 0
+var _result_flow: RefCounted
 var _city_events: RefCounted
 var _encounters: RefCounted
 var _location_runner: RefCounted
@@ -109,12 +110,20 @@ func init(main: Node) -> void:
 	btn_emo_sleep = main.btn_emo_sleep
 	_setup_phone_app_layers()
 	_setup_diary_heavy_ui()
+	_result_flow = _new_action_results()
 	_city_events = _new_city_events()
 	if _city_events and _city_events.has_method("fragments"):
 		_city_fragments = _city_events.fragments()
 	_encounters = _new_encounters()
 	_location_runner = _new_location_runner()
 	_map_app = _new_map_app()
+
+
+func _new_action_results() -> RefCounted:
+	var script := ResourceLoader.load("res://scripts/ActionResultController.gd", "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	var controller := script.new() as RefCounted
+	controller.init(_main)
+	return controller
 
 
 func _new_city_events() -> RefCounted:
@@ -226,67 +235,41 @@ func _set_layer_visible(layer: Control, is_visible: bool) -> void:
 
 
 func _refresh_main_ui() -> void:
+	if _result_flow and _result_flow.has_method("refresh_main_ui"):
+		_result_flow.refresh_main_ui()
+		return
 	GameManager.stats_updated.emit()
 	if is_instance_valid(_main) and _main.has_method("_refresh_ui"):
 		_main._refresh_ui()
 
 
 func _remove_colored_result_segments(line: String) -> String:
-	var cleaned := line
-	var start := cleaned.find("[color=")
-	while start >= 0:
-		var end := cleaned.find("[/color]", start)
-		if end < 0:
-			break
-		cleaned = (cleaned.substr(0, start) + cleaned.substr(end + 8)).strip_edges()
-		start = cleaned.find("[color=")
-	return cleaned
+	if _result_flow and _result_flow.has_method("remove_colored_result_segments"):
+		return str(_result_flow.remove_colored_result_segments(line))
+	return line
 
 
 func _strip_embedded_result_lines(text: String) -> String:
-	var kept: Array = []
-	for line in text.split("\n"):
-		if line.find("[color=90EE90]") >= 0 or line.find("[color=E88080]") >= 0 or line.find("[color=red]") >= 0:
-			var cleaned_line := _remove_colored_result_segments(line)
-			if cleaned_line != "":
-				kept.append(cleaned_line)
-			continue
-		kept.append(line)
-	return "\n".join(kept).strip_edges()
+	if _result_flow and _result_flow.has_method("strip_embedded_result_lines"):
+		return str(_result_flow.strip_embedded_result_lines(text))
+	return text.strip_edges()
 
 
 func _format_result(changes: Dictionary, title: String = "【结算】") -> String:
-	if is_instance_valid(_main) and _main.has_method("format_stat_result"):
-		return _main.format_stat_result(changes, title)
-	var parts: Array = []
-	for stat_name in changes:
-		var val: int = int(changes[stat_name])
-		if val == 0:
-			continue
-		var cn: String = GameManager.stat_names.get(stat_name, stat_name)
-		if val > 0:
-			parts.append("%s +%d" % [cn, val])
-		else:
-			parts.append("%s %d" % [cn, val])
-	return "" if parts.is_empty() else title + "\n" + "  ".join(parts)
+	if _result_flow and _result_flow.has_method("format_result"):
+		return str(_result_flow.format_result(changes, title))
+	return ""
 
 
 func _format_npc_result(changes: Dictionary, npc_name: String, title: String = "【结算】") -> String:
-	var text := _format_result(changes, title)
-	if npc_name.strip_edges() == "" or not changes.has("affection"):
-		return text
-	return text.replace("好感 ", "%s好感 " % npc_name)
+	if _result_flow and _result_flow.has_method("format_npc_result"):
+		return str(_result_flow.format_npc_result(changes, npc_name, title))
+	return _format_result(changes, title)
 
 
 func _show_result(result_text: String, after: Callable = Callable()) -> void:
-	var clean_text := result_text.strip_edges()
-	if clean_text != "" and not clean_text.begins_with("【"):
-		clean_text = "【结算】\n" + clean_text
-	if is_instance_valid(_main) and _main.has_method("show_result_text"):
-		_main.show_result_text(clean_text, after)
-		return
-	if clean_text != "":
-		main_node().galgame.show_galgame_dialog([clean_text], after)
+	if _result_flow and _result_flow.has_method("show_result"):
+		_result_flow.show_result(result_text, after)
 	elif after.is_valid():
 		after.call()
 
@@ -324,70 +307,51 @@ func _finish_location_event_after(after: Callable = Callable()) -> Callable:
 
 
 func _show_story_then_result(story_text: String, result_text: String, after: Callable = Callable()) -> void:
-	var clean_story := _strip_embedded_result_lines(story_text)
-	if clean_story != "":
-		main_node().galgame.show_galgame_dialog([clean_story], func() -> void:
-			_show_result(result_text, after)
-		)
+	if _result_flow and _result_flow.has_method("show_story_then_result"):
+		_result_flow.show_story_then_result(story_text, result_text, after)
 	else:
 		_show_result(result_text, after)
 
 
 func _show_story_then_changes(story_text: String, changes: Dictionary, after: Callable = Callable(), title: String = "【结算】") -> void:
-	_show_story_then_result(story_text, _format_result(changes, title), after)
+	if _result_flow and _result_flow.has_method("show_story_then_changes"):
+		_result_flow.show_story_then_changes(story_text, changes, after, title)
+	else:
+		_show_story_then_result(story_text, _format_result(changes, title), after)
 
 
 func _show_story_then_apply_changes(story_text: String, pending_changes: Dictionary, already_applied_changes: Dictionary = {}, after: Callable = Callable(), title: String = "【结算】") -> void:
-	var clean_story := _strip_embedded_result_lines(story_text)
-	var safe_pending_changes := _drop_unbound_affection(pending_changes)
-	var show_and_apply := func() -> void:
-		var display_changes := _merge_change_dicts(already_applied_changes, safe_pending_changes)
-		_show_result(_format_result(display_changes, title), func() -> void:
-			_apply_location_changes(safe_pending_changes)
-			if after.is_valid():
-				after.call()
-		)
-	if clean_story != "":
-		main_node().galgame.show_galgame_dialog([clean_story], show_and_apply)
-	else:
-		show_and_apply.call()
+	if _result_flow and _result_flow.has_method("show_story_then_apply_changes"):
+		_result_flow.show_story_then_apply_changes(story_text, pending_changes, already_applied_changes, after, title)
+	elif after.is_valid():
+		after.call()
 
 
 func _show_story_then_apply_npc_changes(story_text: String, pending_changes: Dictionary, already_applied_changes: Dictionary, npc_name: String, after: Callable = Callable(), title: String = "【结算】", npc_id: String = "", npc_pending_changes: Dictionary = {}) -> void:
-	var clean_story := _strip_embedded_result_lines(story_text)
-	var safe_pending_changes := _drop_unbound_affection(pending_changes)
-	var safe_npc_changes := _drop_unbound_affection(npc_pending_changes, npc_id)
-	var show_and_apply := func() -> void:
-		var pending_display := _merge_change_dicts(safe_npc_changes, safe_pending_changes)
-		var display_changes := _merge_change_dicts(already_applied_changes, pending_display)
-		_show_result(_format_npc_result(display_changes, npc_name, title), func() -> void:
-			if safe_npc_changes.size() > 0:
-				_apply_npc_bonus_changes(npc_id, safe_npc_changes)
-			_apply_location_changes(safe_pending_changes)
-			if after.is_valid():
-				after.call()
-		)
-	if clean_story != "":
-		main_node().galgame.show_galgame_dialog([clean_story], show_and_apply)
-	else:
-		show_and_apply.call()
+	if _result_flow and _result_flow.has_method("show_story_then_apply_npc_changes"):
+		_result_flow.show_story_then_apply_npc_changes(story_text, pending_changes, already_applied_changes, npc_name, after, title, npc_id, npc_pending_changes)
+	elif after.is_valid():
+		after.call()
 
 
 func _show_location_result(location: String, fallback_text: String, changes: Dictionary, after: Callable = Callable()) -> void:
-	var story := GameManager.get_location_narrative(location, fallback_text)
-	_show_story_then_result(story, _format_result(changes), after)
+	if _result_flow and _result_flow.has_method("show_location_result"):
+		_result_flow.show_location_result(location, fallback_text, changes, after)
+	else:
+		_show_story_then_result(fallback_text, _format_result(changes), after)
 
 
 func _action_service():
+	if _result_flow and _result_flow.has_method("action_service"):
+		return _result_flow.action_service()
 	if is_instance_valid(_main):
 		return main_node().get("action_service")
 	return null
 
 
 func _show_action_result(story_text: String, changes: Dictionary, after: Callable = Callable()) -> void:
-	var service = _action_service()
-	if service and service.has_method("show_deferred_action_result"):
-		service.show_deferred_action_result(story_text, changes, after)
+	if _result_flow and _result_flow.has_method("show_action_result"):
+		_result_flow.show_action_result(story_text, changes, after)
 	else:
 		_show_story_then_apply_changes(story_text, changes, {}, after)
 
@@ -846,19 +810,14 @@ func _is_once_per_week_location_visited() -> bool:
 
 
 func _merge_change_dicts(base: Dictionary, extra: Dictionary) -> Dictionary:
-	var merged := base.duplicate()
-	for key in extra:
-		var amount := int(extra[key])
-		if amount == 0:
-			continue
-		merged[key] = int(merged.get(key, 0)) + amount
-	for key in merged.keys():
-		if int(merged[key]) == 0:
-			merged.erase(key)
-	return merged
+	if _result_flow and _result_flow.has_method("merge_change_dicts"):
+		return _result_flow.merge_change_dicts(base, extra)
+	return base.duplicate()
 
 
 func _drop_unbound_affection(changes: Dictionary, npc_id: String = "") -> Dictionary:
+	if _result_flow and _result_flow.has_method("drop_unbound_affection"):
+		return _result_flow.drop_unbound_affection(changes, npc_id)
 	var cleaned := changes.duplicate()
 	if npc_id == "" and cleaned.has("affection"):
 		cleaned.erase("affection")
@@ -866,48 +825,15 @@ func _drop_unbound_affection(changes: Dictionary, npc_id: String = "") -> Dictio
 
 
 func _apply_location_changes(changes: Dictionary) -> Dictionary:
-	var safe_changes := _drop_unbound_affection(changes)
-	var service = _action_service()
-	if service and service.has_method("apply_stat_changes"):
-		return service.apply_stat_changes(safe_changes)
-	var applied: Dictionary = {}
-	for stat_name in safe_changes:
-		var amount := int(safe_changes[stat_name])
-		if amount == 0:
-			continue
-		match str(stat_name):
-			"max_energy":
-				GameManager.max_energy = maxi(GameManager.max_energy + amount, 1)
-				GameManager.energy = clampi(GameManager.energy, 0, GameManager.max_energy)
-			"weekend_actions":
-				continue
-			"credit_debt":
-				GameManager.huabei_debt = maxi(GameManager.huabei_debt + amount, 0)
-				GameManager.credit_debt = GameManager.huabei_debt
-			_:
-				GameManager.modify_stat(str(stat_name), amount)
-		applied[stat_name] = int(applied.get(stat_name, 0)) + amount
-	_refresh_main_ui()
-	return applied
+	if _result_flow and _result_flow.has_method("apply_location_changes"):
+		return _result_flow.apply_location_changes(changes)
+	return {}
 
 
 func _apply_npc_bonus_changes(npc_id: String, changes: Dictionary) -> Dictionary:
-	var safe_changes := _drop_unbound_affection(changes, npc_id)
-	var applied: Dictionary = {}
-	for stat_name in safe_changes:
-		var amount := int(safe_changes[stat_name])
-		if amount == 0:
-			continue
-		if stat_name == "affection" and npc_id != "":
-			if GameManager.is_npc_unlocked(npc_id):
-				GameManager.add_npc_affection(npc_id, amount)
-			else:
-				GameManager.get_npc_runtime(npc_id)["affection"] += amount
-		else:
-			_apply_location_changes({stat_name: amount})
-		applied[stat_name] = int(applied.get(stat_name, 0)) + amount
-	_refresh_main_ui()
-	return applied
+	if _result_flow and _result_flow.has_method("apply_npc_bonus_changes"):
+		return _result_flow.apply_npc_bonus_changes(npc_id, changes)
+	return {}
 
 
 func _location_story(location: String, config: Dictionary) -> String:

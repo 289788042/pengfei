@@ -901,3 +901,42 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - `AppPopupSystem._check_encounter("park")` 返回空，符合当前“随机核心男性邂逅关闭”的设计口径。
 - 直接触发 `AppPopupSystem._trigger_city_fragment("park")`：Galgame 对话出现，地点 hold 计数为 1，说明城市碎片展示链路已由新控制器接管。
 - Godot editor errors 最终为 0。
+
+## 25. 2026-06-20 追加：ActionResultController 接管叙事结算链路
+
+本轮继续执行“代码架构先收干净”的路线。上一轮已拆出城市碎片和 NPC 邂逅/重逢，本轮把 `AppPopupSystem.gd` 中被地点、碎片、邂逅、职业、消费 App 共同依赖的叙事结算链路拆出来。
+
+新增脚本：
+- `scripts/ActionResultController.gd`
+  - 接管结果文本清洗：移除地点叙事里嵌入的彩色结算行。
+  - 接管结算文本格式化：普通数值结算、NPC 好感结算。
+  - 接管结果展示：优先调用 `MainGame.show_result_text()`，否则回落到 Galgame 对话。
+  - 接管叙事 -> 结算 -> 应用数值 -> 回调的完整顺序。
+  - 接管数值应用：普通地点/行动数值、NPC 好感、`credit_debt`、`max_energy` 等兼容逻辑。
+  - 接管变更字典合并和未绑定 NPC 好感过滤。
+
+兼容边界：
+- `AppPopupSystem.gd` 保留原函数名：
+  - `_format_result()`
+  - `_show_result()`
+  - `_show_story_then_apply_changes()`
+  - `_show_story_then_apply_npc_changes()`
+  - `_merge_change_dicts()`
+  - `_apply_location_changes()`
+  - `_apply_npc_bonus_changes()`
+- 这些函数现在是薄壳，转发到 `ActionResultController`。这样宝淘、团美、贝壳、职业、城市碎片、邂逅等旧调用不需要大范围改名。
+
+当前边界：
+- `AppPopupSystem` 不再自己维护叙事结算/数值应用细节。
+- 之后如果要统一“对话框压暗第二层 UI”“结算展示节奏”“蓝字教程/普通剧情/结算三类文本层级”，优先从 `ActionResultController` 或 MainGame 的结果展示入口继续收，而不是散修每个 App。
+- `MainGame.gd` 里仍有工作日 `_show_action_result()` 和若干主线处直接调用 `action_service.apply_stat_changes()`，未来可以考虑继续把主线/工作日结果也统一到同一结果控制器或 ActionService 上，但本轮先不扩大改动面。
+
+验证结果：
+- Godot 编译：`ActionResultController.gd`、`AppPopupSystem.gd`、`CityEventController.gd`、`EncounterController.gd` 均通过。
+- 运行态实例化：`app._result_flow != null`。
+- `_merge_change_dicts({"sanity":2,"energy":-1},{"sanity":3,"energy":1})` 返回 `{"sanity":5}`，零值会被清掉。
+- `_strip_embedded_result_lines("路上很累\n[color=90EE90]情绪 +3[/color]")` 返回 `路上很累`。
+- `_apply_location_changes({"sanity":7,"energy":-5})` 在情绪/精力设为 50 时，结果为情绪 57、精力 45。
+- 连续两次打开地图仍然 `child_count=1`，地图 UI 没有叠层。
+- `AppPopupSystem._has_city_fragments("park") == true`。
+- Godot editor errors 最终为 0。
