@@ -981,3 +981,36 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 触发新媒体运营面试后，职位变为 1，周末日程写入 `周六:新媒体运营面试 | 周日:空闲`。
 - 职业 App 重新打开后显示当前职位 `新媒体运营`，大客户经理门槛为空。
 - 验收脚本中一次强行连续结束两段 Galgame 对话触发 MCP debugger warning，但后续状态确认职业动作已完成；项目脚本本身无编译错误。
+
+## 27. 2026-06-20 追加：DiaryAppController 接管日记本 UI/筛选/流水
+
+本轮继续从 `AppPopupSystem.gd` 拆具体 App。日记本是玩家复盘行动、数值变化和关键选择的反馈系统，后续主线和关系线变长后会更重要，因此独立成控制器。
+
+新增脚本：
+- `scripts/DiaryAppController.gd`
+  - 接管日记本大屏 UI 初始化。
+  - 接管本月回顾 summary。
+  - 接管筛选按钮收集、样式刷新、当前筛选状态。
+  - 接管活动流水渲染，包括时间、分类、描述、数值变化文本和颜色。
+  - 接管空状态提示。
+
+兼容边界：
+- `AppPopupSystem.gd` 保留旧入口：
+  - `_on_app_diary()`
+  - `_on_diary_filter(category)`
+  - `_refresh_diary_ui()`
+  - `_setup_diary_heavy_ui()`
+- 这些函数现在只转发到 `DiaryAppController`，因此 `MainGame.gd` 中原有按钮连接不用改。
+- `AppPopupSystem.gd` 仍保留 `diary_popup` 和 `diary_log_container` 引用，因为通用关闭/层级管理仍需要它们。
+
+实现细节：
+- 日记控制器自己持有 `_filter`、`_filter_buttons`、`_summary_label`，不再把日记状态挂在 `AppPopupSystem`。
+- `refresh_ui()` 清理日志节点时先 `remove_child()` 再 `queue_free()`，避免同一帧切筛选时旧日志和新日志短暂叠在一起。
+- 日记本仍复用 `HeavyAppUI` 和 `AppPopupSystem` 的通用大屏/样式工具，后续如果日记要做成更强的复盘系统，可继续在 `DiaryAppController` 里演化。
+
+验证结果：
+- Godot 编译：`DiaryAppController.gd`、`AppPopupSystem.gd` 均通过。
+- 运行态实例化：`app._diary_app != null`。
+- 测试态设置 `turn_count=5`、周末并写入 3 条活动记录后打开日记：`visible=true`，日志节点数为 3。
+- 切换到“消费”筛选后：日志节点数即时变为 1，包含“通勤衬衫”，不包含“职业复盘”。
+- Godot editor errors 最终为 0。
