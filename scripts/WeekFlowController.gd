@@ -9,6 +9,12 @@ func init(main: Node) -> void:
 	_main = main
 
 
+func planning() -> RefCounted:
+	if not is_instance_valid(_main):
+		return null
+	return _main.get("week_planning") as RefCounted
+
+
 func enter_weekday() -> void:
 	_main.current_phase = _main.Phase.WEEKDAY
 	_main.return_to_home_environment("weekday")
@@ -45,6 +51,10 @@ func show_weekday_planning_panel() -> void:
 
 
 func reset_weekday_choice_buttons() -> void:
+	var controller := planning()
+	if controller and controller.has_method("reset_choice_buttons"):
+		controller.reset_choice_buttons()
+		return
 	_main.btn_food_low.disabled = false
 	_main.btn_food_mid.disabled = false
 	_main.btn_food_high.disabled = false
@@ -235,6 +245,10 @@ func _on_week_confirm(overlay: ColorRect, no_remind: CheckBox) -> void:
 
 
 func _update_work_button_text() -> void:
+	var controller := planning()
+	if controller and controller.has_method("update_work_button_text"):
+		controller.update_work_button_text()
+		return
 	_main.btn_work_normal.text = "正常打卡 (精力-30, 情绪-15, 待发工资+%d)" % _main._get_salary("normal")
 	_main.btn_work_slack.text = "摸鱼混日子 (精力-10, 情绪+5, 待发工资+%d)" % _main._get_salary("slack")
 	_main.btn_work_overtime.text = "疯狂自愿加班 (精力-60, 情绪-30, 待发工资+%d)" % _main._get_salary("overtime")

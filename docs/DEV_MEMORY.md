@@ -1055,3 +1055,36 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 连续两次打开宝淘后 `child_count=1`，无叠层。
 - 触发宝淘护肤支付入口后 `payment_popup.visible=true`，旧按钮动作到新控制器再到支付宝的链路未断。
 - MCP 日志里保留了一条早先测试脚本误调用不存在方法和一次截图目录不存在造成的工具噪音；后续脚本编译与运行态验收均正常。
+
+## 29. 2026-06-20 追加：WeekPlanningController 接管工作日规划
+
+本轮继续清理“基础流程系统”。用户之前多次遇到“本周饮食标准灰掉、提前结束后卡死、工作日/周末流程按钮状态混乱”的问题，因此把工作日规划从 `AppPopupSystem.gd` 和 `MainGame.gd` 里收出来，单独放到 `WeekPlanningController`。
+
+新增脚本：
+- `scripts/WeekPlanningController.gd`
+  - 接管工作日规划按钮状态：饮食按钮初始可点，工作态度按钮初始锁住；选择饮食后锁饮食、解锁工作。
+  - 接管三档饮食选择：低档 +300 餐饮且情绪 -5；中档 +800 餐饮且精力 +10；高档 +2000 餐饮且情绪 +20、精力 +15。
+  - 接管三档工作态度：摸鱼、正常打卡、疯狂加班，对应精力/情绪/待发工资变化。
+  - 接管工资档位计算、工作日结算叙事、结算页、衰老延迟消息后的工作日结束。
+
+兼容边界：
+- `MainGame.gd` 保留旧入口函数：`_on_food_low()`、`_on_food_mid()`、`_on_food_high()`、`_on_work_slack()`、`_on_work_normal()`、`_on_work_overtime()`、`_complete_work_action()`、`_apply_action_changes()`、`_show_action_result()`、`_get_salary()`、`_finish_workday()`。
+- 这些函数现在只转发到 `WeekPlanningController`，保证旧调试脚本或旧系统调用不断。
+- `AppPopupSystem.gd` 保留旧饮食函数名 `_on_food_low()`、`_on_food_mid()`、`_on_food_high()`、`_unlock_work_buttons()`，但只做兼容转发；手机 App 系统不再持有饮食/工作按钮引用。
+- `WeekFlowController.gd` 仍负责进入工作日、进入周末、月底/周末推进；但按钮状态重置和工作按钮文案更新转交给 `WeekPlanningController`。
+
+当前边界：
+- 以后任何“工作日规划面板”的改动，优先改 `WeekPlanningController`。
+- `WeekFlowController` 只管阶段流转，不写具体饮食/工作数值。
+- `AppPopupSystem` 不再写工作日规划逻辑。
+- `MainGame` 目前仍保留工作日结束转场 `_play_transition()`、职场事件 `_proceed_after_work_event()`，因为它们牵涉主场景 UI 和事件层；后续如果继续拆，可以再收成 `WorkdayTransitionController` 或并入 `WeekFlowController`。
+
+验证结果：
+- Godot 编译：`WeekPlanningController.gd`、`MainGame.gd`、`AppPopupSystem.gd`、`WeekFlowController.gd` 均通过。
+- Godot headless 项目加载通过。
+- 运行态进入工作日规划：面板显示，饮食可点，工作态度锁住。
+- 选择中档饮食后：`monthly_food_cost=800`，`energy=60`，`sanity=50`，工作按钮解锁。
+- 旧入口 `app._on_food_low()` 仍可转发：`monthly_food_cost=300`，`sanity=45`，连续吃差计数 +1，工作按钮解锁。
+- 选择正常打卡后进入叙事/结算链；点掉叙事和结算后，`pending_salary=1500`，`energy=70`，`sanity=85`，进入工作日结束转场。
+- 转场后落到职场事件阶段属于正常随机事件链，不是卡死。
+- Godot editor errors 最终为 0。

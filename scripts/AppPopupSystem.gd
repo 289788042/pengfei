@@ -24,12 +24,6 @@ var job_menu: ColorRect
 var diary_popup: ColorRect
 var diary_log_container: VBoxContainer
 var late_night_popup: ColorRect
-var btn_food_low: Button
-var btn_food_mid: Button
-var btn_food_high: Button
-var btn_work_normal: Button
-var btn_work_slack: Button
-var btn_work_overtime: Button
 var btn_emo_bag: Button
 var btn_emo_sleep: Button
 
@@ -90,12 +84,6 @@ func init(main: Node) -> void:
 	diary_popup = main.diary_popup
 	diary_log_container = main.diary_log_container
 	late_night_popup = main.late_night_popup
-	btn_food_low = main.btn_food_low
-	btn_food_mid = main.btn_food_mid
-	btn_food_high = main.btn_food_high
-	btn_work_normal = main.btn_work_normal
-	btn_work_slack = main.btn_work_slack
-	btn_work_overtime = main.btn_work_overtime
 	btn_emo_bag = main.btn_emo_bag
 	btn_emo_sleep = main.btn_emo_sleep
 	_setup_phone_app_layers()
@@ -879,67 +867,24 @@ func _on_loc_overtime() -> void:
 # ==================== 饮食系统 ====================
 
 func _on_food_low() -> void:
-	btn_food_low.disabled = true
-	btn_food_mid.disabled = true
-	btn_food_high.disabled = true
-	var _changes: Dictionary = {}
-	if main_node().get("action_service") and main_node().action_service.has_method("add_monthly_food"):
-		_changes = main_node().action_service.add_monthly_food(300, "low_food", -5, 0)
-	else:
-		GameManager.monthly_food_cost += 300
-		GameManager.modify_stat("sanity", -5)
-		_changes = {"monthly_food_cost": 300, "sanity": -5}
-	GameManager.add_activity("日常", "吃了挂逼生存套餐（沙县/拉面），花费300元", _changes)
-	GameManager.consecutive_poor_food += 1
-	GameManager.consecutive_overtime = 0
-	# 连续吃土死法检查
-	var death: Dictionary = GameManager.check_behavior_death()
-	if death.size() > 0:
-		GameManager.game_over.emit(death["title"], death["desc"])
-		return
-	_unlock_work_buttons()
+	var controller := main_node().get("week_planning") as RefCounted
+	if controller and controller.has_method("on_food_low"):
+		controller.on_food_low()
 
 func _on_food_mid() -> void:
-	btn_food_low.disabled = true
-	btn_food_mid.disabled = true
-	btn_food_high.disabled = true
-	var _changes: Dictionary = {}
-	if main_node().get("action_service") and main_node().action_service.has_method("add_monthly_food"):
-		_changes = main_node().action_service.add_monthly_food(800, "mid_food", 0, 10)
-	else:
-		GameManager.monthly_food_cost += 800
-		GameManager.modify_stat("energy", 10)
-		_changes = {"monthly_food_cost": 800, "energy": 10}
-	GameManager.add_activity("日常", "吃了打工人标配（肯德基/火锅），花费800元", _changes)
-	GameManager.consecutive_poor_food = 0
-	GameManager.consecutive_overtime = 0
-	_unlock_work_buttons()
+	var controller := main_node().get("week_planning") as RefCounted
+	if controller and controller.has_method("on_food_mid"):
+		controller.on_food_mid()
 
 func _on_food_high() -> void:
-	btn_food_low.disabled = true
-	btn_food_mid.disabled = true
-	btn_food_high.disabled = true
-	var _changes: Dictionary = {}
-	if main_node().get("action_service") and main_node().action_service.has_method("add_monthly_food"):
-		_changes = main_node().action_service.add_monthly_food(2000, "high_food", 20, 15)
-	else:
-		GameManager.monthly_food_cost += 2000
-		GameManager.modify_stat("sanity", 20)
-		GameManager.modify_stat("energy", 15)
-		_changes = {"monthly_food_cost": 2000, "sanity": 20, "energy": 15}
-	GameManager.add_activity("日常", "吃了小资高档（日料/西餐），花费2000元", _changes)
-	GameManager.consecutive_poor_food = 0
-	GameManager.consecutive_overtime = 0
-	_unlock_work_buttons()
+	var controller := main_node().get("week_planning") as RefCounted
+	if controller and controller.has_method("on_food_high"):
+		controller.on_food_high()
 
 func _unlock_work_buttons() -> void:
-	btn_food_low.disabled = true
-	btn_food_mid.disabled = true
-	btn_food_high.disabled = true
-	btn_work_normal.disabled = false
-	btn_work_slack.disabled = false
-	btn_work_overtime.disabled = false
-	main_node()._refresh_ui()
+	var controller := main_node().get("week_planning") as RefCounted
+	if controller and controller.has_method("unlock_work_buttons"):
+		controller.unlock_work_buttons()
 
 
 # ==================== 宝淘App（消费陷阱）====================

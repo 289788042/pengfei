@@ -165,6 +165,7 @@ var phone_apps: RefCounted
 var tutorial: RefCounted
 var ui_focus: RefCounted
 var week_flow: RefCounted
+var week_planning: RefCounted
 
 ## 属性进度条（金钱不用进度条）
 var progress_energy: ProgressBar
@@ -271,9 +272,9 @@ func _ready() -> void:
 
 	btn_app_job.pressed.connect(app._on_app_job)
 
-	btn_food_low.pressed.connect(app._on_food_low)
-	btn_food_mid.pressed.connect(app._on_food_mid)
-	btn_food_high.pressed.connect(app._on_food_high)
+	btn_food_low.pressed.connect(_on_food_low)
+	btn_food_mid.pressed.connect(_on_food_mid)
+	btn_food_high.pressed.connect(_on_food_high)
 
 	btn_close_zodiac.pressed.connect(app._on_close_zodiac)
 
@@ -995,6 +996,8 @@ func _setup_foundation_services() -> void:
 	phone_apps.init(self)
 	tutorial = _new_refcounted_script("res://scripts/TutorialDirector.gd")
 	tutorial.init(self)
+	week_planning = _new_refcounted_script("res://scripts/WeekPlanningController.gd")
+	week_planning.init(self)
 	week_flow = _new_refcounted_script("res://scripts/WeekFlowController.gd")
 	week_flow.init(self)
 
@@ -2764,101 +2767,65 @@ func _disable_all() -> void:
 
 # ==================== 工作日逻辑 ====================
 
+func _on_food_low() -> void:
+	if week_planning and week_planning.has_method("on_food_low"):
+		week_planning.on_food_low()
+
+
+func _on_food_mid() -> void:
+	if week_planning and week_planning.has_method("on_food_mid"):
+		week_planning.on_food_mid()
+
+
+func _on_food_high() -> void:
+	if week_planning and week_planning.has_method("on_food_high"):
+		week_planning.on_food_high()
+
+
 ## 摸鱼混日子
 func _on_work_slack() -> void:
-	GameManager.consecutive_overtime = 0
-	var amount: int = _get_salary("slack")
-	_complete_work_action("摸鱼混日子", {"energy": -10, "sanity": 5, "pending_salary": amount}, "摸鱼混日子，待发工资 +%d" % amount)
+	if week_planning and week_planning.has_method("on_work_slack"):
+		week_planning.on_work_slack()
 
 ## 正常打卡
 func _on_work_normal() -> void:
-	GameManager.consecutive_overtime = 0
-	var amount: int = _get_salary("normal")
-	_complete_work_action("正常打卡", {"energy": -30, "sanity": -15, "pending_salary": amount}, "正常打卡，待发工资 +%d" % amount)
+	if week_planning and week_planning.has_method("on_work_normal"):
+		week_planning.on_work_normal()
 
 ## 疯狂自愿加班
 func _on_work_overtime() -> void:
-	GameManager.consecutive_overtime += 1
-	var amount: int = _get_salary("overtime")
-	var changes := {"energy": -60, "sanity": -30, "pending_salary": amount}
-	GameManager.add_activity("日常", "疯狂加班，待发工资 +%d" % amount, changes)
-	_show_action_result("你选择继续加班，把这周的时间全压进了工位里。", changes, Callable(self, "_finish_workday"))
+	if week_planning and week_planning.has_method("on_work_overtime"):
+		week_planning.on_work_overtime()
 
 
 func _complete_work_action(label: String, changes: Dictionary, activity_desc: String) -> void:
-	GameManager.add_activity("日常", activity_desc, changes)
-	_show_action_result("这周你选择了%s。" % label, changes, Callable(self, "_finish_workday"))
+	if week_planning and week_planning.has_method("complete_work_action"):
+		week_planning.complete_work_action(label, changes, activity_desc)
 
 
 func _apply_action_changes(changes: Dictionary) -> Dictionary:
+	if week_planning and week_planning.has_method("apply_action_changes"):
+		return week_planning.apply_action_changes(changes)
 	if action_service and action_service.has_method("apply_stat_changes"):
 		return action_service.apply_stat_changes(changes)
-	var applied: Dictionary = {}
-	for stat_name in changes:
-		var amount := int(changes[stat_name])
-		if amount == 0:
-			continue
-		match str(stat_name):
-			"pending_salary":
-				GameManager.pending_salary += amount
-			_:
-				GameManager.modify_stat(str(stat_name), amount)
-		applied[stat_name] = amount
-	return applied
+	return {}
 
 
 func _show_action_result(story_text: String, changes: Dictionary, after: Callable = Callable()) -> void:
-	weekday_panel.visible = false
-	if action_service and action_service.has_method("show_deferred_action_result"):
-		action_service.show_deferred_action_result(story_text, changes, func() -> void:
-			var death: Dictionary = GameManager.check_behavior_death()
-			if death.size() > 0:
-				GameManager.game_over.emit(death["title"], death["desc"])
-				return
-			if after.is_valid():
-				after.call()
-		)
-	elif action_service and action_service.has_method("show_action_result"):
-		var applied := _apply_action_changes(changes)
-		action_service.show_action_result(story_text, applied, after)
-	else:
-		var applied := _apply_action_changes(changes)
-		show_stat_result(applied, after)
+	if week_planning and week_planning.has_method("show_action_result"):
+		week_planning.show_action_result(story_text, changes, after)
 
 
 ## 根据职位等级获取薪资
 func _get_salary(work_type: String) -> int:
-	match GameManager.job_level:
-		0:
-			match work_type:
-				"slack": return 800
-				"normal": return 1500
-				"overtime": return 2500
-		1:
-			match work_type:
-				"slack": return 2000
-				"normal": return 4000
-				"overtime": return 6000
-		2:
-			match work_type:
-				"slack": return 4000
-				"normal": return 8000
-				"overtime": return 12000
+	if week_planning and week_planning.has_method("get_salary"):
+		return week_planning.get_salary(work_type)
 	return 1000
 
 
 func _finish_workday() -> void:
-	_refresh_ui()
-	pass
-	weekday_panel.visible = false
-	# 显示延迟的衰老消息（在玩家做完选择后）
-	if GameManager.pending_aging_msg != "":
-		var aging_text = GameManager.pending_aging_msg
-		GameManager.pending_aging_msg = ""
-		galgame.show_message(aging_text, true)
-		_play_transition_after_aging()
-	else:
-		_play_transition("5天的牛马生活结束了，终于熬到了周末...")
+	if week_planning and week_planning.has_method("finish_workday"):
+		week_planning.finish_workday()
 
 
 func _play_transition_after_aging() -> void:
