@@ -778,3 +778,28 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 验证结果：
 - 第一周刚进入周末：`lock=true`，`Btn_NextWeek.disabled=true`，画面上按钮灰掉。
 - 海边提示点完后：`lock=false`，`Btn_NextWeek.disabled=false`，`_phone_focus_button == Btn_NextWeek`，实际画面按钮亮起并有光效。
+
+## 21. 2026-06-20 追加：WeekFlowController / MapAppController 架构拆分
+
+用户明确要求回到主程序模式，继续清架构，不要一直打体验小补丁。本轮重构目标是把周流程和地图入口从巨型脚本里继续拆出去，同时保持旧入口不破坏其他系统调用。
+
+新增脚本：
+- `scripts/WeekFlowController.gd`
+  - 接管 `_enter_weekday`、`_begin_weekday_flow`、`_show_weekday_planning_panel`、`_reset_weekday_choice_buttons`、`_maybe_trigger_weekday_story_event`。
+  - 接管 `_enter_weekend`、`_update_weekend_ui`、`_on_pay_rent`、`_on_btn_next_week`、周末确认弹窗、`_proceed_next_week`。
+  - `MainGame.gd` 保留同名薄包装，避免旧系统直接调用断掉。
+- `scripts/MapAppController.gd`
+  - 作为高德地图唯一入口，负责打开地图前的可用性判断、解锁判断、清焦点、关闭旧菜单、恢复小屏手机层、调用旧地图渲染层。
+  - 地点卡点击改为先进入 `MapAppController.start_location()`，再转发旧地点生命周期。旧 `_start_location` 暂时保留在 `AppPopupSystem.gd`，等下一轮拆 Location/Map 细节时再继续瘦身。
+
+当前边界：
+- `MainGame.gd` 的周流程已经明显变薄，但月末账单计算、主线触发函数本体仍在 MainGame。
+- `AppPopupSystem.gd` 的地图纯 UI 构建函数仍在旧文件中，`MapAppController` 目前先收入口和点击路径，后续可继续把 `_render_map_menu`、`_map_location_order`、`_add_small_map_location_button` 等纯地图 UI 函数迁出。
+
+验证结果：
+- 脚本编译：`MainGame.gd`、`WeekFlowController.gd`、`AppPopupSystem.gd`、`MapAppController.gd` 均通过。
+- 干净开局推进到第一周周末：`week_flow=true`，`gate=alipay`，结束本周仍被教程锁住。
+- 地图打开：`map_visible=true`，地图节点有内容，`_map_app` 实例存在。
+- 地点卡启动：点击公司加班卡后地图关闭、进入加班地点剧情、日程写入 `周六:公司加班 | 周日:空闲`。
+- 地点结算：点掉结算后 `money` 增加、`energy=60`、`sanity=65`、教程 gate 切到 `wechat`，地点 hold 释放为 0。
+- 周推进：调用 `_proceed_next_week()` 后进入第 2 周工作日，`phase=WEEKDAY`，`month=1`，`week=2`，`turn=2`。

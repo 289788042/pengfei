@@ -164,6 +164,7 @@ var environment: RefCounted
 var phone_apps: RefCounted
 var tutorial: RefCounted
 var ui_focus: RefCounted
+var week_flow: RefCounted
 
 ## 属性进度条（金钱不用进度条）
 var progress_energy: ProgressBar
@@ -994,6 +995,8 @@ func _setup_foundation_services() -> void:
 	phone_apps.init(self)
 	tutorial = _new_refcounted_script("res://scripts/TutorialDirector.gd")
 	tutorial.init(self)
+	week_flow = _new_refcounted_script("res://scripts/WeekFlowController.gd")
+	week_flow.init(self)
 
 
 func set_ui_layer_visible(layer: Control, value: bool, exclusive: bool = true) -> void:
@@ -1178,84 +1181,28 @@ func _start_wechat_request_phase() -> void:
 # ==================== 阶段状态机 ====================
 
 func _enter_weekday() -> void:
-	current_phase = Phase.WEEKDAY
-	return_to_home_environment("weekday")
-	btn_next_week.visible = false
-	_hide_all_popups()
-	_disable_app_grid()
-	GameManager.check_auto_unlock_npcs()
-	# 动态更新工作按钮薪资显示
-	btn_work_normal.text = "正常打卡 (精力-30, 情绪-15, 待发工资+%d)" % _get_salary("normal")
-	btn_work_slack.text = "摸鱼混日子 (精力-10, 情绪+5, 待发工资+%d)" % _get_salary("slack")
-	btn_work_overtime.text = "疯狂自愿加班 (精力-60, 情绪-30, 待发工资+%d)" % _get_salary("overtime")
-	weekday_panel.visible = false
-	_reset_weekday_choice_buttons()
-	_refresh_ui()
-	sync_ui_state()
-	call_deferred("_begin_weekday_flow")
+	if week_flow and week_flow.has_method("enter_weekday"):
+		week_flow.enter_weekday()
 
 
 func _begin_weekday_flow() -> void:
-	if current_phase != Phase.WEEKDAY:
-		return
-	if _maybe_trigger_weekday_story_event():
-		_weekday_panel_waiting_for_story = true
-		_weekday_panel_clear_frames = 0
-		sync_ui_state()
-		return
-	_show_weekday_planning_panel()
+	if week_flow and week_flow.has_method("begin_weekday_flow"):
+		week_flow.begin_weekday_flow()
 
 
 func _show_weekday_planning_panel() -> void:
-	if current_phase != Phase.WEEKDAY or GameManager.game_finished or GameManager.awaiting_month_settle:
-		return
-	_weekday_panel_clear_frames = 0
-	_reset_weekday_choice_buttons()
-	weekday_panel.visible = true
-	sync_ui_state()
+	if week_flow and week_flow.has_method("show_weekday_planning_panel"):
+		week_flow.show_weekday_planning_panel()
 
 
 func _reset_weekday_choice_buttons() -> void:
-	btn_food_low.disabled = false
-	btn_food_mid.disabled = false
-	btn_food_high.disabled = false
-	btn_work_normal.disabled = true
-	btn_work_slack.disabled = true
-	btn_work_overtime.disabled = true
-	if ui_state and ui_state.has_method("clear_stored_disabled"):
-		ui_state.clear_stored_disabled(weekday_panel)
+	if week_flow and week_flow.has_method("reset_weekday_choice_buttons"):
+		week_flow.reset_weekday_choice_buttons()
 
 
 func _maybe_trigger_weekday_story_event() -> bool:
-	if current_phase != Phase.WEEKDAY or GameManager.game_finished or GameManager.awaiting_month_settle:
-		return false
-	if GameManager.month == 1 and GameManager.week_in_month == 2:
-		_trigger_mainline_lin_fan_first_brush()
-		return true
-	elif GameManager.month == 1 and GameManager.week_in_month == 3:
-		_push_a_qiang_family_hint_01()
-		return true
-	elif GameManager.month == 2 and GameManager.week_in_month == 1:
-		_trigger_mainline_lin_fan_second_brush()
-		return true
-	elif GameManager.month == 2 and GameManager.week_in_month == 3:
-		_push_a_qiang_family_hint_02()
-		return true
-	elif GameManager.month == 2 and GameManager.week_in_month == 4:
-		_unlock_lin_fan_story_contact()
-		return true
-	elif GameManager.month == 3 and GameManager.week_in_month == 1:
-		_trigger_chen_mo_dinner_notice()
-		return true
-	elif GameManager.month == 3 and GameManager.week_in_month == 2:
-		_trigger_chen_mo_first_dinner()
-		return true
-	elif GameManager.month == 3 and GameManager.week_in_month == 3:
-		_unlock_a_qiang_story_contact()
-		return true
-	elif GameManager.month == 3 and GameManager.week_in_month == 4:
-		_push_chen_mo_light_followup()
-		return true
+	if week_flow and week_flow.has_method("maybe_trigger_weekday_story_event"):
+		return week_flow.maybe_trigger_weekday_story_event()
 	return false
 
 
@@ -1690,28 +1637,13 @@ func _push_chen_mo_light_followup() -> void:
 
 
 func _enter_weekend() -> void:
-	current_phase = Phase.WEEKEND
-	weekday_panel.visible = false
-	return_to_home_environment("weekend")
-	btn_next_week.visible = true
-	_enable_app_grid()
-	_update_weekend_ui()
-	_refresh_ui()
-	sync_ui_state()
-	btn_next_week.disabled = _is_tutorial_end_week_locked()
-	_maybe_start_first_week_app_tutorial()
-	call_deferred("_maybe_show_second_week_map_hint")
-	call_deferred("_maybe_show_client_dinner_prep_prompt")
+	if week_flow and week_flow.has_method("enter_weekend"):
+		week_flow.enter_weekend()
 
 
 func _update_weekend_ui() -> void:
-	btn_next_week.text = "⏭ 结束本周"
-	btn_next_week.tooltip_text = "%s\n\n本周日程：%s" % [
-		_build_week_confirm_text(),
-		GameManager.get_weekend_schedule_text(),
-	]
-	btn_next_week.disabled = _is_tutorial_end_week_locked()
-	_sync_phone_home_apps(true)
+	if week_flow and week_flow.has_method("update_weekend_ui"):
+		week_flow.update_weekend_ui()
 
 
 func _maybe_show_second_week_map_hint() -> void:
@@ -2994,128 +2926,29 @@ func _on_month_ended(salary: int, rent: int, debt: int, food: int) -> void:
 
 
 func _on_pay_rent() -> void:
-	set_ui_layer_visible(month_end_popup, false)
-	GameManager.start_new_month()
-	if GameManager.awaiting_ending_choice:
-		return
-	if not GameManager.game_finished:
-		_enter_weekday()
-	pass
+	if week_flow and week_flow.has_method("on_pay_rent"):
+		week_flow.on_pay_rent()
 
 
 # ==================== 周末按钮 ====================
 
 func _on_btn_next_week() -> void:
-	if _phone_focus_button == btn_next_week:
-		_stop_phone_focus_pulse()
-	if _skip_week_confirm:
-		_proceed_next_week()
-		return
-	_show_week_confirm_popup()
+	if week_flow and week_flow.has_method("on_next_week_pressed"):
+		week_flow.on_next_week_pressed()
 
 
 ## 周末确认弹窗：确认结束本周 or 返回继续活动
 func _show_week_confirm_popup() -> void:
-	var overlay := ColorRect.new()
-	overlay.name = "WeekConfirmOverlay"
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.color = Color(0, 0, 0, 0.6)
-	overlay.z_index = 80
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(overlay)
-	sync_ui_state()
-
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(center)
-
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(560, 0)
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.98, 0.97, 0.95, 1)
-	panel_style.set_corner_radius_all(12.0)
-	panel_style.set_content_margin_all(24)
-	panel.add_theme_stylebox_override("panel", panel_style)
-	center.add_child(panel)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 16)
-	panel.add_child(vbox)
-
-	var title := Label.new()
-	title.text = "确认结束本周？"
-	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_color_override("font_color", Color.BLACK)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(title)
-
-	var desc := Label.new()
-	desc.text = _build_week_confirm_text()
-	desc.add_theme_font_size_override("font_size", 15)
-	desc.add_theme_color_override("font_color", Color(0.3, 0.3, 0.3, 1))
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	vbox.add_child(desc)
-
-	var no_remind := CheckBox.new()
-	no_remind.text = "不再提醒"
-	no_remind.add_theme_font_size_override("font_size", 13)
-	no_remind.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
-	no_remind.add_theme_icon_override("checked", null)
-	no_remind.add_theme_icon_override("unchecked", null)
-	var hbox_remind := HBoxContainer.new()
-	hbox_remind.add_theme_constant_override("separation", 4)
-	var spacer_l := Control.new()
-	spacer_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox_remind.add_child(spacer_l)
-	hbox_remind.add_child(no_remind)
-	vbox.add_child(hbox_remind)
-
-	var btn_confirm := Button.new()
-	btn_confirm.text = "确认，结束本周"
-	btn_confirm.custom_minimum_size = Vector2(0, 44)
-	var confirm_style := StyleBoxFlat.new()
-	confirm_style.bg_color = Color(0.027, 0.757, 0.376, 1)
-	confirm_style.set_corner_radius_all(8)
-	btn_confirm.add_theme_stylebox_override("normal", confirm_style)
-	btn_confirm.add_theme_color_override("font_color", Color.WHITE)
-	btn_confirm.add_theme_font_size_override("font_size", 16)
-	btn_confirm.pressed.connect(_on_week_confirm.bind(overlay, no_remind))
-	vbox.add_child(btn_confirm)
-
-	var btn_back := Button.new()
-	btn_back.text = "返回，再逛逛"
-	btn_back.custom_minimum_size = Vector2(0, 44)
-	var back_style := StyleBoxFlat.new()
-	back_style.bg_color = Color(0.5, 0.5, 0.5, 1)
-	back_style.set_corner_radius_all(8)
-	btn_back.add_theme_stylebox_override("normal", back_style)
-	btn_back.add_theme_color_override("font_color", Color.WHITE)
-	btn_back.add_theme_font_size_override("font_size", 16)
-	btn_back.pressed.connect(func() -> void:
-		overlay.queue_free()
-		call_deferred("sync_ui_state")
-	)
-	vbox.add_child(btn_back)
+	if week_flow and week_flow.has_method("show_week_confirm_popup"):
+		week_flow.show_week_confirm_popup()
 
 
 ## 确认结束本周回调
 func _on_week_confirm(overlay: ColorRect, no_remind: CheckBox) -> void:
-	if no_remind.button_pressed:
-		_skip_week_confirm = true
-	overlay.queue_free()
-	call_deferred("sync_ui_state")
-	# 深夜失眠拦截：情绪低于30时有50%概率触发
-	if GameManager.sanity < 30 and randf() < 0.5:
-		app._enter_late_night()
-		return
-	_proceed_next_week()
+	if week_flow and week_flow.has_method("_on_week_confirm"):
+		week_flow._on_week_confirm(overlay, no_remind)
 
 ## 实际推进下一周（失眠弹窗成功睡觉或冲动消费后也调用此函数）
 func _proceed_next_week() -> void:
-	GameManager.advance_week()
-	if GameManager.awaiting_month_settle:
-		return
-	if not GameManager.game_finished:
-		_enter_weekday()
-	pass
+	if week_flow and week_flow.has_method("proceed_next_week"):
+		week_flow.proceed_next_week()

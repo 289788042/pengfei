@@ -80,6 +80,7 @@ var _pending_fragment_base_changes: Dictionary = {}
 var _pending_fragment_applied_changes: Dictionary = {}
 var _location_event_hold_count: int = 0
 var _location_runner: RefCounted
+var _map_app: RefCounted
 # NPC重逢台词模板
 var _reunion_lines: Array = [
 	"在{loc}又遇到了{name}，ta冲你笑了笑。你们聊了几句。",
@@ -130,6 +131,7 @@ func init(main: Node) -> void:
 	_setup_phone_app_layers()
 	_setup_diary_heavy_ui()
 	_location_runner = _new_location_runner()
+	_map_app = _new_map_app()
 
 	# 加载城市碎片事件
 	var frag_file = FileAccess.open("res://Data/city_fragments.json", FileAccess.READ)
@@ -145,6 +147,13 @@ func _new_location_runner() -> RefCounted:
 	var runner := script.new() as RefCounted
 	runner.init(_main, self)
 	return runner
+
+
+func _new_map_app() -> RefCounted:
+	var script := ResourceLoader.load("res://scripts/MapAppController.gd", "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	var map_controller := script.new() as RefCounted
+	map_controller.init(_main, self)
+	return map_controller
 
 
 # ==================== 辅助方法 ====================
@@ -395,18 +404,20 @@ func _show_action_result(story_text: String, changes: Dictionary, after: Callabl
 # ==================== 地图/地点 ====================
 
 func _on_close_loc() -> void:
+	if _map_app and _map_app.has_method("close_map"):
+		_map_app.close_map()
+		return
 	_set_layer_visible(location_menu, false)
 
 
 func _on_app_map() -> void:
-	if not _can_open_phone_app():
+	if _map_app and _map_app.has_method("open_map"):
+		_map_app.open_map()
 		return
-	if not _ensure_app_unlocked("map"):
-		return
-	_clear_phone_focus_overlays()
-	_close_all_menus()
-	_restore_map_to_phone_layer()
-	_reset_layer_visual_state(location_menu)
+	_render_map_menu()
+
+
+func _render_map_menu() -> void:
 	for child in location_menu.get_children():
 		child.queue_free()
 
@@ -603,7 +614,7 @@ func _add_small_map_location_button(parent: VBoxContainer, location_id: String) 
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			card.accept_event()
 			if can_go:
-				_start_location(location_id)
+				_start_map_location(location_id)
 	)
 
 	var card_margin := MarginContainer.new()
@@ -1113,7 +1124,7 @@ func _add_map_location_card(parent: VBoxContainer, loc: Dictionary) -> void:
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			card.accept_event()
 			if can_go:
-				_start_location(location_id)
+				_start_map_location(location_id)
 	)
 
 	var card_margin := MarginContainer.new()
@@ -1944,6 +1955,13 @@ func _can_start_location(location: String, config: Dictionary) -> bool:
 			main_node().show_message("%s不足（需%d，当前%d），无法前往%s。" % [cn, needed, current, config.get("name", location)])
 			return false
 	return true
+
+
+func _start_map_location(location: String) -> void:
+	if _map_app and _map_app.has_method("start_location"):
+		_map_app.start_location(location)
+		return
+	_start_location(location)
 
 
 func _start_location(location: String) -> void:
