@@ -940,3 +940,44 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 连续两次打开地图仍然 `child_count=1`，地图 UI 没有叠层。
 - `AppPopupSystem._has_city_fragments("park") == true`。
 - Godot editor errors 最终为 0。
+
+## 26. 2026-06-20 追加：CareerAppController 接管 BOSS弯聘/职业系统
+
+本轮继续执行“清架构，不堆小补丁”。上一轮已经把通用叙事结算链路拆到 `ActionResultController`，本轮把 `AppPopupSystem.gd` 里的 BOSS弯聘/职业系统迁出。
+
+新增脚本：
+- `scripts/CareerAppController.gd`
+  - 接管 BOSS弯聘打开与 UI 构建。
+  - 接管职位名、学历名展示。
+  - 接管职业行动门槛：是否周末、周末日程是否已满、精力是否足够、学历是否达标、年龄是否超过 30。
+  - 接管三个职业动作：
+    - 回到初级行政。
+    - 投递/跳槽新媒体运营。
+    - 投递/跳槽大客户经理。
+  - 职业动作仍通过 `ActionResultController` 的旧兼容入口展示叙事与结算，不自己应用数值。
+
+兼容边界：
+- `AppPopupSystem.gd` 继续保留旧函数名：
+  - `_on_app_job()`
+  - `_on_job_admin()`
+  - `_on_job_media()`
+  - `_on_job_client()`
+  - `_media_lock_reason()`
+  - `_client_lock_reason()`
+  - `_get_job_name()`
+  - `_get_degree_name()`
+- 这些函数现在只转发到 `CareerAppController`，因此 `MainGame.gd` 里原来的按钮连接 `btn_app_job.pressed.connect(app._on_app_job)` 不需要改。
+
+当前边界：
+- 职业 App 以后归 `CareerAppController`。
+- 职业系统未来会承载学历、工作跃迁、年龄风险、陈默资源入口、职场主线压力，不应再把新职业逻辑写回 `AppPopupSystem.gd`。
+- `CareerAppController` 当前仍复用 `AppPopupSystem._build_app_overlay()` 的通用列表 UI。以后如果 BOSS弯聘要变成独立大屏/更复杂的招聘 UI，可以在这个控制器里单独演化。
+
+验证结果：
+- Godot 编译：`CareerAppController.gd`、`AppPopupSystem.gd` 均通过。
+- 运行态实例化：`app._career_app != null`。
+- 测试态设置 `turn_count=8`、周末、成人本科、精力/情绪 100 后打开 BOSS弯聘：`job_visible=true`，`children=1`。
+- 新媒体运营面试门槛为空：`app._media_lock_reason() == ""`。
+- 触发新媒体运营面试后，职位变为 1，周末日程写入 `周六:新媒体运营面试 | 周日:空闲`。
+- 职业 App 重新打开后显示当前职位 `新媒体运营`，大客户经理门槛为空。
+- 验收脚本中一次强行连续结束两段 Galgame 对话触发 MCP debugger warning，但后续状态确认职业动作已完成；项目脚本本身无编译错误。

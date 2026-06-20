@@ -80,6 +80,7 @@ var _city_events: RefCounted
 var _encounters: RefCounted
 var _location_runner: RefCounted
 var _map_app: RefCounted
+var _career_app: RefCounted
 
 
 # ==================== 初始化 ====================
@@ -117,6 +118,7 @@ func init(main: Node) -> void:
 	_encounters = _new_encounters()
 	_location_runner = _new_location_runner()
 	_map_app = _new_map_app()
+	_career_app = _new_career_app()
 
 
 func _new_action_results() -> RefCounted:
@@ -152,6 +154,13 @@ func _new_map_app() -> RefCounted:
 	var map_controller := script.new() as RefCounted
 	map_controller.init(_main, self)
 	return map_controller
+
+
+func _new_career_app() -> RefCounted:
+	var script := ResourceLoader.load("res://scripts/CareerAppController.gd", "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	var controller := script.new() as RefCounted
+	controller.init(_main, self)
+	return controller
 
 
 # ==================== 辅助方法 ====================
@@ -1114,180 +1123,62 @@ func _on_close_dating() -> void:
 # ==================== BOSS弯聘App ====================
 
 func _get_job_name(level: int = GameManager.job_level) -> String:
-	var names := ["初级行政", "新媒体运营", "大客户经理"]
-	return names[clampi(level, 0, names.size() - 1)]
+	if _career_app and _career_app.has_method("get_job_name"):
+		return str(_career_app.get_job_name(level))
+	return ""
 
 
 func _get_degree_name(level: int = GameManager.degree) -> String:
-	var names := ["大专", "成人本科"]
-	return names[clampi(level, 0, names.size() - 1)]
+	if _career_app and _career_app.has_method("get_degree_name"):
+		return str(_career_app.get_degree_name(level))
+	return ""
 
 
 func _is_weekend_phase() -> bool:
-	if not is_instance_valid(_main):
-		return false
-	return main_node().current_phase == main_node().Phase.WEEKEND
+	if _career_app and _career_app.has_method("is_weekend_phase"):
+		return bool(_career_app.is_weekend_phase())
+	return false
 
 
 func _career_action_lock_reason(energy_cost: int) -> String:
-	if not _is_weekend_phase():
-		return "工作日只能查看，周末再安排"
-	if main_node().get("action_service") and main_node().action_service.has_method("can_use_weekend_action"):
-		if not main_node().action_service.can_use_weekend_action("职业行动"):
-			return "本周周末日程已排满"
-	if GameManager.energy < energy_cost:
-		return "精力不足：需要%d，当前%d" % [energy_cost, GameManager.energy]
-	return ""
+	if _career_app and _career_app.has_method("career_action_lock_reason"):
+		return str(_career_app.career_action_lock_reason(energy_cost))
+	return "职业系统尚未就绪"
 
 
 func _spend_career_action(label: String, energy_cost: int, sanity_cost: int) -> bool:
-	var reason := _career_action_lock_reason(energy_cost)
-	if reason != "":
-		main_node().show_message(reason)
-		return false
-	if main_node().get("action_service") and main_node().action_service.has_method("spend_weekend_action"):
-		return main_node().action_service.spend_weekend_action(label)
-	return true
+	if _career_app and _career_app.has_method("spend_career_action"):
+		return bool(_career_app.spend_career_action(label, energy_cost, sanity_cost))
+	return false
 
 
 func _media_lock_reason() -> String:
-	if not _is_weekend_phase():
-		return "工作日只能查看，周末才能面试"
-	if main_node().get("action_service") and main_node().action_service.has_method("can_use_weekend_action"):
-		if not main_node().action_service.can_use_weekend_action("新媒体运营面试"):
-			return "本周周末日程已排满"
-	if GameManager.energy < 15:
-		return "精力需15（当前%d）" % GameManager.energy
-	if GameManager.degree < 1:
-		return "需成人本科：微信找尚德夜校王老师上课（%d/12）" % GameManager.night_school_progress
-	return ""
+	if _career_app and _career_app.has_method("media_lock_reason"):
+		return str(_career_app.media_lock_reason())
+	return "职业系统尚未就绪"
 
 
 func _client_lock_reason() -> String:
-	var missing: Array = []
-	if not _is_weekend_phase():
-		missing.append("周末面试")
-	elif main_node().get("action_service") and main_node().action_service.has_method("can_use_weekend_action"):
-		if not main_node().action_service.can_use_weekend_action("大客户经理面试"):
-			missing.append("本周日程已满")
-	if GameManager.energy < 20:
-		missing.append("精力20(当前%d)" % GameManager.energy)
-	if GameManager.job_level < 1:
-		missing.append("新媒体运营履历")
-	if GameManager.degree < 1:
-		missing.append("成人本科")
-	if GameManager.age >= 30:
-		missing.append("年龄30岁以下")
-	if missing.is_empty():
-		return ""
-	return "缺：" + "、".join(missing)
+	if _career_app and _career_app.has_method("client_lock_reason"):
+		return str(_career_app.client_lock_reason())
+	return "职业系统尚未就绪"
 
 
 func _on_app_job() -> void:
-	if not _can_open_phone_app():
-		return
-	if not _ensure_app_unlocked("job"):
-		return
-	_close_all_menus()
-	for child in job_menu.get_children():
-		child.queue_free()
-	var phase_text := "周末可安排面试" if _is_weekend_phase() else "工作日仅查看"
-	var status := "职位：%s | 学历：%s | 夜校：%d/12 | 年龄：%d | %s" % [
-		_get_job_name(),
-		_get_degree_name(),
-		GameManager.night_school_progress,
-		GameManager.age,
-		phase_text,
-	]
-	var items: Array = []
-
-	var admin_item := {
-		"name": "初级行政",
-		"icon_color": Color(0.3, 0.65, 0.35),
-		"cost": "底薪 800/1500/2500。低门槛、低天花板、低风险。",
-		"current": GameManager.job_level == 0,
-	}
-	if GameManager.job_level != 0:
-		if _is_weekend_phase():
-			admin_item["action"] = _on_job_admin
-		else:
-			admin_item["locked"] = true
-			admin_item["lock_reason"] = "周末再处理离职/降岗"
-	items.append(admin_item)
-
-	var media_reason := _media_lock_reason()
-	var media_item := {
-		"name": "投递：新媒体运营",
-		"icon_color": Color(0.2, 0.55, 0.9),
-		"cost": "精力-15 情绪-10 | 底薪 2000/4000/6000。要求：成人本科。",
-		"current": GameManager.job_level == 1,
-		"locked": media_reason != "" and GameManager.job_level != 1,
-		"lock_reason": media_reason,
-	}
-	if GameManager.job_level != 1 and media_reason == "":
-		media_item["action"] = _on_job_media
-	items.append(media_item)
-
-	var client_reason := _client_lock_reason()
-	var client_item := {
-		"name": "投递：大客户经理",
-		"icon_color": Color(0.9, 0.7, 0.15),
-		"cost": "精力-20 情绪-15 | 底薪 4000/8000/12000。要求：新媒体履历、成人本科、30岁以下。",
-		"current": GameManager.job_level == 2,
-		"locked": client_reason != "" and GameManager.job_level != 2,
-		"lock_reason": client_reason,
-	}
-	if GameManager.job_level != 2 and client_reason == "":
-		client_item["action"] = _on_job_client
-	items.append(client_item)
-
-	_build_app_overlay(job_menu, "BOSS弯聘", Color(0.2, 0.55, 0.9, 1), status, items)
-	_set_layer_visible(job_menu, true)
+	if _career_app and _career_app.has_method("open_job_app"):
+		_career_app.open_job_app()
 
 func _on_job_admin() -> void:
-	if GameManager.job_level == 0:
-		main_node().show_message("你已经在初级行政岗位上。")
-		_on_app_job()
-		return
-	GameManager.add_activity("工作", "调整回初级行政岗位，收入下降但压力也更低。")
-	_show_action_result("已转回初级行政，底薪 800/1500/2500。", {"job_level": -GameManager.job_level}, func() -> void:
-		_refresh_main_ui()
-		_on_app_job()
-	)
+	if _career_app and _career_app.has_method("on_job_admin"):
+		_career_app.on_job_admin()
 
 func _on_job_media() -> void:
-	if GameManager.job_level == 1:
-		main_node().show_message("你已经是新媒体运营。")
-		_on_app_job()
-		return
-	var reason := _media_lock_reason()
-	if reason != "":
-		main_node().show_message(reason)
-		return
-	if not _spend_career_action("新媒体运营面试", 15, 10):
-		return
-	GameManager.add_activity("工作", "通过新媒体运营面试，职位提升。")
-	_show_action_result("跳槽成功。下周开始，新媒体运营底薪 2000/4000/6000。", {"energy": -15, "sanity": -10, "job_level": 1 - GameManager.job_level}, func() -> void:
-		_refresh_main_ui()
-		_on_app_job()
-	)
+	if _career_app and _career_app.has_method("on_job_media"):
+		_career_app.on_job_media()
 
 func _on_job_client() -> void:
-	if GameManager.job_level == 2:
-		main_node().show_message("你已经是大客户经理。")
-		_on_app_job()
-		return
-	var reason := _client_lock_reason()
-	if reason != "":
-		main_node().show_message(reason)
-		return
-	if not _spend_career_action("大客户经理面试", 20, 15):
-		return
-	GameManager.add_activity("工作", "拿下大客户经理岗位，正式进入高薪高压轨道。")
-	_show_action_result("面试通过。大客户经理底薪 4000/8000/12000，但从下周开始，职场风险也会更重。", {"energy": -20, "sanity": -15, "job_level": 2 - GameManager.job_level}, func() -> void:
-		_refresh_main_ui()
-		_on_app_job()
-	)
+	if _career_app and _career_app.has_method("on_job_client"):
+		_career_app.on_job_client()
 
 
 # ==================== 日记本 UI ====================
