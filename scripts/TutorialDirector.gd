@@ -67,7 +67,8 @@ func allow_app_open(app_id: String) -> bool:
 
 func refresh_first_week_app_focus() -> void:
 	if _app_gate == "":
-		_main.call("_stop_phone_focus_pulse")
+		if not should_pulse_end_week_button():
+			_main.call("_stop_phone_focus_pulse")
 		return
 	var target: Button = null
 	match _app_gate:
@@ -189,6 +190,14 @@ func is_first_week_beach_route_unlocked() -> bool:
 
 func should_pulse_first_week_park_card() -> bool:
 	return is_first_week_beach_route_unlocked() and _app_gate == "map_beach"
+
+
+func should_lock_end_week_button() -> bool:
+	return is_first_week_context() and not _beach_end_hint_done
+
+
+func should_pulse_end_week_button() -> bool:
+	return is_first_week_context() and _beach_end_hint_done and _app_gate == ""
 
 
 func show_first_week_stats_tutorial() -> void:

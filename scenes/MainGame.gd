@@ -790,6 +790,18 @@ func should_pulse_first_week_park_card() -> bool:
 	return false
 
 
+func _is_tutorial_end_week_locked() -> bool:
+	if tutorial and tutorial.has_method("should_lock_end_week_button"):
+		return tutorial.should_lock_end_week_button()
+	return false
+
+
+func _should_pulse_tutorial_end_week_button() -> bool:
+	if tutorial and tutorial.has_method("should_pulse_end_week_button"):
+		return tutorial.should_pulse_end_week_button()
+	return false
+
+
 func _show_first_week_stats_tutorial() -> void:
 	if tutorial and tutorial.has_method("show_first_week_stats_tutorial"):
 		tutorial.show_first_week_stats_tutorial()
@@ -1038,7 +1050,9 @@ func _repair_next_week_button_state() -> void:
 	if has_blocking_dialog() or _has_active_blocking_layer():
 		return
 	_sync_phone_home_apps(true)
-	btn_next_week.disabled = false
+	btn_next_week.disabled = _is_tutorial_end_week_locked()
+	if not btn_next_week.disabled and _should_pulse_tutorial_end_week_button():
+		_start_phone_focus_pulse(btn_next_week)
 
 
 func _has_active_blocking_layer() -> bool:
@@ -1684,7 +1698,7 @@ func _enter_weekend() -> void:
 	_update_weekend_ui()
 	_refresh_ui()
 	sync_ui_state()
-	btn_next_week.disabled = false
+	btn_next_week.disabled = _is_tutorial_end_week_locked()
 	_maybe_start_first_week_app_tutorial()
 	call_deferred("_maybe_show_second_week_map_hint")
 	call_deferred("_maybe_show_client_dinner_prep_prompt")
@@ -1696,6 +1710,7 @@ func _update_weekend_ui() -> void:
 		_build_week_confirm_text(),
 		GameManager.get_weekend_schedule_text(),
 	]
+	btn_next_week.disabled = _is_tutorial_end_week_locked()
 	_sync_phone_home_apps(true)
 
 

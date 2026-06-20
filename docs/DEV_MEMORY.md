@@ -764,3 +764,17 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 验证结果：
 - 逃课路径：打开微信后直接关闭，`gate=wechat`，`beach_unlocked=false`，`first_week_family_support_seen=false`。
 - 正常路径：读家人群并确认结算后，flag 写入；再关闭微信才进入数值教程并解锁海边。
+
+## 20. 2026-06-20 追加：第一周结束本周按钮锁定
+
+发现问题：第一周刚进入周末时，“结束本周”按钮显示为可点状态。实际点击不会跳周，但玩家看到亮按钮、点了又没反应，会误以为游戏卡住。
+
+修复口径：
+- `TutorialDirector.should_lock_end_week_button()`：第一周海边回来的收尾提示出现前，锁住结束本周。
+- `MainGame._update_weekend_ui()`、`_enter_weekend()`、`_repair_next_week_button_state()` 都必须尊重该锁定状态，不能再无条件 `disabled=false`。
+- 海边回来后，`TutorialDirector.should_pulse_end_week_button()` 让“结束本周”按钮持续呼吸发光，直到玩家点击。
+- `refresh_first_week_app_focus()` 在无 app gate 时不能误停这个结束本周按钮的呼吸焦点。
+
+验证结果：
+- 第一周刚进入周末：`lock=true`，`Btn_NextWeek.disabled=true`，画面上按钮灰掉。
+- 海边提示点完后：`lock=false`，`Btn_NextWeek.disabled=false`，`_phone_focus_button == Btn_NextWeek`，实际画面按钮亮起并有光效。
