@@ -28,29 +28,6 @@ var btn_emo_bag: Button
 var btn_emo_sleep: Button
 
 var _heavy_app_layers: Array = []
-var _dating_names: Array = [
-	"王大壮", "李富贵", "张天宇", "赵子龙", "刘星",
-	"陈浩南", "周杰", "吴彦组", "孙小宝", "马赛克",
-	"钱多多", "郑经", "冯提莫", "何老师", "罗永亮",
-]
-# 滑动交友：随机签名池
-var _dating_bios: Array = [
-	"身高180，腹肌，寻找有趣的灵魂",
-	"币圈创业中，懂的来",
-	"有车有房，就缺一个你",
-	"年入百万，但不想透露太多",
-	"健身爱好者，每天打卡",
-	"文艺青年，喜欢旅行和咖啡",
-	"程序员，头发还在",
-	"海归硕士，寻找真爱",
-	"热爱生活，阳光向上",
-	"不是渣男，真的不是",
-	"月入5k但很有上进心",
-	"佛系男，随缘吧",
-	"创业合伙人，带你飞",
-	"摄影师，只拍女朋友",
-	"摩托车爱好者，带你兜风",
-]
 # 城市碎片事件池
 var _city_fragments: Dictionary = {}
 # NPC邂逅冷却（替代永久失败的 encounter_failed_ids）
@@ -64,6 +41,7 @@ var _map_app: RefCounted
 var _career_app: RefCounted
 var _diary_app: RefCounted
 var _consumer_app: RefCounted
+var _light_social_app: RefCounted
 
 
 # ==================== 初始化 ====================
@@ -98,6 +76,7 @@ func init(main: Node) -> void:
 	_map_app = _new_map_app()
 	_career_app = _new_career_app()
 	_consumer_app = _new_consumer_app()
+	_light_social_app = _new_light_social_app()
 
 
 func _new_action_results() -> RefCounted:
@@ -151,6 +130,13 @@ func _new_diary_app() -> RefCounted:
 
 func _new_consumer_app() -> RefCounted:
 	var script := ResourceLoader.load("res://scripts/ConsumerAppController.gd", "", ResourceLoader.CACHE_MODE_REPLACE) as Script
+	var controller := script.new() as RefCounted
+	controller.init(_main, self)
+	return controller
+
+
+func _new_light_social_app() -> RefCounted:
+	var script := ResourceLoader.load("res://scripts/LightSocialAppController.gd", "", ResourceLoader.CACHE_MODE_REPLACE) as Script
 	var controller := script.new() as RefCounted
 	controller.init(_main, self)
 	return controller
@@ -443,13 +429,8 @@ func _on_app_tuanmei() -> void:
 		_consumer_app.open_tuanmei()
 
 func _on_app_zodiac() -> void:
-	if not _can_open_phone_app():
-		return
-	if not _ensure_app_unlocked("zodiac"):
-		return
-	_close_all_menus()
-	label_zodiac_content.text = "亲爱的%s宝宝，本周运势：\n请注意控制消费，警惕烂桃花哦！" % GameManager.player_zodiac
-	_set_layer_visible(zodiac_popup, true)
+	if _light_social_app and _light_social_app.has_method("open_zodiac"):
+		_light_social_app.open_zodiac()
 
 
 func _on_app_house() -> void:
@@ -457,16 +438,8 @@ func _on_app_house() -> void:
 		_consumer_app.open_house()
 
 func _on_app_dating() -> void:
-	if not _can_open_phone_app():
-		return
-	if not _ensure_app_unlocked("dating"):
-		return
-	_close_all_menus()
-	if GameManager.charm < 10:
-		main_node().show_message("颜值太低（需>=10），没有匹配对象！先提升自己吧~")
-		return
-	_refresh_dating_card()
-	_set_layer_visible(dating_popup, true)
+	if _light_social_app and _light_social_app.has_method("open_dating"):
+		_light_social_app.open_dating()
 
 
 # ==================== 通用App覆盖层构建器 ====================
@@ -910,7 +883,8 @@ func _on_tm_surgery() -> void:
 # ==================== 星座App ====================
 
 func _on_close_zodiac() -> void:
-	_set_layer_visible(zodiac_popup, false)
+	if _light_social_app and _light_social_app.has_method("close_zodiac"):
+		_light_social_app.close_zodiac()
 
 
 # ==================== 贝壳找房App ====================
@@ -930,47 +904,20 @@ func _on_house_luxury() -> void:
 # ==================== 滑动交友App ====================
 
 func _refresh_dating_card() -> void:
-	var name_idx: int = randi() % _dating_names.size()
-	var bio_idx: int = randi() % _dating_bios.size()
-	var age_val: int = 25 + (randi() % 11)
-	label_date_name.text = _dating_names[name_idx]
-	label_date_age.text = "年龄：%d岁 | 身高：%dcm" % [age_val, 170 + (randi() % 16)]
-	label_date_bio.text = "「%s」" % _dating_bios[bio_idx]
+	if _light_social_app and _light_social_app.has_method("refresh_dating_card"):
+		_light_social_app.refresh_dating_card()
 
 func _on_pass() -> void:
-	if GameManager.energy < 5:
-		main_node().show_message("精力不足，没力气滑了！")
-		return
-	GameManager.modify_stat("energy", -5)
-	_refresh_dating_card()
+	if _light_social_app and _light_social_app.has_method("on_pass"):
+		_light_social_app.on_pass()
 
 func _on_like() -> void:
-	if GameManager.energy < 5:
-		main_node().show_message("精力不足，没力气滑了！")
-		return
-	# 颜值+情商越高，被骗概率越低，遇到好结果概率越高
-	var score: int = GameManager.charm + GameManager.eq
-	var roll: int = randi() % 100
-	var scam_chance: int = 70 - score  # 颜值+情商每高1点，被骗概率-1%
-	if scam_chance < 20:
-		scam_chance = 20
-	var changes := {"energy": -5}
-	var story := ""
-	if roll < scam_chance:
-		changes["money"] = -500
-		changes["sanity"] = -15
-		story = "你以为对面是真心聊天，结果对方绕了几句就开始要红包。反应过来的时候，钱已经转出去了。"
-	elif roll < scam_chance + 50:
-		story = "聊了两句，你们都意识到不是一路人。对方沉默，你也顺手划掉了聊天框。"
-	else:
-		changes["eq"] = 2
-		story = "这次遇到的人有点奇怪，但你没有被带着走。聊完以后，你反而更懂怎么识别套路。"
-	_show_story_then_apply_changes(story, changes, {}, func() -> void:
-		_refresh_dating_card()
-	)
+	if _light_social_app and _light_social_app.has_method("on_like"):
+		_light_social_app.on_like()
 
 func _on_close_dating() -> void:
-	_set_layer_visible(dating_popup, false)
+	if _light_social_app and _light_social_app.has_method("close_dating"):
+		_light_social_app.close_dating()
 
 
 # ==================== BOSS弯聘App ====================

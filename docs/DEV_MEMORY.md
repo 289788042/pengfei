@@ -1088,3 +1088,35 @@ TutorialDirector 现在是第一刀，后续最好把教程 step 做成表/枚�
 - 选择正常打卡后进入叙事/结算链；点掉叙事和结算后，`pending_salary=1500`，`energy=70`，`sanity=85`，进入工作日结束转场。
 - 转场后落到职场事件阶段属于正常随机事件链，不是卡死。
 - Godot editor errors 最终为 0。
+
+## 30. 2026-06-20 追加：LightSocialAppController 接管星座/滑动交友
+
+本轮继续瘦身 `AppPopupSystem.gd`，把两个轻量社交类 App 拆到独立控制器，避免手机 App 系统继续承载具体玩法。
+
+新增脚本：
+- `scripts/LightSocialAppController.gd`
+  - 接管星座 App 打开/关闭和运势文本。
+  - 接管滑动交友 App 打开/关闭、颜值门槛、随机资料池、卡片刷新。
+  - 接管滑走：精力不足提示；精力足够时扣 5 精力并刷新卡片。
+  - 接管喜欢：按颜值+情商计算被骗概率，进入叙事 -> 结算 -> 刷新下一张卡的链路。
+
+兼容边界：
+- `AppPopupSystem.gd` 保留旧入口函数：
+  - `_on_app_zodiac()`、`_on_close_zodiac()`
+  - `_on_app_dating()`、`_refresh_dating_card()`、`_on_pass()`、`_on_like()`、`_on_close_dating()`
+- 这些函数现在只转发到 `LightSocialAppController`，因此 `MainGame.gd` 的旧按钮连接不需要改。
+- `AppPopupSystem.gd` 仍保留 `zodiac_popup`、`dating_popup` 和相关 Label 引用，因为通用关闭、层级管理和控制器渲染仍会访问这些节点。
+
+当前边界：
+- 星座和滑动交友以后归 `LightSocialAppController`。
+- `AppPopupSystem` 不再保存滑动交友随机名字/签名池，也不再写滑动交友喜欢/划走结算逻辑。
+- 这只是架构拆分，不代表当前滑动交友玩法已经达到最终设计质量。后续恋爱/男性关系主线重做时，可以把这个控制器继续演化，或者废弃为早期过渡 App。
+
+验证结果：
+- Godot 编译：`LightSocialAppController.gd`、`AppPopupSystem.gd` 均通过。
+- Godot headless 项目加载通过。
+- 运行态星座 App：`app._light_social_app != null`，星座打开 `visible=true` 且文本有内容；关闭后 `visible=false`。
+- 运行态滑动交友：设置 `turn_count=13`、周末、颜值 20、精力 100 后，打开 `dating_popup.visible=true`，名字/年龄/简介都有内容。
+- 划走：精力从 100 到 95，卡片仍有有效内容。
+- 喜欢：进入叙事/结算链；点掉结算后精力从 100 到 95，卡片刷新且不崩。
+- MCP 日志里留有一条临时验收脚本 parse error 的 debugger warning，项目脚本编译和 headless 加载正常。
